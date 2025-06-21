@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -15,49 +15,72 @@ import {
   Users,
   Settings,
   Moon,
-  Sun
+  Sun,
+  ArrowLeft
 } from 'lucide-react';
 
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
+  currentPage: string;
+  onPageChange: (page: string) => void;
 }
 
-const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
-  const { user, selectedInstitute, selectedClass, selectedSubject, isDarkMode, toggleDarkMode } = useAuth();
+const Sidebar = ({ isOpen, onClose, currentPage, onPageChange }: SidebarProps) => {
+  const { user, selectedInstitute, selectedClass, selectedSubject, isDarkMode, toggleDarkMode, setSelectedInstitute, setSelectedClass, setSelectedSubject } = useAuth();
+
+  const handleBackNavigation = () => {
+    if (selectedSubject) {
+      setSelectedSubject(null);
+    } else if (selectedClass) {
+      setSelectedClass(null);
+    } else if (selectedInstitute) {
+      setSelectedInstitute(null);
+    }
+  };
 
   const getNavigationItems = () => {
     const baseItems = [
-      { icon: Home, label: 'Dashboard', href: '#' },
-      { icon: BookUser, label: 'Institutes', href: '#' },
-      { icon: CreditCard, label: 'Payments', href: '#' },
-      { icon: User, label: 'Profile', href: '#' },
+      { icon: Home, label: 'Dashboard', page: 'dashboard' },
     ];
 
-    if (selectedInstitute) {
-      baseItems.splice(2, 0, 
-        { icon: GraduationCap, label: 'Lectures', href: '#' },
-        { icon: FileText, label: 'Results', href: '#' },
-        { icon: Calendar, label: 'Attendance', href: '#' }
-      );
-
-      if (selectedClass) {
-        baseItems.splice(5, 0, { icon: Users, label: 'Select Subject', href: '#' });
-      }
-
-      if (!selectedClass) {
-        baseItems.splice(5, 0, { icon: Users, label: 'Select Class', href: '#' });
-      }
-    }
-
-    // Special handling for Attendance Markers
+    // For Attendance Markers - simplified menu
     if (user?.role === 'AttendanceMarker') {
       return [
-        { icon: Calendar, label: 'Mark Attendance', href: '#' },
-        { icon: CreditCard, label: 'Payments', href: '#' },
-        { icon: User, label: 'Profile', href: '#' },
+        { icon: Calendar, label: 'Mark Attendance', page: 'attendance' },
+        { icon: CreditCard, label: 'Payments', page: 'payments' },
+        { icon: User, label: 'Profile', page: 'profile' },
       ];
     }
+
+    // Add institute selection if no institute selected
+    if (!selectedInstitute) {
+      baseItems.push({ icon: BookUser, label: 'Select Institute', page: 'institutes' });
+    } else {
+      baseItems.push({ icon: BookUser, label: 'Institute Details', page: 'institute-details' });
+    }
+
+    // Add more options if institute is selected
+    if (selectedInstitute) {
+      baseItems.splice(2, 0, 
+        { icon: GraduationCap, label: 'Lectures', page: 'lectures' },
+        { icon: FileText, label: 'Results', page: 'results' },
+        { icon: Calendar, label: 'Attendance', page: 'attendance' }
+      );
+
+      // Add class/subject selection based on current state
+      if (!selectedClass) {
+        baseItems.splice(5, 0, { icon: Users, label: 'Select Class', page: 'classes' });
+      } else if (!selectedSubject) {
+        baseItems.splice(5, 0, { icon: Users, label: 'Select Subject', page: 'subjects' });
+      }
+    }
+
+    // Always add these at the end
+    baseItems.push(
+      { icon: CreditCard, label: 'Payments', page: 'payments' },
+      { icon: User, label: 'Profile', page: 'profile' }
+    );
 
     return baseItems;
   };
@@ -103,20 +126,32 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
             {/* Breadcrumb */}
             <div className="mt-3 text-xs text-blue-600 dark:text-blue-400">
               {selectedInstitute && (
-                <div>
-                  <span>{selectedInstitute.name}</span>
-                  {selectedClass && (
-                    <>
-                      <span className="mx-1">→</span>
-                      <span>{selectedClass.name}</span>
-                    </>
+                <div className="flex items-center gap-2">
+                  {(selectedClass || selectedSubject) && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleBackNavigation}
+                      className="p-1 h-auto"
+                    >
+                      <ArrowLeft className="h-3 w-3" />
+                    </Button>
                   )}
-                  {selectedSubject && (
-                    <>
-                      <span className="mx-1">→</span>
-                      <span>{selectedSubject.name}</span>
-                    </>
-                  )}
+                  <div>
+                    <span>{selectedInstitute.name}</span>
+                    {selectedClass && (
+                      <>
+                        <span className="mx-1">→</span>
+                        <span>{selectedClass.name}</span>
+                      </>
+                    )}
+                    {selectedSubject && (
+                      <>
+                        <span className="mx-1">→</span>
+                        <span>{selectedSubject.name}</span>
+                      </>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
@@ -129,7 +164,11 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                 <Button
                   key={index}
                   variant="ghost"
-                  className="w-full justify-start text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-600 dark:hover:text-blue-400"
+                  className={cn(
+                    "w-full justify-start text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-600 dark:hover:text-blue-400",
+                    currentPage === item.page && "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400"
+                  )}
+                  onClick={() => onPageChange(item.page)}
                 >
                   <item.icon className="mr-3 h-4 w-4" />
                   {item.label}
