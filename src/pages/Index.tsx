@@ -1,13 +1,38 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+
+import React, { useState } from 'react';
+import { AuthProvider, useAuth } from '@/contexts/AuthContext';
+import Sidebar from '@/components/layout/Sidebar';
+import Header from '@/components/layout/Header';
+import InstituteSelector from '@/components/InstituteSelector';
+import Dashboard from '@/components/Dashboard';
+
+const MainContent = () => {
+  const { selectedInstitute } = useAuth();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex w-full">
+      <Sidebar 
+        isOpen={sidebarOpen} 
+        onClose={() => setSidebarOpen(false)} 
+      />
+      
+      <div className="flex-1 flex flex-col lg:ml-64">
+        <Header onMenuClick={() => setSidebarOpen(true)} />
+        
+        <main className="flex-1 p-4 lg:p-8">
+          {!selectedInstitute ? <InstituteSelector /> : <Dashboard />}
+        </main>
+      </div>
+    </div>
+  );
+};
 
 const Index = () => {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
-      </div>
-    </div>
+    <AuthProvider>
+      <MainContent />
+    </AuthProvider>
   );
 };
 
