@@ -1,0 +1,276 @@
+
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useAuth, UserRole } from '@/contexts/AuthContext';
+import { Eye, EyeOff, GraduationCap } from 'lucide-react';
+
+// Mock user credentials for different roles
+const mockUsers = [
+  {
+    email: 'admin@system.com',
+    password: 'admin123',
+    role: 'SystemAdmin' as UserRole,
+    name: 'System Administrator',
+    institutes: [
+      { id: '1', name: 'Cambridge International School', code: 'CIS001', description: 'Premier educational institution', isActive: true },
+      { id: '2', name: 'Oxford Academy', code: 'OXF002', description: 'Excellence in education', isActive: true },
+      { id: '3', name: 'Harvard Institute', code: 'HAR003', description: 'Advanced learning center', isActive: true }
+    ]
+  },
+  {
+    email: 'institute@cambridge.edu',
+    password: 'institute123',
+    role: 'InstituteAdmin' as UserRole,
+    name: 'Cambridge Admin',
+    institutes: [
+      { id: '1', name: 'Cambridge International School', code: 'CIS001', description: 'Premier educational institution', isActive: true }
+    ]
+  },
+  {
+    email: 'teacher@cambridge.edu',
+    password: 'teacher123',
+    role: 'Teacher' as UserRole,
+    name: 'John Smith',
+    institutes: [
+      { id: '1', name: 'Cambridge International School', code: 'CIS001', description: 'Premier educational institution', isActive: true },
+      { id: '2', name: 'Oxford Academy', code: 'OXF002', description: 'Excellence in education', isActive: true }
+    ]
+  },
+  {
+    email: 'marker@cambridge.edu',
+    password: 'marker123',
+    role: 'AttendanceMarker' as UserRole,
+    name: 'Alice Johnson',
+    institutes: [
+      { id: '1', name: 'Cambridge International School', code: 'CIS001', description: 'Premier educational institution', isActive: true },
+      { id: '2', name: 'Oxford Academy', code: 'OXF002', description: 'Excellence in education', isActive: true }
+    ]
+  },
+  {
+    email: 'student@cambridge.edu',
+    password: 'student123',
+    role: 'Student' as UserRole,
+    name: 'Emma Wilson',
+    institutes: [
+      { id: '1', name: 'Cambridge International School', code: 'CIS001', description: 'Premier educational institution', isActive: true },
+      { id: '2', name: 'Oxford Academy', code: 'OXF002', description: 'Excellence in education', isActive: true }
+    ]
+  }
+];
+
+interface LoginProps {
+  onLogin: (user: any) => void;
+}
+
+const Login = ({ onLogin }: LoginProps) => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [selectedRole, setSelectedRole] = useState<UserRole>('Student');
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleQuickLogin = (role: UserRole) => {
+    const user = mockUsers.find(u => u.role === role);
+    if (user) {
+      setEmail(user.email);
+      setPassword(user.password);
+      setSelectedRole(role);
+    }
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setIsLoading(true);
+
+    // Simulate loading
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    const user = mockUsers.find(
+      u => u.email === email && u.password === password && u.role === selectedRole
+    );
+
+    if (user) {
+      onLogin({
+        id: Math.random().toString(36).substr(2, 9),
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        institutes: user.institutes
+      });
+    } else {
+      setError('Invalid credentials or role mismatch');
+    }
+
+    setIsLoading(false);
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
+      <div className="w-full max-w-md space-y-6">
+        {/* Logo and Header */}
+        <div className="text-center">
+          <div className="mx-auto w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mb-4">
+            <GraduationCap className="w-8 h-8 text-white" />
+          </div>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">EduManage</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-2">Institute Learning Management System</p>
+        </div>
+
+        {/* Login Form */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Sign In</CardTitle>
+            <CardDescription>Choose your role and enter your credentials</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleLogin} className="space-y-4">
+              {/* Role Selection */}
+              <div className="space-y-2">
+                <Label htmlFor="role">Role</Label>
+                <Select value={selectedRole} onValueChange={(value: UserRole) => setSelectedRole(value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select your role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="SystemAdmin">System Administrator</SelectItem>
+                    <SelectItem value="InstituteAdmin">Institute Administrator</SelectItem>
+                    <SelectItem value="Teacher">Teacher</SelectItem>
+                    <SelectItem value="AttendanceMarker">Attendance Marker</SelectItem>
+                    <SelectItem value="Student">Student</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Email Input */}
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="Enter your email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+
+              {/* Password Input */}
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="Enter your password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4 text-gray-400" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-gray-400" />
+                    )}
+                  </Button>
+                </div>
+              </div>
+
+              {/* Error Message */}
+              {error && (
+                <div className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 p-3 rounded-md">
+                  {error}
+                </div>
+              )}
+
+              {/* Login Button */}
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? 'Signing in...' : 'Sign In'}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+
+        {/* Quick Login Options */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm">Quick Login (Demo)</CardTitle>
+            <CardDescription className="text-xs">Click to auto-fill credentials for testing</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleQuickLogin('SystemAdmin')}
+                className="text-xs"
+              >
+                System Admin
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleQuickLogin('InstituteAdmin')}
+                className="text-xs"
+              >
+                Institute Admin
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleQuickLogin('Teacher')}
+                className="text-xs"
+              >
+                Teacher
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleQuickLogin('AttendanceMarker')}
+                className="text-xs"
+              >
+                Att. Marker
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleQuickLogin('Student')}
+                className="text-xs col-span-2"
+              >
+                Student
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Demo Credentials */}
+        <Card className="text-xs">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">Demo Credentials</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2 text-gray-600 dark:text-gray-400">
+            <div><strong>System Admin:</strong> admin@system.com / admin123</div>
+            <div><strong>Institute Admin:</strong> institute@cambridge.edu / institute123</div>
+            <div><strong>Teacher:</strong> teacher@cambridge.edu / teacher123</div>
+            <div><strong>Attendance Marker:</strong> marker@cambridge.edu / marker123</div>
+            <div><strong>Student:</strong> student@cambridge.edu / student123</div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+};
+
+export default Login;

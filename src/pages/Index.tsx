@@ -3,17 +3,27 @@ import React, { useState } from 'react';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import Sidebar from '@/components/layout/Sidebar';
 import Header from '@/components/layout/Header';
+import Login from '@/components/Login';
 import InstituteSelector from '@/components/InstituteSelector';
 import Dashboard from '@/components/Dashboard';
+import Classes from '@/components/Classes';
+import Subjects from '@/components/Subjects';
+import Users from '@/components/Users';
 import Lectures from '@/components/Lectures';
 import Results from '@/components/Results';
 import AttendanceMarking from '@/components/AttendanceMarking';
+import Profile from '@/components/Profile';
 import DataTable from '@/components/ui/data-table';
 
 const MainContent = () => {
-  const { selectedInstitute } = useAuth();
+  const { user, login, selectedInstitute } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState('dashboard');
+
+  // Show login if no user is authenticated
+  if (!user) {
+    return <Login onLogin={login} />;
+  }
 
   const renderPage = () => {
     if (!selectedInstitute && currentPage !== 'institutes') {
@@ -25,6 +35,12 @@ const MainContent = () => {
         return <Dashboard />;
       case 'institutes':
         return <InstituteSelector />;
+      case 'classes':
+        return <Classes />;
+      case 'subjects':
+        return <Subjects />;
+      case 'users':
+        return <Users />;
       case 'lectures':
         return <Lectures />;
       case 'results':
@@ -49,14 +65,7 @@ const MainContent = () => {
           />
         );
       case 'profile':
-        return (
-          <div className="max-w-2xl mx-auto">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">Profile</h1>
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-              <p className="text-gray-600 dark:text-gray-400">Profile management coming soon...</p>
-            </div>
-          </div>
-        );
+        return <Profile />;
       default:
         return <Dashboard />;
     }
@@ -74,7 +83,7 @@ const MainContent = () => {
       <div className="flex-1 flex flex-col lg:ml-64">
         <Header onMenuClick={() => setSidebarOpen(true)} />
         
-        <main className="flex-1 p-4 lg:p-8">
+        <main className="flex-1 p-6 lg:p-8">
           {renderPage()}
         </main>
       </div>

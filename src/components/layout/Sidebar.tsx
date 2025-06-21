@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAuth } from '@/contexts/AuthContext';
+import { AccessControl } from '@/utils/permissions';
 import { 
   Home, 
   BookUser, 
@@ -16,7 +17,10 @@ import {
   Settings,
   Moon,
   Sun,
-  ArrowLeft
+  ArrowLeft,
+  LogOut,
+  BookOpen,
+  UserCheck
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -27,7 +31,18 @@ interface SidebarProps {
 }
 
 const Sidebar = ({ isOpen, onClose, currentPage, onPageChange }: SidebarProps) => {
-  const { user, selectedInstitute, selectedClass, selectedSubject, isDarkMode, toggleDarkMode, setSelectedInstitute, setSelectedClass, setSelectedSubject } = useAuth();
+  const { 
+    user, 
+    logout,
+    selectedInstitute, 
+    selectedClass, 
+    selectedSubject, 
+    isDarkMode, 
+    toggleDarkMode, 
+    setSelectedInstitute, 
+    setSelectedClass, 
+    setSelectedSubject 
+  } = useAuth();
 
   const handleBackNavigation = () => {
     if (selectedSubject) {
@@ -37,6 +52,11 @@ const Sidebar = ({ isOpen, onClose, currentPage, onPageChange }: SidebarProps) =
     } else if (selectedInstitute) {
       setSelectedInstitute(null);
     }
+  };
+
+  const handleLogout = () => {
+    logout();
+    onClose();
   };
 
   const getNavigationItems = () => {
@@ -62,17 +82,34 @@ const Sidebar = ({ isOpen, onClose, currentPage, onPageChange }: SidebarProps) =
 
     // Add more options if institute is selected
     if (selectedInstitute) {
-      baseItems.splice(2, 0, 
-        { icon: GraduationCap, label: 'Lectures', page: 'lectures' },
-        { icon: FileText, label: 'Results', page: 'results' },
-        { icon: Calendar, label: 'Attendance', page: 'attendance' }
-      );
+      // Classes - visible to all roles with view permission
+      if (AccessControl.hasPermission(user?.role || '', 'view-classes')) {
+        baseItems.push({ icon: Users, label: 'Classes', page: 'classes' });
+      }
 
-      // Add class/subject selection based on current state
-      if (!selectedClass) {
-        baseItems.splice(5, 0, { icon: Users, label: 'Select Class', page: 'classes' });
-      } else if (!selectedSubject) {
-        baseItems.splice(5, 0, { icon: Users, label: 'Select Subject', page: 'subjects' });
+      // Subjects - visible to all roles with view permission
+      if (AccessControl.hasPermission(user?.role || '', 'view-subjects')) {
+        baseItems.push({ icon: BookOpen, label: 'Subjects', page: 'subjects' });
+      }
+
+      // Lectures
+      if (AccessControl.hasPermission(user?.role || '', 'view-lectures')) {
+        baseItems.push({ icon: GraduationCap, label: 'Lectures', page: 'lectures' });
+      }
+
+      // Results
+      if (AccessControl.hasPermission(user?.role || '', 'view-results')) {
+        baseItems.push({ icon: FileText, label: 'Results', page: 'results' });
+      }
+
+      // Attendance
+      if (AccessControl.hasPermission(user?.role || '', 'view-attendance')) {
+        baseItems.push({ icon: Calendar, label: 'Attendance', page: 'attendance' });
+      }
+
+      // Users management - only for admins
+      if (AccessControl.hasPermission(user?.role || '', 'view-users')) {
+        baseItems.push({ icon: UserCheck, label: 'Users', page: 'users' });
       }
     }
 
@@ -104,21 +141,31 @@ const Sidebar = ({ isOpen, onClose, currentPage, onPageChange }: SidebarProps) =
       )}>
         <div className="flex flex-col h-full">
           {/* Header */}
-          <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+          <div className="p-4 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-bold text-gray-900 dark:text-white">EduManage</h2>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={toggleDarkMode}
-                className="p-2"
-              >
-                {isDarkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-              </Button>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={toggleDarkMode}
+                  className="p-2"
+                >
+                  {isDarkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleLogout}
+                  className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                >
+                  <LogOut className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
             
             {/* User Info */}
-            <div className="mt-4">
+            <div className="mt-3">
               <p className="text-sm font-medium text-gray-900 dark:text-white">{user?.name}</p>
               <p className="text-xs text-gray-500 dark:text-gray-400">{user?.role}</p>
             </div>
@@ -159,7 +206,7 @@ const Sidebar = ({ isOpen, onClose, currentPage, onPageChange }: SidebarProps) =
 
           {/* Navigation */}
           <ScrollArea className="flex-1 px-3 py-4">
-            <nav className="space-y-2">
+            <nav className="space-y-1">
               {navigationItems.map((item, index) => (
                 <Button
                   key={index}
@@ -168,7 +215,10 @@ const Sidebar = ({ isOpen, onClose, currentPage, onPageChange }: SidebarProps) =
                     "w-full justify-start text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-600 dark:hover:text-blue-400",
                     currentPage === item.page && "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400"
                   )}
-                  onClick={() => onPageChange(item.page)}
+                  onClick={() => {
+                    onPageChange(item.page);
+                    onClose(); // Close sidebar on mobile after selection
+                  }}
                 >
                   <item.icon className="mr-3 h-4 w-4" />
                   {item.label}

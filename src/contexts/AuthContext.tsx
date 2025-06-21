@@ -21,6 +21,8 @@ export interface Institute {
 
 interface AuthContextType {
   user: User | null;
+  login: (user: User) => void;
+  logout: () => void;
   selectedInstitute: Institute | null;
   setSelectedInstitute: (institute: Institute | null) => void;
   selectedClass: any | null;
@@ -33,36 +35,23 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Mock user data for demonstration
-const mockUser: User = {
-  id: '1',
-  name: 'John Doe',
-  email: 'john@example.com',
-  role: 'Teacher',
-  institutes: [
-    {
-      id: '1',
-      name: 'Cambridge International School',
-      code: 'CIS001',
-      description: 'Premier educational institution',
-      isActive: true
-    },
-    {
-      id: '2',
-      name: 'Oxford Academy',
-      code: 'OXF002',
-      description: 'Excellence in education',
-      isActive: true
-    }
-  ]
-};
-
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user] = useState<User>(mockUser);
+  const [user, setUser] = useState<User | null>(null);
   const [selectedInstitute, setSelectedInstitute] = useState<Institute | null>(null);
   const [selectedClass, setSelectedClass] = useState<any>(null);
   const [selectedSubject, setSelectedSubject] = useState<any>(null);
   const [isDarkMode, setIsDarkMode] = useState(false);
+
+  const login = (userData: User) => {
+    setUser(userData);
+  };
+
+  const logout = () => {
+    setUser(null);
+    setSelectedInstitute(null);
+    setSelectedClass(null);
+    setSelectedSubject(null);
+  };
 
   const toggleDarkMode = () => {
     setIsDarkMode(!isDarkMode);
@@ -72,6 +61,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   return (
     <AuthContext.Provider value={{
       user,
+      login,
+      logout,
       selectedInstitute,
       setSelectedInstitute,
       selectedClass,
