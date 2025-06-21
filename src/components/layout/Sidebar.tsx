@@ -20,7 +20,12 @@ import {
   ArrowLeft,
   LogOut,
   BookOpen,
-  UserCheck
+  UserCheck,
+  Building,
+  UserPlus,
+  GraduationCapIcon,
+  ClipboardList,
+  CalendarCheck
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -67,15 +72,21 @@ const Sidebar = ({ isOpen, onClose, currentPage, onPageChange }: SidebarProps) =
     // For Attendance Markers - simplified menu
     if (user?.role === 'AttendanceMarker') {
       return [
-        { icon: Calendar, label: 'Mark Attendance', page: 'attendance' },
+        { icon: Home, label: 'Dashboard', page: 'dashboard' },
+        { icon: CalendarCheck, label: 'Mark Attendance', page: 'attendance-marking' },
         { icon: CreditCard, label: 'Payments', page: 'payments' },
         { icon: User, label: 'Profile', page: 'profile' },
       ];
     }
 
+    // SystemAdmin gets institute management
+    if (user?.role === 'SystemAdmin') {
+      baseItems.push({ icon: Building, label: 'All Institutes', page: 'institutes' });
+    }
+
     // Add institute selection if no institute selected
     if (!selectedInstitute) {
-      baseItems.push({ icon: BookUser, label: 'Select Institute', page: 'institutes' });
+      baseItems.push({ icon: BookUser, label: 'Select Institute', page: 'select-institute' });
     } else {
       baseItems.push({ icon: BookUser, label: 'Institute Details', page: 'institute-details' });
     }
@@ -84,12 +95,27 @@ const Sidebar = ({ isOpen, onClose, currentPage, onPageChange }: SidebarProps) =
     if (selectedInstitute) {
       // Classes - visible to all roles with view permission
       if (AccessControl.hasPermission(user?.role || '', 'view-classes')) {
-        baseItems.push({ icon: Users, label: 'Classes', page: 'classes' });
+        baseItems.push({ icon: Users, label: 'Select Class', page: 'classes' });
       }
 
-      // Subjects - visible to all roles with view permission
-      if (AccessControl.hasPermission(user?.role || '', 'view-subjects')) {
-        baseItems.push({ icon: BookOpen, label: 'Subjects', page: 'subjects' });
+      // Subjects - visible to all roles with view permission (only if class selected)
+      if (selectedClass && AccessControl.hasPermission(user?.role || '', 'view-subjects')) {
+        baseItems.push({ icon: BookOpen, label: 'Select Subject', page: 'subjects' });
+      }
+
+      // Students management
+      if (AccessControl.hasPermission(user?.role || '', 'view-students')) {
+        baseItems.push({ icon: GraduationCapIcon, label: 'Students', page: 'students' });
+      }
+
+      // Teachers management
+      if (AccessControl.hasPermission(user?.role || '', 'view-teachers')) {
+        baseItems.push({ icon: UserCheck, label: 'Teachers', page: 'teachers' });
+      }
+
+      // Attendance Markers management
+      if (AccessControl.hasPermission(user?.role || '', 'view-attendance-markers')) {
+        baseItems.push({ icon: UserPlus, label: 'Attendance Markers', page: 'attendance-markers' });
       }
 
       // Lectures
@@ -102,14 +128,19 @@ const Sidebar = ({ isOpen, onClose, currentPage, onPageChange }: SidebarProps) =
         baseItems.push({ icon: FileText, label: 'Results', page: 'results' });
       }
 
-      // Attendance
+      // Attendance (viewing data)
       if (AccessControl.hasPermission(user?.role || '', 'view-attendance')) {
         baseItems.push({ icon: Calendar, label: 'Attendance', page: 'attendance' });
       }
 
+      // Attendance Marking (for marking attendance)
+      if (AccessControl.hasPermission(user?.role || '', 'mark-attendance')) {
+        baseItems.push({ icon: CalendarCheck, label: 'Mark Attendance', page: 'attendance-marking' });
+      }
+
       // Users management - only for admins
       if (AccessControl.hasPermission(user?.role || '', 'view-users')) {
-        baseItems.push({ icon: UserCheck, label: 'Users', page: 'users' });
+        baseItems.push({ icon: ClipboardList, label: 'User Management', page: 'users' });
       }
     }
 
