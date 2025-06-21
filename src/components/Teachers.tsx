@@ -91,10 +91,10 @@ const Teachers = () => {
     console.log('View teacher details:', teacher);
   };
 
-  const canCreate = AccessControl.hasPermission(user?.role || '', 'create-teacher');
-  const canEdit = AccessControl.hasPermission(user?.role || '', 'edit-teacher');
-  const canDelete = AccessControl.hasPermission(user?.role || '', 'delete-teacher');
-  const canView = AccessControl.hasPermission(user?.role || '', 'view-teacher-details');
+  const canCreate = AccessControl.hasPermission(user?.role || 'Student' as const, 'create-teacher');
+  const canEdit = AccessControl.hasPermission(user?.role || 'Student' as const, 'edit-teacher');
+  const canDelete = AccessControl.hasPermission(user?.role || 'Student' as const, 'delete-teacher');
+  const canView = AccessControl.hasPermission(user?.role || 'Student' as const, 'view-teacher-details');
 
   return (
     <div className="space-y-6">

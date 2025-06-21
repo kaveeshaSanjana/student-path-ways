@@ -90,7 +90,7 @@ const MainContent = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex w-full">
       <Sidebar 
         isOpen={sidebarOpen} 
         onClose={() => setSidebarOpen(false)}
@@ -98,10 +98,10 @@ const MainContent = () => {
         onPageChange={setCurrentPage}
       />
       
-      <div className="flex-1 flex flex-col lg:ml-64">
+      <div className="flex-1 flex flex-col min-w-0">
         <Header onMenuClick={() => setSidebarOpen(true)} />
         
-        <main className="flex-1 p-4 lg:p-6">
+        <main className="flex-1 p-4 lg:p-6 overflow-auto">
           {renderPage()}
         </main>
       </div>

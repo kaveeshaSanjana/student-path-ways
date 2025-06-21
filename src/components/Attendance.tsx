@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import DataTable from '@/components/ui/data-table';
@@ -86,7 +85,7 @@ const Attendance = () => {
     console.log('Export attendance:', record);
   };
 
-  const canExport = AccessControl.hasPermission(user?.role || '', 'export-attendance');
+  const canExport = AccessControl.hasPermission(user?.role || 'Student' as const, 'export-attendance');
 
   return (
     <div className="space-y-6">
