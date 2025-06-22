@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -122,83 +121,47 @@ const Grades = () => {
   // Table columns
   const columns = [
     {
-      accessorKey: 'name',
+      key: 'name',
       header: 'Grade Name',
     },
     {
-      accessorKey: 'level',
+      key: 'level',
       header: 'Level',
-      cell: ({ row }: any) => (
-        <Badge variant="outline">Level {row.getValue('level')}</Badge>
+      render: (value: any, row: any) => (
+        <Badge variant="outline">Level {value}</Badge>
       ),
     },
     {
-      accessorKey: 'description',
+      key: 'description',
       header: 'Description',
     },
     {
-      accessorKey: 'studentsCount',
+      key: 'studentsCount',
       header: 'Students',
-      cell: ({ row }: any) => (
+      render: (value: any, row: any) => (
         <div className="flex items-center gap-1">
           <Users className="h-4 w-4 text-gray-500" />
-          <span>{row.getValue('studentsCount')}</span>
+          <span>{value}</span>
         </div>
       ),
     },
     {
-      accessorKey: 'classesCount',
+      key: 'classesCount',
       header: 'Classes',
-      cell: ({ row }: any) => (
+      render: (value: any, row: any) => (
         <div className="flex items-center gap-1">
           <BookOpen className="h-4 w-4 text-gray-500" />
-          <span>{row.getValue('classesCount')}</span>
+          <span>{value}</span>
         </div>
       ),
     },
     {
-      accessorKey: 'isActive',
+      key: 'isActive',
       header: 'Status',
-      cell: ({ row }: any) => (
-        <Badge variant={row.getValue('isActive') ? 'default' : 'secondary'}>
-          {row.getValue('isActive') ? 'Active' : 'Inactive'}
+      render: (value: any, row: any) => (
+        <Badge variant={value ? 'default' : 'secondary'}>
+          {value ? 'Active' : 'Inactive'}
         </Badge>
-      ),
-    },
-    {
-      id: 'actions',
-      header: 'Actions',
-      cell: ({ row }: any) => (
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleViewGrade(row.original)}
-            className="h-8 w-8 p-0"
-          >
-            <Eye className="h-4 w-4" />
-          </Button>
-          {AccessControl.hasPermission(userRole as any, 'edit-grade') && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => handleEditGrade(row.original)}
-              className="h-8 w-8 p-0"
-            >
-              <Edit className="h-4 w-4" />
-            </Button>
-          )}
-          {AccessControl.hasPermission(userRole as any, 'delete-grade') && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => handleDeleteGrade(row.original.id)}
-              className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
       ),
     },
   ];
@@ -652,9 +615,17 @@ const Grades = () => {
         </CardHeader>
         <CardContent>
           <DataTable
+            title="All Grades"
             columns={columns}
             data={filteredGrades}
-            searchKey="name"
+            onView={handleViewGrade}
+            onEdit={AccessControl.hasPermission(userRole as any, 'edit-grade') ? handleEditGrade : undefined}
+            onDelete={AccessControl.hasPermission(userRole as any, 'delete-grade') ? handleDeleteGrade : undefined}
+            onAdd={AccessControl.hasPermission(userRole as any, 'create-grade') ? handleCreateGrade : undefined}
+            searchPlaceholder="Search grades..."
+            allowAdd={AccessControl.hasPermission(userRole as any, 'create-grade')}
+            allowEdit={AccessControl.hasPermission(userRole as any, 'edit-grade')}
+            allowDelete={AccessControl.hasPermission(userRole as any, 'delete-grade')}
           />
         </CardContent>
       </Card>
