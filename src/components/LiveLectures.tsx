@@ -6,8 +6,22 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { Clock, Users, Video, Play } from 'lucide-react';
 
-// Mock live lectures data
-const mockLiveLectures = [
+interface LiveLecture {
+  id: string;
+  title: string;
+  instructor: string;
+  subject: string;
+  grade: string;
+  startTime: string;
+  duration: string;
+  attendees: number;
+  maxAttendees: number;
+  status: 'live' | 'starting-soon' | 'scheduled';
+  meetingUrl: string;
+}
+
+// Mock live lectures data with proper typing
+const mockLiveLectures: LiveLecture[] = [
   {
     id: '1',
     title: 'Advanced Mathematics - Calculus Integration',
@@ -49,20 +63,6 @@ const mockLiveLectures = [
   }
 ];
 
-interface LiveLecture {
-  id: string;
-  title: string;
-  instructor: string;
-  subject: string;
-  grade: string;
-  startTime: string;
-  duration: string;
-  attendees: number;
-  maxAttendees: number;
-  status: 'live' | 'starting-soon' | 'scheduled';
-  meetingUrl: string;
-}
-
 const LiveLectures = () => {
   const { user } = useAuth();
   const userRole = user?.role || 'Student';
@@ -72,7 +72,7 @@ const LiveLectures = () => {
     window.open(lecture.meetingUrl, '_blank');
   };
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: LiveLecture['status']) => {
     switch (status) {
       case 'live':
         return <Badge className="bg-red-500 hover:bg-red-600">🔴 Live</Badge>;
