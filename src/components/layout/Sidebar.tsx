@@ -8,7 +8,7 @@ import {
   LayoutDashboard,
   Users,
   GraduationCap,
-  ChalkboardTeacher,
+  UserCheck,
   BookOpen,
   School,
   ClipboardList,
@@ -16,7 +16,6 @@ import {
   Settings,
   User,
   Building2,
-  UserCheck,
   QrCode,
   X,
   Award
@@ -54,7 +53,7 @@ const Sidebar = ({ isOpen, onClose, currentPage, onPageChange }: SidebarProps) =
     {
       id: 'teachers',
       label: 'Teachers',
-      icon: ChalkboardTeacher,
+      icon: UserCheck,
       permission: 'view-teachers'
     },
     {
@@ -149,7 +148,7 @@ const Sidebar = ({ isOpen, onClose, currentPage, onPageChange }: SidebarProps) =
   const userRole = user?.role || 'Student';
 
   const filterItemsByPermission = (items: any[]) => {
-    return items.filter(item => AccessControl.hasPermission(userRole, item.permission));
+    return items.filter(item => AccessControl.hasPermission(userRole as any, item.permission));
   };
 
   const handleItemClick = (itemId: string) => {

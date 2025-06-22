@@ -116,6 +116,7 @@ const AppContent = () => {
         <Sidebar 
           isOpen={isSidebarOpen}
           onClose={handleSidebarClose}
+          currentPage={currentPage}
           onPageChange={setCurrentPage}
         />
         <div className="flex-1 flex flex-col overflow-hidden">

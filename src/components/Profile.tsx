@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -32,7 +31,7 @@ const Profile = () => {
     joinDate: '2023-01-15'
   });
 
-  const userPermissions = AccessControl.getRolePermissions(user?.role || 'Student');
+  const userPermissions = AccessControl.getUserPermissions(user?.role || 'Student');
 
   const handleSave = () => {
     // Save logic would go here

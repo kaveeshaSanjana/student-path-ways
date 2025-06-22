@@ -1,5 +1,5 @@
 
-export type UserRole = 'SystemAdmin' | 'InstituteAdmin' | 'Teacher' | 'Student';
+export type UserRole = 'SystemAdmin' | 'InstituteAdmin' | 'AttendanceMarker' | 'Teacher' | 'Student';
 
 export type Permission = 
   // Dashboard
@@ -59,6 +59,14 @@ const rolePermissions: Record<UserRole, Permission[]> = {
     'view-grading', 'grade-assignments', 'manage-grades',
     'view-lectures', 'create-lecture', 'edit-lecture', 'delete-lecture',
     'view-results', 'generate-results',
+    'view-profile', 'edit-profile', 'view-institute-details'
+  ],
+  AttendanceMarker: [
+    'view-dashboard',
+    'view-students', 'view-teachers',
+    'view-classes', 'view-class-details',
+    'view-subjects',
+    'view-attendance', 'mark-attendance', 'edit-attendance',
     'view-profile', 'edit-profile', 'view-institute-details'
   ],
   Teacher: [
