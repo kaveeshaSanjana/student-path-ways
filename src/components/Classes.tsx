@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import DataTable from '@/components/ui/data-table';
 import { useAuth } from '@/contexts/AuthContext';
@@ -172,10 +171,11 @@ const Classes = () => {
     }
   };
 
-  const canAdd = AccessControl.hasPermission(user?.role || 'Student', 'add-classes');
-  const canEdit = AccessControl.hasPermission(user?.role || 'Student', 'edit-classes');
-  const canDelete = AccessControl.hasPermission(user?.role || 'Student', 'delete-classes');
-  const canAssignTeachers = AccessControl.hasPermission(user?.role || 'Student', 'assign-teachers');
+  const userRole = user?.role || 'Student';
+  const canAdd = AccessControl.hasPermission(userRole, 'create-class');
+  const canEdit = AccessControl.hasPermission(userRole, 'edit-class');
+  const canDelete = AccessControl.hasPermission(userRole, 'delete-class');
+  const canAssignTeachers = AccessControl.hasPermission(userRole, 'edit-class');
 
   return (
     <div className="space-y-6">
@@ -188,9 +188,6 @@ const Classes = () => {
         onDelete={canDelete ? handleDeleteClass : undefined}
         onView={handleViewClass}
         searchPlaceholder="Search classes..."
-        allowAdd={canAdd}
-        allowEdit={canEdit}
-        allowDelete={canDelete}
         customActions={[
           {
             label: 'Assign Teacher',

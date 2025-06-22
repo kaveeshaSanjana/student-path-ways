@@ -1,3 +1,4 @@
+
 import React from 'react';
 import DataTable from '@/components/ui/data-table';
 import { Badge } from '@/components/ui/badge';
@@ -86,10 +87,11 @@ const AttendanceMarkers = () => {
     console.log('View attendance marker details:', marker);
   };
 
-  const canCreate = AccessControl.hasPermission(user?.role || 'Student', 'create-attendance-marker');
-  const canEdit = AccessControl.hasPermission(user?.role || 'Student', 'edit-attendance-marker');
-  const canDelete = AccessControl.hasPermission(user?.role || 'Student', 'delete-attendance-marker');
-  const canView = AccessControl.hasPermission(user?.role || 'Student', 'view-attendance-marker-details');
+  const userRole = user?.role || 'Student';
+  const canCreate = AccessControl.hasPermission(userRole, 'create-attendance-marker');
+  const canEdit = AccessControl.hasPermission(userRole, 'edit-attendance-marker');
+  const canDelete = AccessControl.hasPermission(userRole, 'delete-attendance-marker');
+  const canView = AccessControl.hasPermission(userRole, 'view-attendance-marker-details');
 
   return (
     <div className="space-y-6">

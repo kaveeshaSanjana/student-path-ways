@@ -107,9 +107,10 @@ const Users = () => {
     });
   };
 
-  const canAdd = AccessControl.hasPermission(user?.role || 'Student', 'add-users');
-  const canEdit = AccessControl.hasPermission(user?.role || 'Student', 'edit-users');
-  const canDelete = AccessControl.hasPermission(user?.role || 'Student', 'delete-users');
+  const userRole = user?.role || 'Student';
+  const canAdd = AccessControl.hasPermission(userRole, 'create-user');
+  const canEdit = AccessControl.hasPermission(userRole, 'edit-user');
+  const canDelete = AccessControl.hasPermission(userRole, 'delete-user');
 
   return (
     <div className="space-y-6">
@@ -122,9 +123,6 @@ const Users = () => {
         onDelete={canDelete ? handleDeleteUser : undefined}
         onView={handleViewUser}
         searchPlaceholder="Search users..."
-        allowAdd={canAdd}
-        allowEdit={canEdit}
-        allowDelete={canDelete}
       />
 
       {/* Create Dialog */}

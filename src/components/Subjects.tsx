@@ -117,9 +117,10 @@ const Subjects = () => {
     });
   };
 
-  const canAdd = AccessControl.hasPermission(user?.role || 'Student', 'add-subjects');
-  const canEdit = AccessControl.hasPermission(user?.role || 'Student', 'edit-subjects');
-  const canDelete = AccessControl.hasPermission(user?.role || 'Student', 'delete-subjects');
+  const userRole = user?.role || 'Student';
+  const canAdd = AccessControl.hasPermission(userRole, 'create-subject');
+  const canEdit = AccessControl.hasPermission(userRole, 'edit-subject');
+  const canDelete = AccessControl.hasPermission(userRole, 'delete-subject');
 
   return (
     <div className="space-y-6">
@@ -132,9 +133,6 @@ const Subjects = () => {
         onDelete={canDelete ? handleDeleteSubject : undefined}
         onView={handleViewSubject}
         searchPlaceholder="Search subjects..."
-        allowAdd={canAdd}
-        allowEdit={canEdit}
-        allowDelete={canDelete}
       />
 
       {/* Create Dialog */}

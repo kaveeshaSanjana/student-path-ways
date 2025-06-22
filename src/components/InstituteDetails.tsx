@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -26,7 +27,8 @@ const InstituteDetails = () => {
     );
   }
 
-  const canEdit = AccessControl.hasPermission(user?.role || 'Student', 'edit-institute');
+  const userRole = user?.role || 'Student';
+  const canEdit = AccessControl.hasPermission(userRole, 'edit-institute');
 
   const handleEdit = () => {
     console.log('Edit institute:', selectedInstitute);
