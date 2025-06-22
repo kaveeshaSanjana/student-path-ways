@@ -1,9 +1,11 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import DataTable from '@/components/ui/data-table';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { AccessControl } from '@/utils/permissions';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useToast } from '@/hooks/use-toast';
+import CreateTeacherForm from '@/components/forms/CreateTeacherForm';
 
 const mockTeachers = [
   {
@@ -49,6 +51,10 @@ const mockTeachers = [
 
 const Teachers = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [selectedTeacher, setSelectedTeacher] = useState<any>(null);
 
   const teachersColumns = [
     { key: 'employeeId', header: 'Employee ID' },
@@ -81,20 +87,49 @@ const Teachers = () => {
 
   const handleEditTeacher = (teacher: any) => {
     console.log('Edit teacher:', teacher);
+    setSelectedTeacher(teacher);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleUpdateTeacher = (teacherData: any) => {
+    console.log('Updating teacher:', teacherData);
+    toast({
+      title: "Teacher Updated",
+      description: `Teacher ${teacherData.name} has been updated successfully.`
+    });
+    setIsEditDialogOpen(false);
+    setSelectedTeacher(null);
   };
 
   const handleDeleteTeacher = (teacher: any) => {
     console.log('Delete teacher:', teacher);
+    toast({
+      title: "Teacher Deleted",
+      description: `Teacher ${teacher.name} has been deleted.`,
+      variant: "destructive"
+    });
   };
 
   const handleViewTeacher = (teacher: any) => {
     console.log('View teacher details:', teacher);
+    toast({
+      title: "View Teacher",
+      description: `Viewing teacher: ${teacher.name}`
+    });
   };
 
-  const canCreate = AccessControl.hasPermission(user?.role || 'Student' as const, 'create-teacher');
+  const handleCreateTeacher = (teacherData: any) => {
+    console.log('Creating teacher:', teacherData);
+    toast({
+      title: "Teacher Created",
+      description: `Teacher ${teacherData.name} has been created successfully.`
+    });
+    setIsCreateDialogOpen(false);
+  };
+
+  const canAdd = AccessControl.hasPermission(user?.role || 'Student' as const, 'create-teacher');
   const canEdit = AccessControl.hasPermission(user?.role || 'Student' as const, 'edit-teacher');
   const canDelete = AccessControl.hasPermission(user?.role || 'Student' as const, 'delete-teacher');
-  const canView = AccessControl.hasPermission(user?.role || 'Student' as const, 'view-teacher-details');
 
   return (
     <div className="space-y-6">
@@ -111,12 +146,45 @@ const Teachers = () => {
         title="Teachers"
         data={mockTeachers}
         columns={teachersColumns}
-        onAdd={canCreate ? handleAddTeacher : undefined}
+        onAdd={canAdd ? () => setIsCreateDialogOpen(true) : undefined}
         onEdit={canEdit ? handleEditTeacher : undefined}
         onDelete={canDelete ? handleDeleteTeacher : undefined}
-        onView={canView ? handleViewTeacher : undefined}
+        onView={handleViewTeacher}
         searchPlaceholder="Search teachers..."
+        allowAdd={canAdd}
+        allowEdit={canEdit}
+        allowDelete={canDelete}
       />
+
+      {/* Create Dialog */}
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Create New Teacher</DialogTitle>
+          </DialogHeader>
+          <CreateTeacherForm
+            onSubmit={handleCreateTeacher}
+            onCancel={() => setIsCreateDialogOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Teacher</DialogTitle>
+          </DialogHeader>
+          <CreateTeacherForm
+            initialData={selectedTeacher}
+            onSubmit={handleUpdateTeacher}
+            onCancel={() => {
+              setIsEditDialogOpen(false);
+              setSelectedTeacher(null);
+            }}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

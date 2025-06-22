@@ -1,84 +1,58 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import DataTable from '@/components/ui/data-table';
+import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { AccessControl } from '@/utils/permissions';
-import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useToast } from '@/hooks/use-toast';
+import CreateUserForm from '@/components/forms/CreateUserForm';
 
 const mockUsers = [
   {
     id: '1',
-    name: 'John Smith',
-    email: 'john.smith@cambridge.edu',
-    role: 'Teacher',
+    name: 'John Doe',
+    email: 'john.doe@example.com',
+    role: 'Student',
     status: 'Active',
-    joinDate: '2023-01-15',
     lastLogin: '2024-01-20'
   },
   {
     id: '2',
-    name: 'Sarah Wilson',
-    email: 'sarah.wilson@cambridge.edu',
+    name: 'Jane Smith',
+    email: 'jane.smith@example.com',
     role: 'Teacher',
     status: 'Active',
-    joinDate: '2023-02-20',
-    lastLogin: '2024-01-19'
+    lastLogin: '2024-01-21'
   },
   {
     id: '3',
-    name: 'Emily Davis',
-    email: 'emily.davis@cambridge.edu',
+    name: 'Alice Johnson',
+    email: 'alice.johnson@example.com',
     role: 'InstituteAdmin',
-    status: 'Active',
-    joinDate: '2022-08-10',
-    lastLogin: '2024-01-20'
+    status: 'Inactive',
+    lastLogin: '2024-01-15'
   },
   {
     id: '4',
-    name: 'Michael Brown',
-    email: 'michael.brown@cambridge.edu',
-    role: 'AttendanceMarker',
+    name: 'Bob Williams',
+    email: 'bob.williams@example.com',
+    role: 'SystemAdmin',
     status: 'Active',
-    joinDate: '2023-05-12',
-    lastLogin: '2024-01-18'
-  },
-  {
-    id: '5',
-    name: 'Alice Johnson',
-    email: 'alice.johnson@cambridge.edu',
-    role: 'Student',
-    status: 'Inactive',
-    joinDate: '2023-09-01',
-    lastLogin: '2024-01-10'
+    lastLogin: '2024-01-22'
   }
 ];
 
 const Users = () => {
   const { user } = useAuth();
-
-  const getRoleBadgeVariant = (role: string) => {
-    switch (role) {
-      case 'SystemAdmin': return 'destructive';
-      case 'InstituteAdmin': return 'default';
-      case 'Teacher': return 'secondary';
-      case 'AttendanceMarker': return 'outline';
-      case 'Student': return 'outline';
-      default: return 'secondary';
-    }
-  };
+  const { toast } = useToast();
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<any>(null);
 
   const usersColumns = [
     { key: 'name', header: 'Name' },
     { key: 'email', header: 'Email' },
-    { 
-      key: 'role', 
-      header: 'Role',
-      render: (value: string) => (
-        <Badge variant={getRoleBadgeVariant(value)}>
-          {value}
-        </Badge>
-      )
-    },
+    { key: 'role', header: 'Role' },
     { 
       key: 'status', 
       header: 'Status',
@@ -88,46 +62,100 @@ const Users = () => {
         </Badge>
       )
     },
-    { key: 'joinDate', header: 'Join Date' },
     { key: 'lastLogin', header: 'Last Login' }
   ];
 
-  const handleAddUser = () => {
-    console.log('Add new user');
+  const handleCreateUser = (userData: any) => {
+    console.log('Creating user:', userData);
+    toast({
+      title: "User Created",
+      description: `User ${userData.name} has been created successfully.`
+    });
+    setIsCreateDialogOpen(false);
   };
 
   const handleEditUser = (userData: any) => {
-    console.log('Edit user:', userData);
+    console.log('Editing user:', userData);
+    setSelectedUser(userData);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleUpdateUser = (userData: any) => {
+    console.log('Updating user:', userData);
+    toast({
+      title: "User Updated",
+      description: `User ${userData.name} has been updated successfully.`
+    });
+    setIsEditDialogOpen(false);
+    setSelectedUser(null);
   };
 
   const handleDeleteUser = (userData: any) => {
-    console.log('Delete user:', userData);
+    console.log('Deleting user:', userData);
+    toast({
+      title: "User Deleted",
+      description: `User ${userData.name} has been deleted.`,
+      variant: "destructive"
+    });
   };
 
-  const canCreate = AccessControl.hasPermission(user?.role || '', 'create-user');
-  const canEdit = AccessControl.hasPermission(user?.role || '', 'edit-user');
-  const canDelete = AccessControl.hasPermission(user?.role || '', 'delete-user');
+  const handleViewUser = (userData: any) => {
+    console.log('View user details:', userData);
+    toast({
+      title: "View User",
+      description: `Viewing user: ${userData.name}`
+    });
+  };
+
+  const canAdd = AccessControl.hasPermission(user?.role || 'Student', 'add-users');
+  const canEdit = AccessControl.hasPermission(user?.role || 'Student', 'edit-users');
+  const canDelete = AccessControl.hasPermission(user?.role || 'Student', 'delete-users');
 
   return (
     <div className="space-y-6">
-      <div className="text-center">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-          Users Management
-        </h1>
-        <p className="text-gray-600 dark:text-gray-400">
-          Manage system users, roles, and permissions
-        </p>
-      </div>
-
       <DataTable
-        title="Users"
+        title="Users Management"
         data={mockUsers}
         columns={usersColumns}
-        onAdd={canCreate ? handleAddUser : undefined}
+        onAdd={canAdd ? () => setIsCreateDialogOpen(true) : undefined}
         onEdit={canEdit ? handleEditUser : undefined}
         onDelete={canDelete ? handleDeleteUser : undefined}
+        onView={handleViewUser}
         searchPlaceholder="Search users..."
+        allowAdd={canAdd}
+        allowEdit={canEdit}
+        allowDelete={canDelete}
       />
+
+      {/* Create Dialog */}
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Create New User</DialogTitle>
+          </DialogHeader>
+          <CreateUserForm
+            onSubmit={handleCreateUser}
+            onCancel={() => setIsCreateDialogOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit User</DialogTitle>
+          </DialogHeader>
+          <CreateUserForm
+            initialData={selectedUser}
+            onSubmit={handleUpdateUser}
+            onCancel={() => {
+              setIsEditDialogOpen(false);
+              setSelectedUser(null);
+            }}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

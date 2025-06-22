@@ -27,7 +27,12 @@ import {
   ClipboardList,
   CalendarCheck,
   Menu,
-  X
+  X,
+  BookMarked,
+  Award,
+  Plus,
+  Edit,
+  Eye
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -120,6 +125,17 @@ const Sidebar = ({ isOpen, onClose, currentPage, onPageChange }: SidebarProps) =
         baseItems.push({ icon: UserPlus, label: 'Attendance Markers', page: 'attendance-markers' });
       }
 
+      // Grading Section
+      if (AccessControl.hasPermission(user?.role || 'Student', 'view-grades')) {
+        baseItems.push(
+          { icon: Award, label: 'Grading System', page: 'grading' },
+          { icon: BookMarked, label: 'Grades Table', page: 'grades-table' },
+          { icon: Plus, label: 'Create Grade', page: 'create-grade' },
+          { icon: Edit, label: 'Assign Classes', page: 'assign-grade-classes' },
+          { icon: Eye, label: 'View Grade Classes', page: 'view-grade-classes' }
+        );
+      }
+
       // Lectures
       if (AccessControl.hasPermission(user?.role || 'Student', 'view-lectures')) {
         baseItems.push({ icon: GraduationCap, label: 'Lectures', page: 'lectures' });
@@ -181,7 +197,7 @@ const Sidebar = ({ isOpen, onClose, currentPage, onPageChange }: SidebarProps) =
                 variant="ghost"
                 size="sm"
                 onClick={toggleDarkMode}
-                className="p-2"
+                className="p-2 touch-manipulation"
               >
                 {isDarkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
               </Button>
@@ -190,7 +206,7 @@ const Sidebar = ({ isOpen, onClose, currentPage, onPageChange }: SidebarProps) =
                 variant="ghost"
                 size="sm"
                 onClick={onClose}
-                className="p-2 lg:hidden"
+                className="p-2 lg:hidden touch-manipulation"
               >
                 <X className="h-4 w-4" />
               </Button>
@@ -198,7 +214,7 @@ const Sidebar = ({ isOpen, onClose, currentPage, onPageChange }: SidebarProps) =
                 variant="ghost"
                 size="sm"
                 onClick={handleLogout}
-                className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 touch-manipulation"
               >
                 <LogOut className="h-4 w-4" />
               </Button>
@@ -220,7 +236,7 @@ const Sidebar = ({ isOpen, onClose, currentPage, onPageChange }: SidebarProps) =
                     variant="ghost"
                     size="sm"
                     onClick={handleBackNavigation}
-                    className="p-1 h-auto"
+                    className="p-1 h-auto touch-manipulation"
                   >
                     <ArrowLeft className="h-3 w-3" />
                   </Button>
@@ -254,7 +270,7 @@ const Sidebar = ({ isOpen, onClose, currentPage, onPageChange }: SidebarProps) =
                   key={index}
                   variant="ghost"
                   className={cn(
-                    "w-full justify-start text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-600 dark:hover:text-blue-400 h-10",
+                    "w-full justify-start text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-600 dark:hover:text-blue-400 h-12 touch-manipulation min-h-[48px]",
                     currentPage === item.page && "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400"
                   )}
                   onClick={() => {

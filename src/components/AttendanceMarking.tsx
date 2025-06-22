@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,7 +14,11 @@ import {
   Edit3
 } from 'lucide-react';
 
-const AttendanceMarking = () => {
+interface AttendanceMarkingProps {
+  onNavigate?: (page: string) => void;
+}
+
+const AttendanceMarking = ({ onNavigate }: AttendanceMarkingProps) => {
   const { selectedClass, selectedSubject } = useAuth();
   const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
 
@@ -27,7 +30,8 @@ const AttendanceMarking = () => {
       icon: QrCode,
       color: 'blue',
       availability: 'Available for all classes',
-      features: ['Quick scanning', 'Automatic recording', 'Real-time updates']
+      features: ['Quick scanning', 'Automatic recording', 'Real-time updates'],
+      page: 'qr-attendance'
     },
     {
       id: 'manual',
@@ -52,6 +56,10 @@ const AttendanceMarking = () => {
 
   const handleMethodSelect = (methodId: string) => {
     setSelectedMethod(methodId);
+    const method = attendanceMethods.find(m => m.id === methodId);
+    if (method?.page && onNavigate) {
+      onNavigate(method.page);
+    }
     console.log('Selected attendance method:', methodId);
   };
 

@@ -1,9 +1,12 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import DataTable from '@/components/ui/data-table';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { AccessControl } from '@/utils/permissions';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useToast } from '@/hooks/use-toast';
+import CreateInstituteForm from '@/components/forms/CreateInstituteForm';
 
 const mockInstitutes = [
   {
@@ -52,6 +55,10 @@ const mockInstitutes = [
 
 const Institutes = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [selectedInstitute, setSelectedInstitute] = useState<any>(null);
 
   // Only SystemAdmin can access this page
   if (user?.role !== 'SystemAdmin') {
@@ -90,27 +97,66 @@ const Institutes = () => {
   ];
 
   const handleAddInstitute = () => {
-    console.log('Add new institute');
+    setIsCreateDialogOpen(true);
+  };
+
+  const handleCreateInstitute = (instituteData: any) => {
+    console.log('Creating institute:', instituteData);
+    toast({
+      title: "Institute Created",
+      description: `Institute ${instituteData.name} has been created successfully.`
+    });
+    setIsCreateDialogOpen(false);
   };
 
   const handleEditInstitute = (institute: any) => {
     console.log('Edit institute:', institute);
+    setSelectedInstitute(institute);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleUpdateInstitute = (instituteData: any) => {
+    console.log('Updating institute:', instituteData);
+    toast({
+      title: "Institute Updated",
+      description: `Institute ${instituteData.name} has been updated successfully.`
+    });
+    setIsEditDialogOpen(false);
+    setSelectedInstitute(null);
   };
 
   const handleDeleteInstitute = (institute: any) => {
     console.log('Delete institute:', institute);
+    toast({
+      title: "Institute Deleted",
+      description: `Institute ${institute.name} has been deleted.`,
+      variant: "destructive"
+    });
   };
 
   const handleViewInstitute = (institute: any) => {
     console.log('View institute details:', institute);
+    toast({
+      title: "View Institute",
+      description: `Viewing institute: ${institute.name}`
+    });
   };
 
   const handleDisableInstitute = (institute: any) => {
     console.log('Disable institute:', institute);
+    toast({
+      title: "Institute Disabled",
+      description: `Institute ${institute.name} has been disabled.`,
+      variant: "destructive"
+    });
   };
 
   const handleEnableInstitute = (institute: any) => {
     console.log('Enable institute:', institute);
+    toast({
+      title: "Institute Enabled",
+      description: `Institute ${institute.name} has been enabled.`
+    });
   };
 
   return (
@@ -136,18 +182,48 @@ const Institutes = () => {
         customActions={[
           {
             label: 'Disable',
-            onClick: handleDisableInstitute,
+            action: handleDisableInstitute,
             variant: 'destructive',
             condition: (row: any) => row.status === 'Active'
           },
           {
             label: 'Enable',
-            onClick: handleEnableInstitute,
+            action: handleEnableInstitute,
             variant: 'default',
             condition: (row: any) => row.status === 'Inactive'
           }
         ]}
       />
+
+      {/* Create Dialog */}
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Create New Institute</DialogTitle>
+          </DialogHeader>
+          <CreateInstituteForm
+            onSubmit={handleCreateInstitute}
+            onCancel={() => setIsCreateDialogOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Institute</DialogTitle>
+          </DialogHeader>
+          <CreateInstituteForm
+            initialData={selectedInstitute}
+            onSubmit={handleUpdateInstitute}
+            onCancel={() => {
+              setIsEditDialogOpen(false);
+              setSelectedInstitute(null);
+            }}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
