@@ -17,6 +17,7 @@ import AttendanceMarking from '@/components/AttendanceMarking';
 import AttendanceMarkers from '@/components/AttendanceMarkers';
 import QRAttendance from '@/components/QRAttendance';
 import Lectures from '@/components/Lectures';
+import LiveLectures from '@/components/LiveLectures';
 import Results from '@/components/Results';
 import Profile from '@/components/Profile';
 import InstituteDetails from '@/components/InstituteDetails';
@@ -95,6 +96,8 @@ const AppContent = () => {
         return <QRAttendance />;
       case 'lectures':
         return <Lectures />;
+      case 'live-lectures':
+        return <LiveLectures />;
       case 'results':
         return <Results />;
       case 'profile':

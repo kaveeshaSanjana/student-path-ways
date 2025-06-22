@@ -120,7 +120,7 @@ const DataTable = ({
                   </th>
                 ))}
                 {hasActions && (
-                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider min-w-[150px] sticky right-0 bg-gray-50 dark:bg-gray-700 border-l border-gray-200 dark:border-gray-600">
+                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider min-w-[150px] border-l border-gray-200 dark:border-gray-600">
                     Actions
                   </th>
                 )}
@@ -148,7 +148,7 @@ const DataTable = ({
                       </td>
                     ))}
                     {hasActions && (
-                      <td className="px-2 py-3 text-center min-w-[150px] sticky right-0 bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700">
+                      <td className="px-2 py-3 text-center min-w-[150px] border-l border-gray-200 dark:border-gray-700">
                         <div className="flex justify-center items-center gap-1 flex-wrap">
                           {onView && (
                             <Button

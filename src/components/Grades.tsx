@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import DataTable from '@/components/ui/data-table';
 import { useAuth } from '@/contexts/AuthContext';
 import { AccessControl } from '@/utils/permissions';
-import { Plus, Edit, Trash2, Eye, Users, BookOpen } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, Users, BookOpen, Settings } from 'lucide-react';
 
 // Mock grades data
 const mockGrades = [
@@ -223,9 +223,15 @@ const Grades = () => {
     setIsCreating(false);
   };
 
-  const handleAssignClasses = () => {
+  const handleAssignClasses = (grade: Grade) => {
+    setSelectedGrade(grade);
     setCurrentView('assign-classes');
     setAssignedClasses([]); // Reset assigned classes
+  };
+
+  const handleViewClasses = (grade: Grade) => {
+    setSelectedGrade(grade);
+    setCurrentView('view-classes');
   };
 
   const handleAddClassToGrade = () => {
@@ -247,6 +253,24 @@ const Grades = () => {
     console.log('Saving class assignments for grade:', selectedGrade?.name, assignedClasses);
     setCurrentView('details');
   };
+
+  // Add custom actions for View Classes and Assign Classes buttons
+  const customActions = [
+    {
+      label: 'View Classes',
+      action: (row: any) => handleViewClasses(row),
+      icon: <Eye className="h-3 w-3" />,
+      variant: 'outline' as const,
+      condition: () => AccessControl.hasPermission(userRole as any, 'view-classes')
+    },
+    {
+      label: 'Assign Classes',
+      action: (row: any) => handleAssignClasses(row),
+      icon: <Settings className="h-3 w-3" />,
+      variant: 'outline' as const,
+      condition: () => AccessControl.hasPermission(userRole as any, 'edit-grade')
+    }
+  ];
 
   // Render different views
   if (currentView === 'form') {
@@ -444,6 +468,59 @@ const Grades = () => {
     );
   }
 
+  if (currentView === 'view-classes' && selectedGrade) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+              Classes in {selectedGrade.name}
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400">
+              View all classes assigned to this grade
+            </p>
+          </div>
+          <Button variant="outline" onClick={() => setCurrentView('list')}>
+            Back to List
+          </Button>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Assigned Classes</CardTitle>
+            <CardDescription>
+              Classes currently assigned to {selectedGrade.name}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {classes.slice(0, selectedGrade.classesCount).map((cls) => (
+                <Card key={cls.id}>
+                  <CardContent className="pt-6">
+                    <div className="space-y-2">
+                      <h3 className="font-semibold">{cls.name}</h3>
+                      <p className="text-sm text-gray-600">
+                        {cls.studentsCount} students
+                      </p>
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="outline">
+                          View Details
+                        </Button>
+                        <Button size="sm" variant="outline">
+                          Manage
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   if (currentView === 'assign-classes' && selectedGrade) {
     return (
       <div className="space-y-6">
@@ -622,6 +699,7 @@ const Grades = () => {
             onEdit={AccessControl.hasPermission(userRole as any, 'edit-grade') ? handleEditGrade : undefined}
             onDelete={AccessControl.hasPermission(userRole as any, 'delete-grade') ? handleDeleteGrade : undefined}
             onAdd={AccessControl.hasPermission(userRole as any, 'create-grade') ? handleCreateGrade : undefined}
+            customActions={customActions}
             searchPlaceholder="Search grades..."
             allowAdd={AccessControl.hasPermission(userRole as any, 'create-grade')}
             allowEdit={AccessControl.hasPermission(userRole as any, 'edit-grade')}

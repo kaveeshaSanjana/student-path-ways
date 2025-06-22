@@ -18,7 +18,8 @@ import {
   Building2,
   QrCode,
   X,
-  Award
+  Award,
+  Video
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -120,6 +121,12 @@ const Sidebar = ({ isOpen, onClose, currentPage, onPageChange }: SidebarProps) =
       id: 'lectures',
       label: 'Lectures',
       icon: BookOpen,
+      permission: 'view-lectures'
+    },
+    {
+      id: 'live-lectures',
+      label: 'Live Lectures',
+      icon: Video,
       permission: 'view-lectures'
     },
     {
