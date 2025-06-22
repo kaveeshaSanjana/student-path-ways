@@ -118,7 +118,7 @@ const Grades = () => {
     return matchesSearch && matchesLevel && matchesStatus;
   });
 
-  // Table columns
+  // Table columns with proper render functions
   const columns = [
     {
       key: 'name',
@@ -162,6 +162,36 @@ const Grades = () => {
         <Badge variant={value ? 'default' : 'secondary'}>
           {value ? 'Active' : 'Inactive'}
         </Badge>
+      ),
+    },
+    {
+      key: 'viewClasses',
+      header: 'View Classes',
+      render: (value: any, row: Grade) => (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => handleViewClasses(row)}
+          className="flex items-center gap-1"
+        >
+          <Eye className="h-3 w-3" />
+          View
+        </Button>
+      ),
+    },
+    {
+      key: 'assignClasses',
+      header: 'Assign Classes',
+      render: (value: any, row: Grade) => (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => handleAssignClasses(row)}
+          className="flex items-center gap-1"
+        >
+          <Settings className="h-3 w-3" />
+          Assign
+        </Button>
       ),
     },
   ];
@@ -452,7 +482,7 @@ const Grades = () => {
           </CardHeader>
           <CardContent>
             <div className="flex gap-2">
-              <Button onClick={handleAssignClasses}>
+              <Button onClick={() => handleAssignClasses(selectedGrade)}>
                 Assign Classes
               </Button>
               <Button variant="outline">
@@ -699,7 +729,6 @@ const Grades = () => {
             onEdit={AccessControl.hasPermission(userRole as any, 'edit-grade') ? handleEditGrade : undefined}
             onDelete={AccessControl.hasPermission(userRole as any, 'delete-grade') ? handleDeleteGrade : undefined}
             onAdd={AccessControl.hasPermission(userRole as any, 'create-grade') ? handleCreateGrade : undefined}
-            customActions={customActions}
             searchPlaceholder="Search grades..."
             allowAdd={AccessControl.hasPermission(userRole as any, 'create-grade')}
             allowEdit={AccessControl.hasPermission(userRole as any, 'edit-grade')}
