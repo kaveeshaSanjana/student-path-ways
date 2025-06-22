@@ -1,4 +1,3 @@
-
 export type UserRole = 'SystemAdmin' | 'InstituteAdmin' | 'AttendanceMarker' | 'Teacher' | 'Student';
 
 export type Permission = 
@@ -19,7 +18,7 @@ export type Permission =
   // Institutes
   | 'view-institutes' | 'create-institute' | 'edit-institute' | 'delete-institute'
   // Attendance
-  | 'view-attendance' | 'mark-attendance' | 'edit-attendance' | 'delete-attendance' | 'manage-attendance-markers' | 'create-attendance-marker' | 'edit-attendance-marker' | 'delete-attendance-marker' | 'view-attendance-marker-details'
+  | 'view-attendance' | 'mark-attendance' | 'edit-attendance' | 'delete-attendance' | 'manage-attendance-markers' | 'create-attendance-marker' | 'edit-attendance-marker' | 'delete-attendance-marker' | 'view-attendance-marker-details' | 'export-attendance'
   // Grading & Assessment
   | 'view-grading' | 'grade-assignments' | 'manage-grades'
   // Lectures
@@ -40,7 +39,7 @@ const rolePermissions: Record<UserRole, Permission[]> = {
     'view-classes', 'create-class', 'edit-class', 'delete-class', 'view-class-details',
     'view-subjects', 'create-subject', 'edit-subject', 'delete-subject',
     'view-institutes', 'create-institute', 'edit-institute', 'delete-institute',
-    'view-attendance', 'mark-attendance', 'edit-attendance', 'delete-attendance', 'manage-attendance-markers', 'create-attendance-marker', 'edit-attendance-marker', 'delete-attendance-marker', 'view-attendance-marker-details',
+    'view-attendance', 'mark-attendance', 'edit-attendance', 'delete-attendance', 'manage-attendance-markers', 'create-attendance-marker', 'edit-attendance-marker', 'delete-attendance-marker', 'view-attendance-marker-details', 'export-attendance',
     'view-grading', 'grade-assignments', 'manage-grades',
     'view-lectures', 'create-lecture', 'edit-lecture', 'delete-lecture',
     'view-results', 'generate-results',
@@ -55,7 +54,7 @@ const rolePermissions: Record<UserRole, Permission[]> = {
     'view-classes', 'create-class', 'edit-class', 'delete-class', 'view-class-details',
     'view-subjects', 'create-subject', 'edit-subject', 'delete-subject',
     'view-institutes',
-    'view-attendance', 'mark-attendance', 'edit-attendance', 'delete-attendance', 'manage-attendance-markers', 'create-attendance-marker', 'edit-attendance-marker', 'delete-attendance-marker', 'view-attendance-marker-details',
+    'view-attendance', 'mark-attendance', 'edit-attendance', 'delete-attendance', 'manage-attendance-markers', 'create-attendance-marker', 'edit-attendance-marker', 'delete-attendance-marker', 'view-attendance-marker-details', 'export-attendance',
     'view-grading', 'grade-assignments', 'manage-grades',
     'view-lectures', 'create-lecture', 'edit-lecture', 'delete-lecture',
     'view-results', 'generate-results',
@@ -66,7 +65,7 @@ const rolePermissions: Record<UserRole, Permission[]> = {
     'view-students', 'view-teachers',
     'view-classes', 'view-class-details',
     'view-subjects',
-    'view-attendance', 'mark-attendance', 'edit-attendance',
+    'view-attendance', 'mark-attendance', 'edit-attendance', 'export-attendance',
     'view-profile', 'edit-profile', 'view-institute-details'
   ],
   Teacher: [
@@ -75,7 +74,7 @@ const rolePermissions: Record<UserRole, Permission[]> = {
     'view-grades', 'view-grade-details',
     'view-classes', 'view-class-details',
     'view-subjects',
-    'view-attendance', 'mark-attendance', 'edit-attendance', 'view-attendance-marker-details',
+    'view-attendance', 'mark-attendance', 'edit-attendance', 'view-attendance-marker-details', 'export-attendance',
     'view-grading', 'grade-assignments',
     'view-lectures', 'create-lecture', 'edit-lecture',
     'view-results',
