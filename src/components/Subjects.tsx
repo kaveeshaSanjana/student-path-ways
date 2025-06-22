@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import DataTable from '@/components/ui/data-table';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
@@ -7,55 +7,82 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { useToast } from '@/hooks/use-toast';
 import CreateSubjectForm from '@/components/forms/CreateSubjectForm';
 
+interface SubjectsProps {
+  apiLevel?: 'institute' | 'class' | 'subject';
+}
+
 const mockSubjects = [
   {
     id: '1',
     code: 'MATH101',
     name: 'Mathematics',
-    class: 'Grade 10',
+    class: 'Grade 10 - A',
     teacher: 'Mr. Smith',
     credits: 3,
     description: 'Basic mathematics course for grade 10 students.',
-    status: 'Active'
+    status: 'Active',
+    institute: 'Main Campus'
   },
   {
     id: '2',
     code: 'SCI101',
     name: 'Science',
-    class: 'Grade 10',
+    class: 'Grade 10 - A',
     teacher: 'Mrs. Johnson',
     credits: 4,
     description: 'Introduction to science for grade 10 students.',
-    status: 'Active'
+    status: 'Active',
+    institute: 'Main Campus'
   },
   {
     id: '3',
     code: 'ENG101',
     name: 'English',
-    class: 'Grade 10',
+    class: 'Grade 10 - B',
     teacher: 'Mr. Williams',
     credits: 3,
     description: 'English language and literature course for grade 10 students.',
-    status: 'Active'
+    status: 'Active',
+    institute: 'Main Campus'
   },
   {
     id: '4',
     code: 'HIST101',
     name: 'History',
-    class: 'Grade 10',
+    class: 'Grade 11 - Science',
     teacher: 'Ms. Brown',
     credits: 3,
-    description: 'World history course for grade 10 students.',
-    status: 'Inactive'
+    description: 'World history course for grade 11 students.',
+    status: 'Inactive',
+    institute: 'Science Branch'
   }
 ];
 
-const Subjects = () => {
-  const { user } = useAuth();
+const Subjects = ({ apiLevel = 'institute' }: SubjectsProps) => {
+  const { user, selectedInstitute, selectedClass } = useAuth();
   const { toast } = useToast();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedSubject, setSelectedSubject] = useState<any>(null);
+  const [subjectsData, setSubjectsData] = useState(mockSubjects);
+
+  useEffect(() => {
+    // Simulate different API calls based on level
+    console.log(`Fetching subjects data for API level: ${apiLevel}`);
+    console.log(`Current context - Institute: ${selectedInstitute?.name}, Class: ${selectedClass?.name}`);
+    
+    // Simulate filtering based on API level
+    let filteredData = mockSubjects;
+    if (apiLevel === 'class' && selectedClass) {
+      // Class level: show subjects for selected class
+      filteredData = mockSubjects.filter(subject => subject.class === selectedClass.name);
+    } else if (apiLevel === 'institute' && selectedInstitute) {
+      // Institute level: show subjects for selected institute
+      filteredData = mockSubjects.filter(subject => subject.institute === selectedInstitute.name);
+    }
+    
+    setSubjectsData(filteredData);
+  }, [apiLevel, selectedInstitute, selectedClass]);
 
   const subjectsColumns = [
     { key: 'code', header: 'Subject Code' },
@@ -63,6 +90,7 @@ const Subjects = () => {
     { key: 'class', header: 'Class' },
     { key: 'teacher', header: 'Teacher' },
     { key: 'credits', header: 'Credits' },
+    { key: 'institute', header: 'Institute' },
     { key: 'description', header: 'Description' },
     { 
       key: 'status', 
@@ -122,11 +150,21 @@ const Subjects = () => {
   const canEdit = AccessControl.hasPermission(userRole, 'edit-subject');
   const canDelete = AccessControl.hasPermission(userRole, 'delete-subject');
 
+  const getTitle = () => {
+    let title = 'All Subjects';
+    if (apiLevel === 'class' && selectedClass) {
+      title += ` (${selectedClass.name})`;
+    } else if (apiLevel === 'institute' && selectedInstitute) {
+      title += ` (${selectedInstitute.name})`;
+    }
+    return title;
+  };
+
   return (
     <div className="space-y-6">
       <DataTable
-        title="Subjects Management"
-        data={mockSubjects}
+        title={getTitle()}
+        data={subjectsData}
         columns={subjectsColumns}
         onAdd={canAdd ? () => setIsCreateDialogOpen(true) : undefined}
         onEdit={canEdit ? handleEditSubject : undefined}
@@ -153,7 +191,7 @@ const Subjects = () => {
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Subject</DialogTitle>
-          </DialogHeader>
+          </Dialog>
           <CreateSubjectForm
             initialData={selectedSubject}
             onSubmit={handleUpdateSubject}

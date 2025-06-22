@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -19,7 +18,8 @@ import {
   QrCode,
   X,
   Award,
-  Video
+  Video,
+  LogOut
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -30,7 +30,7 @@ interface SidebarProps {
 }
 
 const Sidebar = ({ isOpen, onClose, currentPage, onPageChange }: SidebarProps) => {
-  const { user, selectedInstitute, selectedClass, selectedSubject } = useAuth();
+  const { user, selectedInstitute, selectedClass, selectedSubject, logout } = useAuth();
 
   const menuItems = [
     {
@@ -65,13 +65,25 @@ const Sidebar = ({ isOpen, onClose, currentPage, onPageChange }: SidebarProps) =
     },
     {
       id: 'classes',
-      label: 'Classes',
+      label: 'All Classes',
       icon: School,
       permission: 'view-classes'
     },
     {
       id: 'subjects',
-      label: 'Subjects',
+      label: 'All Subjects',
+      icon: BookOpen,
+      permission: 'view-subjects'
+    },
+    {
+      id: 'select-class',
+      label: 'Select Class',
+      icon: School,
+      permission: 'view-classes'
+    },
+    {
+      id: 'select-subject',
+      label: 'Select Subject',
       icon: BookOpen,
       permission: 'view-subjects'
     },
@@ -160,6 +172,11 @@ const Sidebar = ({ isOpen, onClose, currentPage, onPageChange }: SidebarProps) =
 
   const handleItemClick = (itemId: string) => {
     onPageChange(itemId);
+    onClose();
+  };
+
+  const handleLogout = () => {
+    logout();
     onClose();
   };
 
@@ -261,11 +278,20 @@ const Sidebar = ({ isOpen, onClose, currentPage, onPageChange }: SidebarProps) =
 
         {/* Footer */}
         <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-          <div className="text-xs text-gray-500 dark:text-gray-400">
+          <div className="text-xs text-gray-500 dark:text-gray-400 mb-3">
             Logged in as: <span className="font-medium">{user?.name}</span>
             <br />
             Role: <span className="font-medium">{user?.role}</span>
           </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleLogout}
+            className="w-full flex items-center justify-center gap-2"
+          >
+            <LogOut className="h-4 w-4" />
+            Logout
+          </Button>
         </div>
       </div>
     </>

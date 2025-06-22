@@ -49,14 +49,24 @@ const AppContent = () => {
       return <InstituteSelector />;
     }
 
+    // Handle class selector routing
+    if (currentPage === 'select-class') {
+      return <ClassSelector />;
+    }
+
+    // Handle subject selector routing
+    if (currentPage === 'select-subject') {
+      return <SubjectSelector />;
+    }
+
     // If class is required for current page but not selected
-    const classRequiredPages = ['subjects', 'select-subject'];
+    const classRequiredPages = ['attendance-marking', 'grading'];
     if (selectedInstitute && !selectedClass && classRequiredPages.includes(currentPage)) {
       return <ClassSelector />;
     }
 
     // If subject is required for current page but not selected
-    const subjectRequiredPages = ['lectures', 'attendance-marking', 'grading'];
+    const subjectRequiredPages = ['lectures'];
     if (selectedClass && !selectedSubject && subjectRequiredPages.includes(currentPage)) {
       return <SubjectSelector />;
     }
@@ -73,9 +83,11 @@ const AppContent = () => {
       case 'grades':
         return <Grades />;
       case 'classes':
-        return selectedInstitute ? <Classes /> : <ClassSelector />;
+        // All classes view - API calls based on selected institute level
+        return <Classes apiLevel="institute" />;
       case 'subjects':
-        return selectedClass ? <Subjects /> : <SubjectSelector />;
+        // All subjects view - API calls based on selected institute/class level  
+        return <Subjects apiLevel={selectedClass ? "class" : "institute"} />;
       case 'institutes':
         return <Institutes />;
       case 'select-institute':

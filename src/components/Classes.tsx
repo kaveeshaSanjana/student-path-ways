@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import DataTable from '@/components/ui/data-table';
 import { useAuth } from '@/contexts/AuthContext';
 import { AccessControl } from '@/utils/permissions';
@@ -8,6 +8,10 @@ import { useToast } from '@/hooks/use-toast';
 import CreateClassForm from '@/components/forms/CreateClassForm';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+interface ClassesProps {
+  apiLevel?: 'institute' | 'class' | 'subject';
+}
 
 const mockClasses = [
   {
@@ -20,7 +24,8 @@ const mockClasses = [
     room: 'Room 101',
     status: 'Active',
     subjects: 8,
-    assignedTeachers: ['John Smith', 'Sarah Johnson']
+    assignedTeachers: ['John Smith', 'Sarah Johnson'],
+    institute: 'Main Campus'
   },
   {
     id: '2',
@@ -32,7 +37,8 @@ const mockClasses = [
     room: 'Room 102',
     status: 'Active',
     subjects: 8,
-    assignedTeachers: ['Sarah Johnson', 'Michael Brown']
+    assignedTeachers: ['Sarah Johnson', 'Michael Brown'],
+    institute: 'Main Campus'
   },
   {
     id: '3',
@@ -44,7 +50,8 @@ const mockClasses = [
     room: 'Room 201',
     status: 'Active',
     subjects: 10,
-    assignedTeachers: ['Michael Brown', 'Emily Davis']
+    assignedTeachers: ['Michael Brown', 'Emily Davis'],
+    institute: 'Science Branch'
   },
   {
     id: '4',
@@ -56,7 +63,8 @@ const mockClasses = [
     room: 'Room 301',
     status: 'Inactive',
     subjects: 6,
-    assignedTeachers: ['Emily Davis']
+    assignedTeachers: ['Emily Davis'],
+    institute: 'Commerce Branch'
   }
 ];
 
@@ -68,14 +76,30 @@ const mockTeachers = [
   { id: '5', name: 'Dr. Alice Johnson', subject: 'Chemistry' }
 ];
 
-const Classes = () => {
-  const { user, setSelectedClass } = useAuth();
+const Classes = ({ apiLevel = 'institute' }: ClassesProps) => {
+  const { user, setSelectedClass, selectedInstitute } = useAuth();
   const { toast } = useToast();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isAssignTeacherDialogOpen, setIsAssignTeacherDialogOpen] = useState(false);
   const [selectedClassData, setSelectedClassData] = useState<any>(null);
   const [selectedTeacher, setSelectedTeacher] = useState('');
+  const [classesData, setClassesData] = useState(mockClasses);
+
+  useEffect(() => {
+    // Simulate different API calls based on level
+    console.log(`Fetching classes data for API level: ${apiLevel}`);
+    console.log(`Current context - Institute: ${selectedInstitute?.name}`);
+    
+    // Simulate filtering based on API level
+    let filteredData = mockClasses;
+    if (apiLevel === 'institute' && selectedInstitute) {
+      // Institute level: show classes for selected institute
+      filteredData = mockClasses.filter(cls => cls.institute === selectedInstitute.name);
+    }
+    
+    setClassesData(filteredData);
+  }, [apiLevel, selectedInstitute]);
 
   const classesColumns = [
     { key: 'name', header: 'Class Name' },
@@ -88,6 +112,7 @@ const Classes = () => {
       render: (value: number, row: any) => `${value}/${row.capacity}`
     },
     { key: 'subjects', header: 'Subjects' },
+    { key: 'institute', header: 'Institute' },
     { 
       key: 'assignedTeachers',
       header: 'Assigned Teachers',
@@ -180,8 +205,8 @@ const Classes = () => {
   return (
     <div className="space-y-6">
       <DataTable
-        title="Classes Management"
-        data={mockClasses}
+        title={`All Classes ${apiLevel === 'institute' ? `(${selectedInstitute?.name || 'All Institutes'})` : ''}`}
+        data={classesData}
         columns={classesColumns}
         onAdd={canAdd ? () => setIsCreateDialogOpen(true) : undefined}
         onEdit={canEdit ? handleEditClass : undefined}
