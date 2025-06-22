@@ -3,10 +3,11 @@ import DataTable from '@/components/ui/data-table';
 import { useAuth } from '@/contexts/AuthContext';
 import { AccessControl } from '@/utils/permissions';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { RefreshCw } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import CreateClassForm from '@/components/forms/CreateClassForm';
-import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface ClassesProps {
@@ -84,21 +85,45 @@ const Classes = ({ apiLevel = 'institute' }: ClassesProps) => {
   const [isAssignTeacherDialogOpen, setIsAssignTeacherDialogOpen] = useState(false);
   const [selectedClassData, setSelectedClassData] = useState<any>(null);
   const [selectedTeacher, setSelectedTeacher] = useState('');
-  const [classesData, setClassesData] = useState(mockClasses);
+  const [classesData, setClassesData] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [dataLoaded, setDataLoaded] = useState(false);
 
-  useEffect(() => {
-    // Simulate different API calls based on level
-    console.log(`Fetching classes data for API level: ${apiLevel}`);
+  const handleLoadData = async () => {
+    setIsLoading(true);
+    console.log(`Loading classes data for API level: ${apiLevel}`);
     console.log(`Current context - Institute: ${selectedInstitute?.name}`);
     
-    // Simulate filtering based on API level
-    let filteredData = mockClasses;
-    if (apiLevel === 'institute' && selectedInstitute) {
-      // Institute level: show classes for selected institute
-      filteredData = mockClasses.filter(cls => cls.institute === selectedInstitute.name);
+    try {
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Simulate filtering based on API level
+      let filteredData = mockClasses;
+      if (apiLevel === 'institute' && selectedInstitute) {
+        // Institute level: show classes for selected institute
+        filteredData = mockClasses.filter(cls => cls.institute === selectedInstitute.name);
+      }
+      
+      setClassesData(filteredData);
+      setDataLoaded(true);
+      toast({
+        title: "Data Loaded",
+        description: `Successfully loaded ${filteredData.length} classes.`
+      });
+    } catch (error) {
+      toast({
+        title: "Load Failed",
+        description: "Failed to load classes data.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
     }
-    
-    setClassesData(filteredData);
+  };
+
+  useEffect(() => {
+    handleLoadData();
   }, [apiLevel, selectedInstitute]);
 
   const classesColumns = [
@@ -204,24 +229,76 @@ const Classes = ({ apiLevel = 'institute' }: ClassesProps) => {
 
   return (
     <div className="space-y-6">
-      <DataTable
-        title={`All Classes ${apiLevel === 'institute' ? `(${selectedInstitute?.name || 'All Institutes'})` : ''}`}
-        data={classesData}
-        columns={classesColumns}
-        onAdd={canAdd ? () => setIsCreateDialogOpen(true) : undefined}
-        onEdit={canEdit ? handleEditClass : undefined}
-        onDelete={canDelete ? handleDeleteClass : undefined}
-        onView={handleViewClass}
-        searchPlaceholder="Search classes..."
-        customActions={[
-          {
-            label: 'Assign Teacher',
-            action: handleAssignTeacher,
-            variant: 'outline',
-            condition: () => canAssignTeachers
-          }
-        ]}
-      />
+      {!dataLoaded ? (
+        <div className="text-center py-12">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+            All Classes {apiLevel === 'institute' ? `(${selectedInstitute?.name || 'All Institutes'})` : ''}
+          </h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
+            Click the button below to load classes data
+          </p>
+          <Button 
+            onClick={handleLoadData} 
+            disabled={isLoading}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            {isLoading ? (
+              <>
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                Loading Data...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Load Data
+              </>
+            )}
+          </Button>
+        </div>
+      ) : (
+        <>
+          <div className="flex justify-between items-center">
+            <div></div>
+            <Button 
+              onClick={handleLoadData} 
+              disabled={isLoading}
+              variant="outline"
+              size="sm"
+            >
+              {isLoading ? (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  Refreshing...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Refresh Data
+                </>
+              )}
+            </Button>
+          </div>
+
+          <DataTable
+            title={`All Classes ${apiLevel === 'institute' ? `(${selectedInstitute?.name || 'All Institutes'})` : ''}`}
+            data={classesData}
+            columns={classesColumns}
+            onAdd={canAdd ? () => setIsCreateDialogOpen(true) : undefined}
+            onEdit={canEdit ? handleEditClass : undefined}
+            onDelete={canDelete ? handleDeleteClass : undefined}
+            onView={handleViewClass}
+            searchPlaceholder="Search classes..."
+            customActions={[
+              {
+                label: 'Assign Teacher',
+                action: handleAssignTeacher,
+                variant: 'outline',
+                condition: () => canAssignTeachers
+              }
+            ]}
+          />
+        </>
+      )}
 
       {/* Create Dialog */}
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>

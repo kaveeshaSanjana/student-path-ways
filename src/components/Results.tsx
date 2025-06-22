@@ -1,7 +1,10 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import DataTable from '@/components/ui/data-table';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { RefreshCw } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 // Mock results data
 const mockResults = [
@@ -78,6 +81,36 @@ const resultsColumns = [
 ];
 
 const Results = () => {
+  const { toast } = useToast();
+  const [resultsData, setResultsData] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [dataLoaded, setDataLoaded] = useState(false);
+
+  const handleLoadData = async () => {
+    setIsLoading(true);
+    console.log('Loading results data...');
+    
+    try {
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      setResultsData(mockResults);
+      setDataLoaded(true);
+      toast({
+        title: "Data Loaded",
+        description: `Successfully loaded ${mockResults.length} results.`
+      });
+    } catch (error) {
+      toast({
+        title: "Load Failed",
+        description: "Failed to load results data.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleAddResult = () => {
     console.log('Add new result');
   };
@@ -92,24 +125,76 @@ const Results = () => {
 
   return (
     <div className="space-y-6">
-      <div className="text-center">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-          Exam Results
-        </h1>
-        <p className="text-gray-600 dark:text-gray-400">
-          View and manage exam results and grades
-        </p>
-      </div>
+      {!dataLoaded ? (
+        <div className="text-center py-12">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+            Exam Results
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
+            Click the button below to load exam results data
+          </p>
+          <Button 
+            onClick={handleLoadData} 
+            disabled={isLoading}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            {isLoading ? (
+              <>
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                Loading Data...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Load Data
+              </>
+            )}
+          </Button>
+        </div>
+      ) : (
+        <>
+          <div className="text-center mb-6">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+              Exam Results
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400">
+              View and manage exam results and grades
+            </p>
+          </div>
 
-      <DataTable
-        title="Exam Results"
-        data={mockResults}
-        columns={resultsColumns}
-        onAdd={handleAddResult}
-        onEdit={handleEditResult}
-        onDelete={handleDeleteResult}
-        searchPlaceholder="Search results..."
-      />
+          <div className="flex justify-between items-center">
+            <div></div>
+            <Button 
+              onClick={handleLoadData} 
+              disabled={isLoading}
+              variant="outline"
+              size="sm"
+            >
+              {isLoading ? (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  Refreshing...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Refresh Data
+                </>
+              )}
+            </Button>
+          </div>
+
+          <DataTable
+            title="Exam Results"
+            data={resultsData}
+            columns={resultsColumns}
+            onAdd={handleAddResult}
+            onEdit={handleEditResult}
+            onDelete={handleDeleteResult}
+            searchPlaceholder="Search results..."
+          />
+        </>
+      )}
     </div>
   );
 };

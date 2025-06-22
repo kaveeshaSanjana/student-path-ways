@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import DataTable from '@/components/ui/data-table';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { RefreshCw } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { AccessControl } from '@/utils/permissions';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -64,24 +66,48 @@ const Subjects = ({ apiLevel = 'institute' }: SubjectsProps) => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedSubject, setSelectedSubject] = useState<any>(null);
-  const [subjectsData, setSubjectsData] = useState(mockSubjects);
+  const [subjectsData, setSubjectsData] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [dataLoaded, setDataLoaded] = useState(false);
 
-  useEffect(() => {
-    // Simulate different API calls based on level
-    console.log(`Fetching subjects data for API level: ${apiLevel}`);
+  const handleLoadData = async () => {
+    setIsLoading(true);
+    console.log(`Loading subjects data for API level: ${apiLevel}`);
     console.log(`Current context - Institute: ${selectedInstitute?.name}, Class: ${selectedClass?.name}`);
     
-    // Simulate filtering based on API level
-    let filteredData = mockSubjects;
-    if (apiLevel === 'class' && selectedClass) {
-      // Class level: show subjects for selected class
-      filteredData = mockSubjects.filter(subject => subject.class === selectedClass.name);
-    } else if (apiLevel === 'institute' && selectedInstitute) {
-      // Institute level: show subjects for selected institute
-      filteredData = mockSubjects.filter(subject => subject.institute === selectedInstitute.name);
+    try {
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Simulate filtering based on API level
+      let filteredData = mockSubjects;
+      if (apiLevel === 'class' && selectedClass) {
+        // Class level: show subjects for selected class
+        filteredData = mockSubjects.filter(subject => subject.class === selectedClass.name);
+      } else if (apiLevel === 'institute' && selectedInstitute) {
+        // Institute level: show subjects for selected institute
+        filteredData = mockSubjects.filter(subject => subject.institute === selectedInstitute.name);
+      }
+      
+      setSubjectsData(filteredData);
+      setDataLoaded(true);
+      toast({
+        title: "Data Loaded",
+        description: `Successfully loaded ${filteredData.length} subjects.`
+      });
+    } catch (error) {
+      toast({
+        title: "Load Failed",
+        description: "Failed to load subjects data.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
     }
-    
-    setSubjectsData(filteredData);
+  };
+
+  useEffect(() => {
+    handleLoadData();
   }, [apiLevel, selectedInstitute, selectedClass]);
 
   const subjectsColumns = [
@@ -162,16 +188,68 @@ const Subjects = ({ apiLevel = 'institute' }: SubjectsProps) => {
 
   return (
     <div className="space-y-6">
-      <DataTable
-        title={getTitle()}
-        data={subjectsData}
-        columns={subjectsColumns}
-        onAdd={canAdd ? () => setIsCreateDialogOpen(true) : undefined}
-        onEdit={canEdit ? handleEditSubject : undefined}
-        onDelete={canDelete ? handleDeleteSubject : undefined}
-        onView={handleViewSubject}
-        searchPlaceholder="Search subjects..."
-      />
+      {!dataLoaded ? (
+        <div className="text-center py-12">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+            {getTitle()}
+          </h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
+            Click the button below to load subjects data
+          </p>
+          <Button 
+            onClick={handleLoadData} 
+            disabled={isLoading}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            {isLoading ? (
+              <>
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                Loading Data...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Load Data
+              </>
+            )}
+          </Button>
+        </div>
+      ) : (
+        <>
+          <div className="flex justify-between items-center">
+            <div></div>
+            <Button 
+              onClick={handleLoadData} 
+              disabled={isLoading}
+              variant="outline"
+              size="sm"
+            >
+              {isLoading ? (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  Refreshing...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Refresh Data
+                </>
+              )}
+            </Button>
+          </div>
+          
+          <DataTable
+            title={getTitle()}
+            data={subjectsData}
+            columns={subjectsColumns}
+            onAdd={canAdd ? () => setIsCreateDialogOpen(true) : undefined}
+            onEdit={canEdit ? handleEditSubject : undefined}
+            onDelete={canDelete ? handleDeleteSubject : undefined}
+            onView={handleViewSubject}
+            searchPlaceholder="Search subjects..."
+          />
+        </>
+      )}
 
       {/* Create Dialog */}
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
