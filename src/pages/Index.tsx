@@ -7,6 +7,7 @@ import Dashboard from '@/components/Dashboard';
 import Users from '@/components/Users';
 import Students from '@/components/Students';
 import Teachers from '@/components/Teachers';
+import Grades from '@/components/Grades';
 import Classes from '@/components/Classes';
 import Subjects from '@/components/Subjects';
 import Institutes from '@/components/Institutes';
@@ -68,6 +69,8 @@ const AppContent = () => {
         return <Students />;
       case 'teachers':
         return <Teachers />;
+      case 'grades':
+        return <Grades />;
       case 'classes':
         return selectedInstitute ? <Classes /> : <ClassSelector />;
       case 'subjects':
@@ -85,7 +88,7 @@ const AppContent = () => {
       case 'attendance':
         return <Attendance />;
       case 'attendance-marking':
-        return <AttendanceMarking />;
+        return <AttendanceMarking onNavigate={setCurrentPage} />;
       case 'attendance-markers':
         return <AttendanceMarkers />;
       case 'qr-attendance':
@@ -109,16 +112,15 @@ const AppContent = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="flex w-full">
+      <div className="flex w-full h-screen">
         <Sidebar 
           isOpen={isSidebarOpen}
           onClose={handleSidebarClose}
-          currentPage={currentPage}
           onPageChange={setCurrentPage}
         />
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col overflow-hidden">
           <Header onMenuClick={handleMenuClick} />
-          <main className="flex-1 p-6">
+          <main className="flex-1 overflow-auto p-6">
             {renderComponent()}
           </main>
         </div>

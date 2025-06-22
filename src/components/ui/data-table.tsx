@@ -78,7 +78,7 @@ const DataTable = ({
   const goToPrevPage = () => setCurrentPage(prev => Math.max(prev - 1, 1));
 
   return (
-    <div className="w-full max-w-full">
+    <div className="w-full">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
         <h2 className="text-xl font-bold text-gray-900 dark:text-white truncate">{title}</h2>
@@ -104,25 +104,23 @@ const DataTable = ({
         />
       </div>
 
-      {/* Table Container - Fixed Height */}
+      {/* Table Container - Fixed Height with Scrollbars */}
       <div className="border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 shadow-sm">
-        {/* Table Wrapper with Fixed Height and Scrollbars */}
-        <div className="h-[500px] overflow-auto relative">
-          <table className="w-full min-w-full table-fixed">
+        <div className="h-[600px] overflow-auto">
+          <table className="w-full min-w-[800px]">
             {/* Sticky Header */}
             <thead className="bg-gray-50 dark:bg-gray-700 sticky top-0 z-10">
               <tr>
                 {columns.map((column) => (
                   <th
                     key={column.key}
-                    className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider border-r border-gray-200 dark:border-gray-600 last:border-r-0"
-                    style={{ width: column.width || `${100 / (columns.length + (hasActions ? 1 : 0))}%` }}
+                    className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider border-r border-gray-200 dark:border-gray-600 last:border-r-0 min-w-[120px]"
                   >
                     {column.header}
                   </th>
                 ))}
                 {hasActions && (
-                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-32 sticky right-0 bg-gray-50 dark:bg-gray-700 border-l border-gray-200 dark:border-gray-600">
+                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider min-w-[150px] sticky right-0 bg-gray-50 dark:bg-gray-700 border-l border-gray-200 dark:border-gray-600">
                     Actions
                   </th>
                 )}
@@ -135,15 +133,14 @@ const DataTable = ({
                 paginatedData.map((row, index) => (
                   <tr 
                     key={index} 
-                    className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                    className="hover:bg-gray-50 dark:hover:bg-gray-700"
                   >
                     {columns.map((column) => (
                       <td 
                         key={column.key} 
-                        className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 border-r border-gray-100 dark:border-gray-700 last:border-r-0 overflow-hidden"
-                        style={{ width: column.width || `${100 / (columns.length + (hasActions ? 1 : 0))}%` }}
+                        className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 border-r border-gray-100 dark:border-gray-700 last:border-r-0 min-w-[120px]"
                       >
-                        <div className="truncate" title={String(row[column.key] || '-')}>
+                        <div className="max-w-[200px] truncate" title={String(row[column.key] || '-')}>
                           {column.render ? column.render(row[column.key], row) : (
                             <span>{row[column.key] || '-'}</span>
                           )}
@@ -151,7 +148,7 @@ const DataTable = ({
                       </td>
                     ))}
                     {hasActions && (
-                      <td className="px-2 py-3 text-center w-32 sticky right-0 bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700">
+                      <td className="px-2 py-3 text-center min-w-[150px] sticky right-0 bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700">
                         <div className="flex justify-center items-center gap-1 flex-wrap">
                           {onView && (
                             <Button
@@ -234,7 +231,7 @@ const DataTable = ({
           </table>
         </div>
         
-        {/* Enhanced Pagination Footer */}
+        {/* Pagination Footer */}
         <div className="px-4 py-3 bg-gray-50 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="text-sm text-gray-700 dark:text-gray-300">
             <span>
@@ -302,43 +299,6 @@ const DataTable = ({
           )}
         </div>
       </div>
-
-      {/* Custom Scrollbar Styles */}
-      <style>
-        {`
-          .overflow-auto::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-          }
-          .overflow-auto::-webkit-scrollbar-track {
-            background: #f1f5f9;
-            border-radius: 4px;
-          }
-          .overflow-auto::-webkit-scrollbar-thumb {
-            background: #94a3b8;
-            border-radius: 4px;
-          }
-          .overflow-auto::-webkit-scrollbar-thumb:hover {
-            background: #64748b;
-          }
-          .overflow-auto::-webkit-scrollbar-corner {
-            background: #f1f5f9;
-          }
-          
-          .dark .overflow-auto::-webkit-scrollbar-track {
-            background: #1e293b;
-          }
-          .dark .overflow-auto::-webkit-scrollbar-thumb {
-            background: #475569;
-          }
-          .dark .overflow-auto::-webkit-scrollbar-thumb:hover {
-            background: #64748b;
-          }
-          .dark .overflow-auto::-webkit-scrollbar-corner {
-            background: #1e293b;
-          }
-        `}
-      </style>
     </div>
   );
 };

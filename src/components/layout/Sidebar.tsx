@@ -1,38 +1,25 @@
 
-import React, { useState } from 'react';
-import { cn } from '@/lib/utils';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAuth } from '@/contexts/AuthContext';
 import { AccessControl } from '@/utils/permissions';
-import { 
-  Home, 
-  BookUser, 
-  CreditCard, 
-  User, 
-  GraduationCap,
-  Calendar,
-  FileText,
+import {
+  LayoutDashboard,
   Users,
-  Settings,
-  Moon,
-  Sun,
-  ArrowLeft,
-  LogOut,
+  GraduationCap,
+  ChalkboardTeacher,
   BookOpen,
-  UserCheck,
-  Building,
-  UserPlus,
-  GraduationCapIcon,
+  School,
   ClipboardList,
-  CalendarCheck,
-  Menu,
+  BarChart3,
+  Settings,
+  User,
+  Building2,
+  UserCheck,
+  QrCode,
   X,
-  BookMarked,
-  Award,
-  Plus,
-  Edit,
-  Eye
+  Award
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -43,247 +30,236 @@ interface SidebarProps {
 }
 
 const Sidebar = ({ isOpen, onClose, currentPage, onPageChange }: SidebarProps) => {
-  const { 
-    user, 
-    logout,
-    selectedInstitute, 
-    selectedClass, 
-    selectedSubject, 
-    isDarkMode, 
-    toggleDarkMode, 
-    setSelectedInstitute, 
-    setSelectedClass, 
-    setSelectedSubject 
-  } = useAuth();
+  const { user, selectedInstitute, selectedClass, selectedSubject } = useAuth();
 
-  const handleBackNavigation = () => {
-    if (selectedSubject) {
-      setSelectedSubject(null);
-    } else if (selectedClass) {
-      setSelectedClass(null);
-    } else if (selectedInstitute) {
-      setSelectedInstitute(null);
+  const menuItems = [
+    {
+      id: 'dashboard',
+      label: 'Dashboard',
+      icon: LayoutDashboard,
+      permission: 'view-dashboard'
+    },
+    {
+      id: 'users',
+      label: 'Users',
+      icon: Users,
+      permission: 'view-users'
+    },
+    {
+      id: 'students',
+      label: 'Students',
+      icon: GraduationCap,
+      permission: 'view-students'
+    },
+    {
+      id: 'teachers',
+      label: 'Teachers',
+      icon: ChalkboardTeacher,
+      permission: 'view-teachers'
+    },
+    {
+      id: 'grades',
+      label: 'Grades',
+      icon: Award,
+      permission: 'view-grades'
+    },
+    {
+      id: 'classes',
+      label: 'Classes',
+      icon: School,
+      permission: 'view-classes'
+    },
+    {
+      id: 'subjects',
+      label: 'Subjects',
+      icon: BookOpen,
+      permission: 'view-subjects'
+    },
+    {
+      id: 'institutes',
+      label: 'Institutes',
+      icon: Building2,
+      permission: 'view-institutes'
     }
+  ];
+
+  const attendanceItems = [
+    {
+      id: 'attendance',
+      label: 'View Attendance',
+      icon: ClipboardList,
+      permission: 'view-attendance'
+    },
+    {
+      id: 'attendance-marking',
+      label: 'Mark Attendance',
+      icon: UserCheck,
+      permission: 'mark-attendance'
+    },
+    {
+      id: 'attendance-markers',
+      label: 'Attendance Markers',
+      icon: Users,
+      permission: 'manage-attendance-markers'
+    },
+    {
+      id: 'qr-attendance',
+      label: 'QR Attendance',
+      icon: QrCode,
+      permission: 'mark-attendance'
+    }
+  ];
+
+  const systemItems = [
+    {
+      id: 'grading',
+      label: 'Grading',
+      icon: BarChart3,
+      permission: 'view-grading'
+    },
+    {
+      id: 'lectures',
+      label: 'Lectures',
+      icon: BookOpen,
+      permission: 'view-lectures'
+    },
+    {
+      id: 'results',
+      label: 'Results',
+      icon: ClipboardList,
+      permission: 'view-results'
+    }
+  ];
+
+  const settingsItems = [
+    {
+      id: 'profile',
+      label: 'Profile',
+      icon: User,
+      permission: 'view-profile'
+    },
+    {
+      id: 'institute-details',
+      label: 'Institute Details',
+      icon: Building2,
+      permission: 'view-institute-details'
+    }
+  ];
+
+  const userRole = user?.role || 'Student';
+
+  const filterItemsByPermission = (items: any[]) => {
+    return items.filter(item => AccessControl.hasPermission(userRole, item.permission));
   };
 
-  const handleLogout = () => {
-    logout();
+  const handleItemClick = (itemId: string) => {
+    onPageChange(itemId);
     onClose();
   };
 
-  const getNavigationItems = () => {
-    const baseItems = [
-      { icon: Home, label: 'Dashboard', page: 'dashboard' },
-    ];
+  const SidebarSection = ({ title, items }: { title: string; items: any[] }) => {
+    const filteredItems = filterItemsByPermission(items);
+    
+    if (filteredItems.length === 0) return null;
 
-    // For Attendance Markers - simplified menu
-    if (user?.role === 'AttendanceMarker') {
-      return [
-        { icon: Home, label: 'Dashboard', page: 'dashboard' },
-        { icon: CalendarCheck, label: 'Mark Attendance', page: 'attendance-marking' },
-        { icon: CreditCard, label: 'Payments', page: 'payments' },
-        { icon: User, label: 'Profile', page: 'profile' },
-      ];
-    }
-
-    // SystemAdmin gets institute management
-    if (user?.role === 'SystemAdmin') {
-      baseItems.push({ icon: Building, label: 'All Institutes', page: 'institutes' });
-    }
-
-    // Add institute selection if no institute selected
-    if (!selectedInstitute) {
-      baseItems.push({ icon: BookUser, label: 'Select Institute', page: 'select-institute' });
-    } else {
-      baseItems.push({ icon: BookUser, label: 'Institute Details', page: 'institute-details' });
-    }
-
-    // Add more options if institute is selected
-    if (selectedInstitute) {
-      // Classes - visible to all roles with view permission
-      if (AccessControl.hasPermission(user?.role || 'Student', 'view-classes')) {
-        baseItems.push({ icon: Users, label: 'Select Class', page: 'classes' });
-      }
-
-      // Subjects - visible to all roles with view permission (only if class selected)
-      if (selectedClass && AccessControl.hasPermission(user?.role || 'Student', 'view-subjects')) {
-        baseItems.push({ icon: BookOpen, label: 'Select Subject', page: 'subjects' });
-      }
-
-      // Students management
-      if (AccessControl.hasPermission(user?.role || 'Student', 'view-students')) {
-        baseItems.push({ icon: GraduationCapIcon, label: 'Students', page: 'students' });
-      }
-
-      // Teachers management
-      if (AccessControl.hasPermission(user?.role || 'Student', 'view-teachers')) {
-        baseItems.push({ icon: UserCheck, label: 'Teachers', page: 'teachers' });
-      }
-
-      // Attendance Markers management
-      if (AccessControl.hasPermission(user?.role || 'Student', 'view-attendance-markers')) {
-        baseItems.push({ icon: UserPlus, label: 'Attendance Markers', page: 'attendance-markers' });
-      }
-
-      // Grading Section
-      if (AccessControl.hasPermission(user?.role || 'Student', 'view-grades')) {
-        baseItems.push(
-          { icon: Award, label: 'Grading System', page: 'grading' },
-          { icon: BookMarked, label: 'Grades Table', page: 'grades-table' },
-          { icon: Plus, label: 'Create Grade', page: 'create-grade' },
-          { icon: Edit, label: 'Assign Classes', page: 'assign-grade-classes' },
-          { icon: Eye, label: 'View Grade Classes', page: 'view-grade-classes' }
-        );
-      }
-
-      // Lectures
-      if (AccessControl.hasPermission(user?.role || 'Student', 'view-lectures')) {
-        baseItems.push({ icon: GraduationCap, label: 'Lectures', page: 'lectures' });
-      }
-
-      // Results
-      if (AccessControl.hasPermission(user?.role || 'Student', 'view-results')) {
-        baseItems.push({ icon: FileText, label: 'Results', page: 'results' });
-      }
-
-      // Attendance (viewing data)
-      if (AccessControl.hasPermission(user?.role || 'Student', 'view-attendance')) {
-        baseItems.push({ icon: Calendar, label: 'Attendance', page: 'attendance' });
-      }
-
-      // Attendance Marking (for marking attendance)
-      if (AccessControl.hasPermission(user?.role || 'Student', 'mark-attendance')) {
-        baseItems.push({ icon: CalendarCheck, label: 'Mark Attendance', page: 'attendance-marking' });
-      }
-
-      // Users management - only for admins
-      if (AccessControl.hasPermission(user?.role || 'Student', 'view-users')) {
-        baseItems.push({ icon: ClipboardList, label: 'User Management', page: 'users' });
-      }
-    }
-
-    // Always add these at the end
-    baseItems.push(
-      { icon: CreditCard, label: 'Payments', page: 'payments' },
-      { icon: User, label: 'Profile', page: 'profile' }
+    return (
+      <div className="mb-6">
+        <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 px-3">
+          {title}
+        </h3>
+        <div className="space-y-1">
+          {filteredItems.map((item) => (
+            <Button
+              key={item.id}
+              variant={currentPage === item.id ? "secondary" : "ghost"}
+              className={`w-full justify-start h-10 px-3 ${
+                currentPage === item.id 
+                  ? 'bg-blue-100 dark:bg-blue-900 text-blue-900 dark:text-blue-100 border-r-2 border-blue-600' 
+                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+              }`}
+              onClick={() => handleItemClick(item.id)}
+            >
+              <item.icon className="mr-3 h-4 w-4" />
+              <span className="truncate">{item.label}</span>
+            </Button>
+          ))}
+        </div>
+      </div>
     );
-
-    return baseItems;
   };
-
-  const navigationItems = getNavigationItems();
 
   return (
     <>
       {/* Mobile Overlay */}
       {isOpen && (
         <div 
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden" 
           onClick={onClose}
         />
       )}
-      
-      {/* Sidebar */}
-      <div className={cn(
-        "fixed left-0 top-0 z-50 h-full w-80 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:z-auto flex flex-col",
-        isOpen ? "translate-x-0" : "-translate-x-full"
-      )}>
-        {/* Header - Fixed */}
-        <div className="flex-shrink-0 p-4 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">EduManage</h2>
-            <div className="flex items-center gap-1">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={toggleDarkMode}
-                className="p-2 touch-manipulation"
-              >
-                {isDarkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-              </Button>
-              {/* Mobile close button */}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onClose}
-                className="p-2 lg:hidden touch-manipulation"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleLogout}
-                className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 touch-manipulation"
-              >
-                <LogOut className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-          
-          {/* User Info */}
-          <div className="mt-3">
-            <p className="text-sm font-medium text-gray-900 dark:text-white">{user?.name}</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">{user?.role}</p>
-          </div>
 
-          {/* Breadcrumb */}
-          <div className="mt-3 text-xs text-blue-600 dark:text-blue-400">
+      {/* Sidebar */}
+      <div className={`
+        fixed md:static inset-y-0 left-0 z-50
+        w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700
+        transform transition-transform duration-300 ease-in-out
+        ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+        flex flex-col h-screen
+      `}>
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex items-center space-x-2">
+            <School className="h-6 w-6 text-blue-600" />
+            <span className="font-bold text-lg text-gray-900 dark:text-white">EduSystem</span>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onClose}
+            className="md:hidden h-8 w-8 p-0"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+
+        {/* Context Info */}
+        {(selectedInstitute || selectedClass || selectedSubject) && (
+          <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border-b border-gray-200 dark:border-gray-700">
             {selectedInstitute && (
-              <div className="flex items-center gap-2">
-                {(selectedClass || selectedSubject) && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleBackNavigation}
-                    className="p-1 h-auto touch-manipulation"
-                  >
-                    <ArrowLeft className="h-3 w-3" />
-                  </Button>
-                )}
-                <div className="truncate">
-                  <span className="truncate">{selectedInstitute.name}</span>
-                  {selectedClass && (
-                    <>
-                      <span className="mx-1">→</span>
-                      <span className="truncate">{selectedClass.name}</span>
-                    </>
-                  )}
-                  {selectedSubject && (
-                    <>
-                      <span className="mx-1">→</span>
-                      <span className="truncate">{selectedSubject.name}</span>
-                    </>
-                  )}
-                </div>
+              <div className="text-xs text-blue-600 dark:text-blue-400">
+                <span className="font-medium">Institute:</span> {selectedInstitute.name}
+              </div>
+            )}
+            {selectedClass && (
+              <div className="text-xs text-blue-600 dark:text-blue-400">
+                <span className="font-medium">Class:</span> {selectedClass.name}
+              </div>
+            )}
+            {selectedSubject && (
+              <div className="text-xs text-blue-600 dark:text-blue-400">
+                <span className="font-medium">Subject:</span> {selectedSubject.name}
               </div>
             )}
           </div>
-        </div>
+        )}
 
-        {/* Navigation - Scrollable */}
-        <div className="flex-1 overflow-hidden">
-          <ScrollArea className="h-full px-3 py-4">
-            <nav className="space-y-1">
-              {navigationItems.map((item, index) => (
-                <Button
-                  key={index}
-                  variant="ghost"
-                  className={cn(
-                    "w-full justify-start text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-600 dark:hover:text-blue-400 h-12 touch-manipulation min-h-[48px]",
-                    currentPage === item.page && "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400"
-                  )}
-                  onClick={() => {
-                    onPageChange(item.page);
-                    onClose(); // Close sidebar on mobile after selection
-                  }}
-                >
-                  <item.icon className="mr-3 h-4 w-4 flex-shrink-0" />
-                  <span className="truncate">{item.label}</span>
-                </Button>
-              ))}
-            </nav>
-          </ScrollArea>
+        {/* Navigation */}
+        <ScrollArea className="flex-1 px-3 py-4">
+          <div className="space-y-2">
+            <SidebarSection title="Main" items={menuItems} />
+            <SidebarSection title="Attendance" items={attendanceItems} />
+            <SidebarSection title="Academic" items={systemItems} />
+            <SidebarSection title="Settings" items={settingsItems} />
+          </div>
+        </ScrollArea>
+
+        {/* Footer */}
+        <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+          <div className="text-xs text-gray-500 dark:text-gray-400">
+            Logged in as: <span className="font-medium">{user?.name}</span>
+            <br />
+            Role: <span className="font-medium">{user?.role}</span>
+          </div>
         </div>
       </div>
     </>

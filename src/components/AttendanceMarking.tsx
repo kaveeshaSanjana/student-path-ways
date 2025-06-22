@@ -57,10 +57,12 @@ const AttendanceMarking = ({ onNavigate }: AttendanceMarkingProps) => {
   const handleMethodSelect = (methodId: string) => {
     setSelectedMethod(methodId);
     const method = attendanceMethods.find(m => m.id === methodId);
+    
     if (method?.page && onNavigate) {
       onNavigate(method.page);
+    } else {
+      console.log('Selected attendance method:', methodId);
     }
-    console.log('Selected attendance method:', methodId);
   };
 
   const recentSessions = [
