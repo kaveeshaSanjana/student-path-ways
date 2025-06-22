@@ -191,7 +191,7 @@ const Subjects = ({ apiLevel = 'institute' }: SubjectsProps) => {
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Subject</DialogTitle>
-          </Dialog>
+          </DialogHeader>
           <CreateSubjectForm
             initialData={selectedSubject}
             onSubmit={handleUpdateSubject}
