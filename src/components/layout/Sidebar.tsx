@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -19,7 +20,9 @@ import {
   X,
   Award,
   Video,
-  LogOut
+  LogOut,
+  Menu,
+  FileText
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -75,18 +78,21 @@ const Sidebar = ({ isOpen, onClose, currentPage, onPageChange }: SidebarProps) =
       icon: BookOpen,
       permission: 'view-subjects'
     },
-    {
-      id: 'select-class',
-      label: 'Select Class',
-      icon: School,
-      permission: 'view-classes'
-    },
-    {
-      id: 'select-subject',
-      label: 'Select Subject',
-      icon: BookOpen,
-      permission: 'view-subjects'
-    },
+    // Only show selection options for non-SystemAdmin users
+    ...(user?.role !== 'SystemAdmin' ? [
+      {
+        id: 'select-class',
+        label: 'Select Class',
+        icon: School,
+        permission: 'view-classes'
+      },
+      {
+        id: 'select-subject',
+        label: 'Select Subject',
+        icon: BookOpen,
+        permission: 'view-subjects'
+      }
+    ] : []),
     {
       id: 'institutes',
       label: 'Institutes',
@@ -140,6 +146,12 @@ const Sidebar = ({ isOpen, onClose, currentPage, onPageChange }: SidebarProps) =
       label: 'Live Lectures',
       icon: Video,
       permission: 'view-lectures'
+    },
+    {
+      id: 'exams',
+      label: 'Exams',
+      icon: FileText,
+      permission: 'view-exams'
     },
     {
       id: 'results',
@@ -216,17 +228,17 @@ const Sidebar = ({ isOpen, onClose, currentPage, onPageChange }: SidebarProps) =
       {/* Mobile Overlay */}
       {isOpen && (
         <div 
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden" 
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden" 
           onClick={onClose}
         />
       )}
 
       {/* Sidebar */}
       <div className={`
-        fixed md:static inset-y-0 left-0 z-50
+        fixed lg:static inset-y-0 left-0 z-50
         w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700
         transform transition-transform duration-300 ease-in-out
-        ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+        ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         flex flex-col h-screen
       `}>
         {/* Header */}
@@ -239,14 +251,16 @@ const Sidebar = ({ isOpen, onClose, currentPage, onPageChange }: SidebarProps) =
             variant="ghost"
             size="sm"
             onClick={onClose}
-            className="md:hidden h-8 w-8 p-0"
+            className="h-8 w-8 p-0"
+            title="Close Sidebar"
           >
-            <X className="h-4 w-4" />
+            <X className="h-4 w-4 lg:hidden" />
+            <Menu className="h-4 w-4 hidden lg:block" />
           </Button>
         </div>
 
-        {/* Context Info */}
-        {(selectedInstitute || selectedClass || selectedSubject) && (
+        {/* Context Info - Only show for non-SystemAdmin users */}
+        {user?.role !== 'SystemAdmin' && (selectedInstitute || selectedClass || selectedSubject) && (
           <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border-b border-gray-200 dark:border-gray-700">
             {selectedInstitute && (
               <div className="text-xs text-blue-600 dark:text-blue-400">

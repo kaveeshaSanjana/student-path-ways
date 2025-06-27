@@ -18,6 +18,7 @@ import AttendanceMarkers from '@/components/AttendanceMarkers';
 import QRAttendance from '@/components/QRAttendance';
 import Lectures from '@/components/Lectures';
 import LiveLectures from '@/components/LiveLectures';
+import Exams from '@/components/Exams';
 import Results from '@/components/Results';
 import Profile from '@/components/Profile';
 import InstituteDetails from '@/components/InstituteDetails';
@@ -44,6 +45,56 @@ const AppContent = () => {
   };
 
   const renderComponent = () => {
+    // System Admin doesn't need institute/class/subject selection flow
+    if (user?.role === 'SystemAdmin') {
+      switch (currentPage) {
+        case 'dashboard':
+          return <Dashboard />;
+        case 'users':
+          return <Users />;
+        case 'students':
+          return <Students />;
+        case 'teachers':
+          return <Teachers />;
+        case 'grades':
+          return <Grades />;
+        case 'classes':
+          return <Classes apiLevel="institute" />;
+        case 'subjects':
+          return <Subjects apiLevel="institute" />;
+        case 'institutes':
+          return <Institutes />;
+        case 'grading':
+        case 'grades-table':
+        case 'create-grade':
+        case 'assign-grade-classes':
+        case 'view-grade-classes':
+          return <Grading />;
+        case 'attendance':
+          return <Attendance />;
+        case 'attendance-marking':
+          return <AttendanceMarking onNavigate={setCurrentPage} />;
+        case 'attendance-markers':
+          return <AttendanceMarkers />;
+        case 'qr-attendance':
+          return <QRAttendance />;
+        case 'lectures':
+          return <Lectures />;
+        case 'live-lectures':
+          return <LiveLectures />;
+        case 'exams':
+          return <Exams />;
+        case 'results':
+          return <Results />;
+        case 'profile':
+          return <Profile />;
+        case 'institute-details':
+          return <InstituteDetails />;
+        default:
+          return <Dashboard />;
+      }
+    }
+
     // First check if user needs to select institute
     if (!selectedInstitute && currentPage !== 'institutes' && currentPage !== 'select-institute') {
       return <InstituteSelector />;
@@ -110,6 +161,8 @@ const AppContent = () => {
         return <Lectures />;
       case 'live-lectures':
         return <LiveLectures />;
+      case 'exams':
+        return <Exams />;
       case 'results':
         return <Results />;
       case 'profile':

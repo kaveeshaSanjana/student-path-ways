@@ -3,40 +3,58 @@ import React, { useState } from 'react';
 import DataTable from '@/components/ui/data-table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 // Mock results data
-const mockResults = [
+const mockOnlineResults = [
   {
     id: '1',
-    examName: 'Mid Term Mathematics',
+    examName: 'Mid Term Mathematics (Online)',
     examDate: '2024-01-20',
     totalMarks: 100,
     obtainedMarks: 85,
     percentage: 85,
     grade: 'A',
-    status: 'Published'
+    status: 'Published',
+    type: 'Online'
   },
   {
     id: '2',
-    examName: 'Physics Unit Test',
+    examName: 'Physics Unit Test (Online)',
     examDate: '2024-01-22',
     totalMarks: 50,
     obtainedMarks: 42,
     percentage: 84,
     grade: 'A',
-    status: 'Published'
-  },
+    status: 'Published',
+    type: 'Online'
+  }
+];
+
+const mockPhysicalResults = [
   {
     id: '3',
-    examName: 'Chemistry Practical',
+    examName: 'Chemistry Practical (Physical)',
     examDate: '2024-01-25',
     totalMarks: 30,
+    obtainedMarks: 25,
+    percentage: 83,
+    grade: 'A',
+    status: 'Published',
+    type: 'Physical'
+  },
+  {
+    id: '4',
+    examName: 'Biology Lab Test (Physical)',
+    examDate: '2024-01-28',
+    totalMarks: 40,
     obtainedMarks: 0,
     percentage: 0,
     grade: 'Pending',
-    status: 'Pending'
+    status: 'Pending',
+    type: 'Physical'
   }
 ];
 
@@ -82,32 +100,58 @@ const resultsColumns = [
 
 const Results = () => {
   const { toast } = useToast();
-  const [resultsData, setResultsData] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [dataLoaded, setDataLoaded] = useState(false);
+  const [onlineResultsData, setOnlineResultsData] = useState<any[]>([]);
+  const [physicalResultsData, setPhysicalResultsData] = useState<any[]>([]);
+  const [isOnlineLoading, setIsOnlineLoading] = useState(false);
+  const [isPhysicalLoading, setIsPhysicalLoading] = useState(false);
+  const [onlineDataLoaded, setOnlineDataLoaded] = useState(false);
+  const [physicalDataLoaded, setPhysicalDataLoaded] = useState(false);
 
-  const handleLoadData = async () => {
-    setIsLoading(true);
-    console.log('Loading results data...');
+  const handleLoadOnlineData = async () => {
+    setIsOnlineLoading(true);
+    console.log('Loading online results data...');
     
     try {
-      // Simulate API call delay
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      setResultsData(mockResults);
-      setDataLoaded(true);
+      setOnlineResultsData(mockOnlineResults);
+      setOnlineDataLoaded(true);
       toast({
         title: "Data Loaded",
-        description: `Successfully loaded ${mockResults.length} results.`
+        description: `Successfully loaded ${mockOnlineResults.length} online results.`
       });
     } catch (error) {
       toast({
         title: "Load Failed",
-        description: "Failed to load results data.",
+        description: "Failed to load online results data.",
         variant: "destructive"
       });
     } finally {
-      setIsLoading(false);
+      setIsOnlineLoading(false);
+    }
+  };
+
+  const handleLoadPhysicalData = async () => {
+    setIsPhysicalLoading(true);
+    console.log('Loading physical results data...');
+    
+    try {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      setPhysicalResultsData(mockPhysicalResults);
+      setPhysicalDataLoaded(true);
+      toast({
+        title: "Data Loaded",
+        description: `Successfully loaded ${mockPhysicalResults.length} physical results.`
+      });
+    } catch (error) {
+      toast({
+        title: "Load Failed",
+        description: "Failed to load physical results data.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsPhysicalLoading(false);
     }
   };
 
@@ -123,25 +167,39 @@ const Results = () => {
     console.log('Delete result:', result);
   };
 
-  return (
-    <div className="space-y-6">
-      {!dataLoaded ? (
+  const ResultsTab = ({ 
+    dataLoaded, 
+    isLoading, 
+    onLoadData, 
+    data, 
+    title, 
+    loadingText 
+  }: {
+    dataLoaded: boolean;
+    isLoading: boolean;
+    onLoadData: () => void;
+    data: any[];
+    title: string;
+    loadingText: string;
+  }) => {
+    if (!dataLoaded) {
+      return (
         <div className="text-center py-12">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            Exam Results
-          </h1>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+            {title} Results
+          </h2>
           <p className="text-gray-600 dark:text-gray-400 mb-6">
-            Click the button below to load exam results data
+            Click the button below to load {title.toLowerCase()} results data
           </p>
           <Button 
-            onClick={handleLoadData} 
+            onClick={onLoadData} 
             disabled={isLoading}
             className="bg-blue-600 hover:bg-blue-700"
           >
             {isLoading ? (
               <>
                 <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                Loading Data...
+                {loadingText}
               </>
             ) : (
               <>
@@ -151,50 +209,85 @@ const Results = () => {
             )}
           </Button>
         </div>
-      ) : (
-        <>
-          <div className="text-center mb-6">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-              Exam Results
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400">
-              View and manage exam results and grades
-            </p>
-          </div>
+      );
+    }
 
-          <div className="flex justify-between items-center">
-            <div></div>
-            <Button 
-              onClick={handleLoadData} 
-              disabled={isLoading}
-              variant="outline"
-              size="sm"
-            >
-              {isLoading ? (
-                <>
-                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                  Refreshing...
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  Refresh Data
-                </>
-              )}
-            </Button>
-          </div>
+    return (
+      <>
+        <div className="flex justify-between items-center mb-4">
+          <div></div>
+          <Button 
+            onClick={onLoadData} 
+            disabled={isLoading}
+            variant="outline"
+            size="sm"
+          >
+            {isLoading ? (
+              <>
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                Refreshing...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Refresh Data
+              </>
+            )}
+          </Button>
+        </div>
 
-          <DataTable
-            title="Exam Results"
-            data={resultsData}
-            columns={resultsColumns}
-            onAdd={handleAddResult}
-            onEdit={handleEditResult}
-            onDelete={handleDeleteResult}
-            searchPlaceholder="Search results..."
+        <DataTable
+          title={`${title} Results`}
+          data={data}
+          columns={resultsColumns}
+          onAdd={handleAddResult}
+          onEdit={handleEditResult}
+          onDelete={handleDeleteResult}
+          searchPlaceholder={`Search ${title.toLowerCase()} results...`}
+        />
+      </>
+    );
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="text-center mb-6">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+          Exam Results
+        </h1>
+        <p className="text-gray-600 dark:text-gray-400">
+          View and manage online and physical exam results
+        </p>
+      </div>
+
+      <Tabs defaultValue="online" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="online">Online Results</TabsTrigger>
+          <TabsTrigger value="physical">Physical Results</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="online" className="space-y-4">
+          <ResultsTab
+            dataLoaded={onlineDataLoaded}
+            isLoading={isOnlineLoading}
+            onLoadData={handleLoadOnlineData}
+            data={onlineResultsData}
+            title="Online"
+            loadingText="Loading Online Data..."
           />
-        </>
-      )}
+        </TabsContent>
+        
+        <TabsContent value="physical" className="space-y-4">
+          <ResultsTab
+            dataLoaded={physicalDataLoaded}
+            isLoading={isPhysicalLoading}
+            onLoadData={handleLoadPhysicalData}
+            data={physicalResultsData}
+            title="Physical"
+            loadingText="Loading Physical Data..."
+          />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

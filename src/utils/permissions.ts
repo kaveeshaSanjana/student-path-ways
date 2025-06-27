@@ -1,105 +1,113 @@
-export type UserRole = 'SystemAdmin' | 'InstituteAdmin' | 'AttendanceMarker' | 'Teacher' | 'Student';
+export type UserRole = 'SystemAdmin' | 'InstituteAdmin' | 'Teacher' | 'Student' | 'AttendanceMarker';
 
-export type Permission = 
-  // Dashboard
+export const AccessControl = {
+  hasPermission: (userRole: UserRole, permission: Permission): boolean => {
+    const rolePermissions = permissions[userRole];
+    return rolePermissions ? rolePermissions.includes(permission) : false;
+  }
+};
+
+// Add exam permissions to the Permission type and permissions object
+type Permission = 
   | 'view-dashboard'
-  // Users
-  | 'view-users' | 'create-user' | 'edit-user' | 'delete-user'
-  // Students
-  | 'view-students' | 'create-student' | 'edit-student' | 'delete-student'
-  // Teachers
-  | 'view-teachers' | 'create-teacher' | 'edit-teacher' | 'delete-teacher'
-  // Grades
-  | 'view-grades' | 'create-grade' | 'edit-grade' | 'delete-grade' | 'view-grade-details'
-  // Classes
-  | 'view-classes' | 'create-class' | 'edit-class' | 'delete-class' | 'view-class-details'
-  // Subjects
-  | 'view-subjects' | 'create-subject' | 'edit-subject' | 'delete-subject'
-  // Institutes
-  | 'view-institutes' | 'create-institute' | 'edit-institute' | 'delete-institute'
-  // Attendance
-  | 'view-attendance' | 'mark-attendance' | 'edit-attendance' | 'delete-attendance' | 'manage-attendance-markers' | 'create-attendance-marker' | 'edit-attendance-marker' | 'delete-attendance-marker' | 'view-attendance-marker-details' | 'export-attendance'
-  // Grading & Assessment
-  | 'view-grading' | 'grade-assignments' | 'manage-grades'
-  // Lectures
-  | 'view-lectures' | 'create-lecture' | 'edit-lecture' | 'delete-lecture'
-  // Results
-  | 'view-results' | 'generate-results'
-  // Profile & Settings
-  | 'view-profile' | 'edit-profile' | 'view-institute-details';
+  | 'view-users'
+  | 'create-user'
+  | 'edit-user'
+  | 'delete-user'
+  | 'view-students'
+  | 'create-student'
+  | 'edit-student'
+  | 'delete-student'
+  | 'view-teachers'
+  | 'create-teacher'
+  | 'edit-teacher'
+  | 'delete-teacher'
+  | 'view-grades'
+  | 'create-grade'
+  | 'edit-grade'
+  | 'delete-grade'
+  | 'view-classes'
+  | 'create-class'
+  | 'edit-class'
+  | 'delete-class'
+  | 'view-subjects'
+  | 'create-subject'
+  | 'edit-subject'
+  | 'delete-subject'
+  | 'view-institutes'
+  | 'create-institute'
+  | 'edit-institute'
+  | 'delete-institute'
+  | 'view-attendance'
+  | 'mark-attendance'
+  | 'manage-attendance-markers'
+  | 'view-grading'
+  | 'view-lectures'
+  | 'view-exams'
+  | 'create-exam'
+  | 'edit-exam'
+  | 'delete-exam'
+  | 'view-results'
+  | 'view-profile'
+  | 'view-institute-details';
 
-const rolePermissions: Record<UserRole, Permission[]> = {
+const permissions: Record<UserRole, Permission[]> = {
   SystemAdmin: [
-    // All permissions for system admin
     'view-dashboard',
     'view-users', 'create-user', 'edit-user', 'delete-user',
     'view-students', 'create-student', 'edit-student', 'delete-student',
     'view-teachers', 'create-teacher', 'edit-teacher', 'delete-teacher',
-    'view-grades', 'create-grade', 'edit-grade', 'delete-grade', 'view-grade-details',
-    'view-classes', 'create-class', 'edit-class', 'delete-class', 'view-class-details',
+    'view-grades', 'create-grade', 'edit-grade', 'delete-grade',
+    'view-classes', 'create-class', 'edit-class', 'delete-class',
     'view-subjects', 'create-subject', 'edit-subject', 'delete-subject',
     'view-institutes', 'create-institute', 'edit-institute', 'delete-institute',
-    'view-attendance', 'mark-attendance', 'edit-attendance', 'delete-attendance', 'manage-attendance-markers', 'create-attendance-marker', 'edit-attendance-marker', 'delete-attendance-marker', 'view-attendance-marker-details', 'export-attendance',
-    'view-grading', 'grade-assignments', 'manage-grades',
-    'view-lectures', 'create-lecture', 'edit-lecture', 'delete-lecture',
-    'view-results', 'generate-results',
-    'view-profile', 'edit-profile', 'view-institute-details'
+    'view-attendance', 'mark-attendance', 'manage-attendance-markers',
+    'view-grading',
+    'view-lectures',
+    'view-exams', 'create-exam', 'edit-exam', 'delete-exam',
+    'view-results',
+    'view-profile',
+    'view-institute-details'
   ],
   InstituteAdmin: [
     'view-dashboard',
     'view-users', 'create-user', 'edit-user', 'delete-user',
     'view-students', 'create-student', 'edit-student', 'delete-student',
     'view-teachers', 'create-teacher', 'edit-teacher', 'delete-teacher',
-    'view-grades', 'create-grade', 'edit-grade', 'delete-grade', 'view-grade-details',
-    'view-classes', 'create-class', 'edit-class', 'delete-class', 'view-class-details',
+    'view-grades', 'create-grade', 'edit-grade', 'delete-grade',
+    'view-classes', 'create-class', 'edit-class', 'delete-class',
     'view-subjects', 'create-subject', 'edit-subject', 'delete-subject',
-    'view-institutes',
-    'view-attendance', 'mark-attendance', 'edit-attendance', 'delete-attendance', 'manage-attendance-markers', 'create-attendance-marker', 'edit-attendance-marker', 'delete-attendance-marker', 'view-attendance-marker-details', 'export-attendance',
-    'view-grading', 'grade-assignments', 'manage-grades',
-    'view-lectures', 'create-lecture', 'edit-lecture', 'delete-lecture',
-    'view-results', 'generate-results',
-    'view-profile', 'edit-profile', 'view-institute-details'
-  ],
-  AttendanceMarker: [
-    'view-dashboard',
-    'view-students', 'view-teachers',
-    'view-classes', 'view-class-details',
-    'view-subjects',
-    'view-attendance', 'mark-attendance', 'edit-attendance', 'export-attendance',
-    'view-profile', 'edit-profile', 'view-institute-details'
+    'view-attendance', 'mark-attendance', 'manage-attendance-markers',
+    'view-grading',
+    'view-lectures',
+    'view-exams', 'create-exam', 'edit-exam', 'delete-exam',
+    'view-results',
+    'view-profile',
+    'view-institute-details'
   ],
   Teacher: [
     'view-dashboard',
-    'view-students', 'view-teachers',
-    'view-grades', 'view-grade-details',
-    'view-classes', 'view-class-details',
+    'view-students',
+    'view-classes',
     'view-subjects',
-    'view-attendance', 'mark-attendance', 'edit-attendance', 'view-attendance-marker-details', 'export-attendance',
-    'view-grading', 'grade-assignments',
-    'view-lectures', 'create-lecture', 'edit-lecture',
+    'view-attendance', 'mark-attendance',
+    'view-grading',
+    'view-lectures',
+    'view-exams', 'create-exam', 'edit-exam',
     'view-results',
-    'view-profile', 'edit-profile', 'view-institute-details'
+    'view-profile'
   ],
   Student: [
     'view-dashboard',
     'view-attendance',
     'view-lectures',
+    'view-exams',
     'view-results',
-    'view-profile', 'edit-profile'
+    'view-profile'
+  ],
+  AttendanceMarker: [
+    'view-dashboard',
+    'mark-attendance',
+    'view-profile'
   ]
 };
-
-export class AccessControl {
-  static hasPermission(userRole: UserRole, permission: Permission): boolean {
-    return rolePermissions[userRole]?.includes(permission) || false;
-  }
-
-  static getUserPermissions(userRole: UserRole): Permission[] {
-    return rolePermissions[userRole] || [];
-  }
-
-  static canAccessResource(userRole: UserRole, resourcePermissions: Permission[]): boolean {
-    const userPermissions = this.getUserPermissions(userRole);
-    return resourcePermissions.some(permission => userPermissions.includes(permission));
-  }
-}
