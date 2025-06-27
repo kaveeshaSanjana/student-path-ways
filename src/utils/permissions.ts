@@ -1,13 +1,18 @@
+
 export type UserRole = 'SystemAdmin' | 'InstituteAdmin' | 'Teacher' | 'Student' | 'AttendanceMarker';
 
 export const AccessControl = {
   hasPermission: (userRole: UserRole, permission: Permission): boolean => {
     const rolePermissions = permissions[userRole];
     return rolePermissions ? rolePermissions.includes(permission) : false;
+  },
+  
+  getUserPermissions: (userRole: UserRole): Permission[] => {
+    return permissions[userRole] || [];
   }
 };
 
-// Add exam permissions to the Permission type and permissions object
+// Add all missing permissions to the Permission type
 type Permission = 
   | 'view-dashboard'
   | 'view-users'
@@ -41,7 +46,14 @@ type Permission =
   | 'view-attendance'
   | 'mark-attendance'
   | 'manage-attendance-markers'
+  | 'export-attendance'
+  | 'create-attendance-marker'
+  | 'edit-attendance-marker'
+  | 'delete-attendance-marker'
+  | 'view-attendance-marker-details'
   | 'view-grading'
+  | 'grade-assignments'
+  | 'manage-grades'
   | 'view-lectures'
   | 'view-exams'
   | 'create-exam'
@@ -61,8 +73,9 @@ const permissions: Record<UserRole, Permission[]> = {
     'view-classes', 'create-class', 'edit-class', 'delete-class',
     'view-subjects', 'create-subject', 'edit-subject', 'delete-subject',
     'view-institutes', 'create-institute', 'edit-institute', 'delete-institute',
-    'view-attendance', 'mark-attendance', 'manage-attendance-markers',
-    'view-grading',
+    'view-attendance', 'mark-attendance', 'manage-attendance-markers', 'export-attendance',
+    'create-attendance-marker', 'edit-attendance-marker', 'delete-attendance-marker', 'view-attendance-marker-details',
+    'view-grading', 'grade-assignments', 'manage-grades',
     'view-lectures',
     'view-exams', 'create-exam', 'edit-exam', 'delete-exam',
     'view-results',
@@ -77,8 +90,9 @@ const permissions: Record<UserRole, Permission[]> = {
     'view-grades', 'create-grade', 'edit-grade', 'delete-grade',
     'view-classes', 'create-class', 'edit-class', 'delete-class',
     'view-subjects', 'create-subject', 'edit-subject', 'delete-subject',
-    'view-attendance', 'mark-attendance', 'manage-attendance-markers',
-    'view-grading',
+    'view-attendance', 'mark-attendance', 'manage-attendance-markers', 'export-attendance',
+    'create-attendance-marker', 'edit-attendance-marker', 'delete-attendance-marker', 'view-attendance-marker-details',
+    'view-grading', 'grade-assignments', 'manage-grades',
     'view-lectures',
     'view-exams', 'create-exam', 'edit-exam', 'delete-exam',
     'view-results',
@@ -90,8 +104,8 @@ const permissions: Record<UserRole, Permission[]> = {
     'view-students',
     'view-classes',
     'view-subjects',
-    'view-attendance', 'mark-attendance',
-    'view-grading',
+    'view-attendance', 'mark-attendance', 'export-attendance',
+    'view-grading', 'grade-assignments',
     'view-lectures',
     'view-exams', 'create-exam', 'edit-exam',
     'view-results',
