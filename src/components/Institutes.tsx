@@ -9,50 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { useToast } from '@/hooks/use-toast';
 import CreateInstituteForm from '@/components/forms/CreateInstituteForm';
 
-const mockInstitutes = [
-  {
-    id: '1',
-    code: 'MIT001',
-    name: 'Modern Institute of Technology',
-    address: '123 Tech Street, Silicon Valley, CA',
-    phone: '+1 (555) 100-2000',
-    email: 'admin@mit001.edu',
-    establishedDate: '2010-01-15',
-    totalStudents: 1234,
-    totalTeachers: 78,
-    totalClasses: 24,
-    status: 'Active',
-    lastUpdated: '2024-01-15'
-  },
-  {
-    id: '2',
-    code: 'SCI002',
-    name: 'Science Excellence Academy',
-    address: '456 Learning Ave, Education City, NY',
-    phone: '+1 (555) 200-3000',
-    email: 'info@sci002.edu',
-    establishedDate: '2015-08-20',
-    totalStudents: 856,
-    totalTeachers: 45,
-    totalClasses: 18,
-    status: 'Active',
-    lastUpdated: '2024-01-14'
-  },
-  {
-    id: '3',
-    code: 'COM003',
-    name: 'Commerce Business School',
-    address: '789 Business Blvd, Trade Town, TX',
-    phone: '+1 (555) 300-4000',
-    email: 'contact@com003.edu',
-    establishedDate: '2012-03-10',
-    totalStudents: 567,
-    totalTeachers: 32,
-    totalClasses: 12,
-    status: 'Inactive',
-    lastUpdated: '2024-01-10'
-  }
-];
+const BASE_URL = 'https://5ee1-2402-4000-2280-68b1-b149-ba1b-ef57-a0b9.ngrok-free.app';
 
 const Institutes = () => {
   const { user } = useAuth();
@@ -83,19 +40,23 @@ const Institutes = () => {
     console.log('Loading institutes data...');
     
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const response = await fetch(`${BASE_URL}/institutes`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
       
-      setInstitutesData(mockInstitutes);
+      const result = await response.json();
+      setInstitutesData(result.data || result || []);
       setDataLoaded(true);
       toast({
         title: "Data Loaded",
-        description: `Successfully loaded ${mockInstitutes.length} institutes.`
+        description: `Successfully loaded ${(result.data || result || []).length} institutes.`
       });
     } catch (error) {
+      console.error('Error loading institutes:', error);
       toast({
         title: "Load Failed",
-        description: "Failed to load institutes data.",
+        description: "Failed to load institutes data. Please check your connection.",
         variant: "destructive"
       });
     } finally {
@@ -106,21 +67,21 @@ const Institutes = () => {
   const institutesColumns = [
     { key: 'code', header: 'Institute Code' },
     { key: 'name', header: 'Institute Name' },
-    { key: 'address', header: 'Address' },
-    { key: 'phone', header: 'Phone' },
     { key: 'email', header: 'Email' },
-    { key: 'establishedDate', header: 'Established' },
-    { key: 'totalStudents', header: 'Students' },
-    { key: 'totalTeachers', header: 'Teachers' },
-    { key: 'totalClasses', header: 'Classes' },
-    { key: 'lastUpdated', header: 'Last Updated' },
+    { key: 'phone', header: 'Phone' },
+    { key: 'city', header: 'City' },
+    { key: 'state', header: 'State' },
+    { key: 'country', header: 'Country' },
+    { key: 'pinCode', header: 'Pin Code' },
     { 
-      key: 'status', 
-      header: 'Status',
+      key: 'imageUrl', 
+      header: 'Image',
       render: (value: string) => (
-        <Badge variant={value === 'Active' ? 'default' : 'secondary'}>
-          {value}
-        </Badge>
+        value ? (
+          <img src={value} alt="Institute" className="w-8 h-8 rounded object-cover" />
+        ) : (
+          <span className="text-gray-400">No image</span>
+        )
       )
     }
   ];
@@ -129,13 +90,35 @@ const Institutes = () => {
     setIsCreateDialogOpen(true);
   };
 
-  const handleCreateInstitute = (instituteData: any) => {
+  const handleCreateInstitute = async (instituteData: any) => {
     console.log('Creating institute:', instituteData);
-    toast({
-      title: "Institute Created",
-      description: `Institute ${instituteData.name} has been created successfully.`
-    });
-    setIsCreateDialogOpen(false);
+    try {
+      const response = await fetch(`${BASE_URL}/institutes`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(instituteData),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      toast({
+        title: "Institute Created",
+        description: `Institute ${instituteData.name} has been created successfully.`
+      });
+      setIsCreateDialogOpen(false);
+      handleLoadData(); // Reload data
+    } catch (error) {
+      console.error('Error creating institute:', error);
+      toast({
+        title: "Create Failed",
+        description: "Failed to create institute. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleEditInstitute = (institute: any) => {
@@ -144,48 +127,88 @@ const Institutes = () => {
     setIsEditDialogOpen(true);
   };
 
-  const handleUpdateInstitute = (instituteData: any) => {
+  const handleUpdateInstitute = async (instituteData: any) => {
     console.log('Updating institute:', instituteData);
-    toast({
-      title: "Institute Updated",
-      description: `Institute ${instituteData.name} has been updated successfully.`
-    });
-    setIsEditDialogOpen(false);
-    setSelectedInstitute(null);
+    try {
+      const response = await fetch(`${BASE_URL}/institutes/${selectedInstitute.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(instituteData),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      toast({
+        title: "Institute Updated",
+        description: `Institute ${instituteData.name} has been updated successfully.`
+      });
+      setIsEditDialogOpen(false);
+      setSelectedInstitute(null);
+      handleLoadData(); // Reload data
+    } catch (error) {
+      console.error('Error updating institute:', error);
+      toast({
+        title: "Update Failed",
+        description: "Failed to update institute. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleDeleteInstitute = (institute: any) => {
+  const handleDeleteInstitute = async (institute: any) => {
     console.log('Delete institute:', institute);
-    toast({
-      title: "Institute Deleted",
-      description: `Institute ${institute.name} has been deleted.`,
-      variant: "destructive"
-    });
+    try {
+      const response = await fetch(`${BASE_URL}/institutes/${institute.id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      toast({
+        title: "Institute Deleted",
+        description: `Institute ${institute.name} has been deleted.`,
+        variant: "destructive"
+      });
+      handleLoadData(); // Reload data
+    } catch (error) {
+      console.error('Error deleting institute:', error);
+      toast({
+        title: "Delete Failed",
+        description: "Failed to delete institute. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleViewInstitute = (institute: any) => {
+  const handleViewInstitute = async (institute: any) => {
     console.log('View institute details:', institute);
-    toast({
-      title: "View Institute",
-      description: `Viewing institute: ${institute.name}`
-    });
-  };
-
-  const handleDisableInstitute = (institute: any) => {
-    console.log('Disable institute:', institute);
-    toast({
-      title: "Institute Disabled",
-      description: `Institute ${institute.name} has been disabled.`,
-      variant: "destructive"
-    });
-  };
-
-  const handleEnableInstitute = (institute: any) => {
-    console.log('Enable institute:', institute);
-    toast({
-      title: "Institute Enabled",
-      description: `Institute ${institute.name} has been enabled.`
-    });
+    try {
+      const response = await fetch(`${BASE_URL}/institutes/${institute.id}`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const detailedInstitute = await response.json();
+      console.log('Detailed institute data:', detailedInstitute);
+      
+      toast({
+        title: "View Institute",
+        description: `Viewing institute: ${institute.name}`
+      });
+    } catch (error) {
+      console.error('Error fetching institute details:', error);
+      toast({
+        title: "Fetch Failed",
+        description: "Failed to fetch institute details.",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -260,17 +283,10 @@ const Institutes = () => {
             searchPlaceholder="Search institutes..."
             customActions={[
               {
-                label: 'Disable',
-                action: handleDisableInstitute,
+                label: 'Delete',
+                action: handleDeleteInstitute,
                 variant: 'destructive',
-                condition: (row: any) => row.status === 'Active'
               },
-              {
-                label: 'Enable',
-                action: handleEnableInstitute,
-                variant: 'default',
-                condition: (row: any) => row.status === 'Inactive'
-              }
             ]}
           />
         </>

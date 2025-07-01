@@ -6,22 +6,20 @@ import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 
 const instituteSchema = z.object({
-  code: z.string().min(1, 'Institute code is required'),
   name: z.string().min(2, 'Institute name must be at least 2 characters'),
-  address: z.string().min(10, 'Address is required'),
-  phone: z.string().min(10, 'Phone number must be at least 10 digits'),
+  code: z.string().min(1, 'Institute code is required'),
   email: z.string().email('Please enter a valid email'),
-  establishedDate: z.string().min(1, 'Established date is required'),
-  status: z.string().default('Active'),
-  type: z.string().min(1, 'Institute type is required'),
-  accreditation: z.string().optional(),
-  website: z.string().optional(),
-  description: z.string().min(10, 'Description is required')
+  phone: z.string().min(10, 'Phone number must be at least 10 digits'),
+  address: z.string().min(10, 'Address is required'),
+  city: z.string().min(1, 'City is required'),
+  state: z.string().min(1, 'State is required'),
+  country: z.string().min(1, 'Country is required'),
+  pinCode: z.string().min(4, 'Pin code is required'),
+  imageUrl: z.string().url('Please enter a valid image URL').optional().or(z.literal(''))
 });
 
 type InstituteFormData = z.infer<typeof instituteSchema>;
@@ -38,17 +36,16 @@ const CreateInstituteForm = ({ onSubmit, onCancel, initialData }: CreateInstitut
   const form = useForm<InstituteFormData>({
     resolver: zodResolver(instituteSchema),
     defaultValues: {
-      code: initialData?.code || '',
       name: initialData?.name || '',
-      address: initialData?.address || '',
-      phone: initialData?.phone || '',
+      code: initialData?.code || '',
       email: initialData?.email || '',
-      establishedDate: initialData?.establishedDate || '',
-      status: initialData?.status || 'Active',
-      type: initialData?.type || '',
-      accreditation: initialData?.accreditation || '',
-      website: initialData?.website || '',
-      description: initialData?.description || ''
+      phone: initialData?.phone || '',
+      address: initialData?.address || '',
+      city: initialData?.city || '',
+      state: initialData?.state || '',
+      country: initialData?.country || '',
+      pinCode: initialData?.pinCode || '',
+      imageUrl: initialData?.imageUrl || ''
     }
   });
 
@@ -68,12 +65,12 @@ const CreateInstituteForm = ({ onSubmit, onCancel, initialData }: CreateInstitut
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="code"
+                name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Institute Code</FormLabel>
+                    <FormLabel>Institute Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="MIT001" {...field} />
+                      <Input placeholder="Cambridge International School" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -82,12 +79,12 @@ const CreateInstituteForm = ({ onSubmit, onCancel, initialData }: CreateInstitut
               
               <FormField
                 control={form.control}
-                name="name"
+                name="code"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Institute Name</FormLabel>
+                    <FormLabel>Institute Code</FormLabel>
                     <FormControl>
-                      <Input placeholder="Modern Institute of Technology" {...field} />
+                      <Input placeholder="CIS002" {...field} disabled={isEditing} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -101,7 +98,7 @@ const CreateInstituteForm = ({ onSubmit, onCancel, initialData }: CreateInstitut
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input type="email" placeholder="admin@institute.edu" {...field} />
+                      <Input type="email" placeholder="admin@cambridge-school.edu" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -115,7 +112,7 @@ const CreateInstituteForm = ({ onSubmit, onCancel, initialData }: CreateInstitut
                   <FormItem>
                     <FormLabel>Phone</FormLabel>
                     <FormControl>
-                      <Input placeholder="+1 (555) 100-2000" {...field} />
+                      <Input placeholder="+1-234-567-8900" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -124,36 +121,12 @@ const CreateInstituteForm = ({ onSubmit, onCancel, initialData }: CreateInstitut
               
               <FormField
                 control={form.control}
-                name="type"
+                name="city"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Institute Type</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select type" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="Public">Public</SelectItem>
-                        <SelectItem value="Private">Private</SelectItem>
-                        <SelectItem value="Technical">Technical</SelectItem>
-                        <SelectItem value="University">University</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="establishedDate"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Established Date</FormLabel>
+                    <FormLabel>City</FormLabel>
                     <FormControl>
-                      <Input type="date" {...field} />
+                      <Input placeholder="Colombo" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -162,12 +135,12 @@ const CreateInstituteForm = ({ onSubmit, onCancel, initialData }: CreateInstitut
               
               <FormField
                 control={form.control}
-                name="accreditation"
+                name="state"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Accreditation (Optional)</FormLabel>
+                    <FormLabel>State</FormLabel>
                     <FormControl>
-                      <Input placeholder="NAAC, AICTE, etc." {...field} />
+                      <Input placeholder="Western" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -176,22 +149,27 @@ const CreateInstituteForm = ({ onSubmit, onCancel, initialData }: CreateInstitut
               
               <FormField
                 control={form.control}
-                name="status"
+                name="country"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Status</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select status" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="Active">Active</SelectItem>
-                        <SelectItem value="Inactive">Inactive</SelectItem>
-                        <SelectItem value="Pending">Pending</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <FormLabel>Country</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Sri Lanka" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="pinCode"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Pin Code</FormLabel>
+                    <FormControl>
+                      <Input placeholder="10100" {...field} />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -205,7 +183,7 @@ const CreateInstituteForm = ({ onSubmit, onCancel, initialData }: CreateInstitut
                 <FormItem>
                   <FormLabel>Address</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="123 Tech Street, Silicon Valley, CA" {...field} />
+                    <Textarea placeholder="123 Education Boulevard, Academic District" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -214,26 +192,12 @@ const CreateInstituteForm = ({ onSubmit, onCancel, initialData }: CreateInstitut
             
             <FormField
               control={form.control}
-              name="website"
+              name="imageUrl"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Website (Optional)</FormLabel>
+                  <FormLabel>Image URL (Optional)</FormLabel>
                   <FormControl>
-                    <Input placeholder="https://www.institute.edu" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Textarea placeholder="Institute description and mission" {...field} />
+                    <Input placeholder="https://cambridge-school.edu/logo.png" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
