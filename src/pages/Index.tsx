@@ -33,7 +33,29 @@ const AppContent = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const handleLogin = (userData: any) => {
+    console.log('Logging in user with role:', userData.role);
     login(userData);
+    
+    // Set appropriate default page based on user role
+    switch (userData.role) {
+      case 'Student':
+        setCurrentPage('dashboard');
+        break;
+      case 'Teacher':
+        setCurrentPage('dashboard');
+        break;
+      case 'AttendanceMarker':
+        setCurrentPage('attendance-marking');
+        break;
+      case 'InstituteAdmin':
+        setCurrentPage('dashboard');
+        break;
+      case 'SystemAdmin':
+        setCurrentPage('dashboard');
+        break;
+      default:
+        setCurrentPage('dashboard');
+    }
   };
 
   const handleMenuClick = () => {
@@ -95,28 +117,142 @@ const AppContent = () => {
       }
     }
 
-    // First check if user needs to select institute
+    // For Student role - simplified interface
+    if (user?.role === 'Student') {
+      // Students don't need institute selection if they only have access to one
+      if (!selectedInstitute && user.institutes.length === 1) {
+        // Auto-select the only institute available
+        // This should be handled by the auth context
+      }
+      
+      if (!selectedInstitute && currentPage !== 'institutes' && currentPage !== 'select-institute') {
+        return <InstituteSelector />;
+      }
+
+      switch (currentPage) {
+        case 'dashboard':
+          return <Dashboard />;
+        case 'attendance':
+          return <Attendance />;
+        case 'lectures':
+          return <Lectures />;
+        case 'exams':
+          return <Exams />;
+        case 'results':
+          return <Results />;
+        case 'profile':
+          return <Profile />;
+        case 'select-institute':
+          return <InstituteSelector />;
+        default:
+          return <Dashboard />;
+      }
+    }
+
+    // For Teacher role
+    if (user?.role === 'Teacher') {
+      if (!selectedInstitute && currentPage !== 'institutes' && currentPage !== 'select-institute') {
+        return <InstituteSelector />;
+      }
+
+      if (currentPage === 'select-class') {
+        return <ClassSelector />;
+      }
+
+      if (currentPage === 'select-subject') {
+        return <SubjectSelector />;
+      }
+
+      const classRequiredPages = ['attendance-marking', 'grading'];
+      if (selectedInstitute && !selectedClass && classRequiredPages.includes(currentPage)) {
+        return <ClassSelector />;
+      }
+
+      const subjectRequiredPages = ['lectures'];
+      if (selectedClass && !selectedSubject && subjectRequiredPages.includes(currentPage)) {
+        return <SubjectSelector />;
+      }
+
+      switch (currentPage) {
+        case 'dashboard':
+          return <Dashboard />;
+        case 'students':
+          return <Students />;
+        case 'classes':
+          return <Classes apiLevel="institute" />;
+        case 'subjects':
+          return <Subjects apiLevel={selectedClass ? "class" : "institute"} />;
+        case 'select-institute':
+          return <InstituteSelector />;
+        case 'grading':
+        case 'grades-table':
+        case 'create-grade':
+        case 'assign-grade-classes':
+        case 'view-grade-classes':
+          return <Grading />;
+        case 'attendance':
+          return <Attendance />;
+        case 'attendance-marking':
+          return <AttendanceMarking onNavigate={setCurrentPage} />;
+        case 'lectures':
+          return <Lectures />;
+        case 'exams':
+          return <Exams />;
+        case 'results':
+          return <Results />;
+        case 'profile':
+          return <Profile />;
+        default:
+          return <Dashboard />;
+      }
+    }
+
+    // For AttendanceMarker role
+    if (user?.role === 'AttendanceMarker') {
+      if (!selectedInstitute && currentPage !== 'select-institute') {
+        return <InstituteSelector />;
+      }
+
+      if (!selectedClass && currentPage !== 'select-class') {
+        return <ClassSelector />;
+      }
+
+      switch (currentPage) {
+        case 'dashboard':
+          return <Dashboard />;
+        case 'attendance-marking':
+          return <AttendanceMarking onNavigate={setCurrentPage} />;
+        case 'qr-attendance':
+          return <QRAttendance />;
+        case 'profile':
+          return <Profile />;
+        case 'select-institute':
+          return <InstituteSelector />;
+        case 'select-class':
+          return <ClassSelector />;
+        default:
+          return <AttendanceMarking onNavigate={setCurrentPage} />;
+      }
+    }
+
+    // For InstituteAdmin and other roles - full access within their institute
     if (!selectedInstitute && currentPage !== 'institutes' && currentPage !== 'select-institute') {
       return <InstituteSelector />;
     }
 
-    // Handle class selector routing
     if (currentPage === 'select-class') {
       return <ClassSelector />;
     }
 
-    // Handle subject selector routing
     if (currentPage === 'select-subject') {
       return <SubjectSelector />;
     }
 
-    // If class is required for current page but not selected
     const classRequiredPages = ['attendance-marking', 'grading'];
     if (selectedInstitute && !selectedClass && classRequiredPages.includes(currentPage)) {
       return <ClassSelector />;
     }
 
-    // If subject is required for current page but not selected
     const subjectRequiredPages = ['lectures'];
     if (selectedClass && !selectedSubject && subjectRequiredPages.includes(currentPage)) {
       return <SubjectSelector />;
@@ -134,10 +270,8 @@ const AppContent = () => {
       case 'grades':
         return <Grades />;
       case 'classes':
-        // All classes view - API calls based on selected institute level
         return <Classes apiLevel="institute" />;
       case 'subjects':
-        // All subjects view - API calls based on selected institute/class level  
         return <Subjects apiLevel={selectedClass ? "class" : "institute"} />;
       case 'institutes':
         return <Institutes />;

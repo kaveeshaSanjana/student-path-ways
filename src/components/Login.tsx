@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -87,6 +88,37 @@ const Login = ({ onLogin }: LoginProps) => {
     }
   };
 
+  // Map API user types to frontend roles
+  const mapUserTypeToRole = (userType: string): UserRole => {
+    const typeMapping: Record<string, UserRole> = {
+      'STUDENT': 'Student',
+      'TEACHER': 'Teacher',
+      'ADMIN': 'SystemAdmin',
+      'INSTITUTE_ADMIN': 'InstituteAdmin',
+      'ATTENDANCE_MARKER': 'AttendanceMarker'
+    };
+    return typeMapping[userType.toUpperCase()] || 'Student';
+  };
+
+  const fetchUserInstitutes = async (userId: string, accessToken: string) => {
+    try {
+      const response = await fetch(`${BASE_URL}/users/${userId}/institutes`, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const institutes = await response.json();
+        return Array.isArray(institutes) ? institutes : [];
+      }
+    } catch (error) {
+      console.error('Error fetching user institutes:', error);
+    }
+    return [];
+  };
+
   const handleApiLogin = async (email: string, password: string) => {
     try {
       const response = await fetch(`${BASE_URL}/auth/login`, {
@@ -103,13 +135,16 @@ const Login = ({ onLogin }: LoginProps) => {
 
       const data = await response.json();
       
-      // Map API response to our user format
+      // Fetch user institutes if available
+      const institutes = await fetchUserInstitutes(data.user.id, data.access_token);
+      
+      // Map API response to our user format with proper role mapping
       const user = {
         id: data.user.id,
         name: `${data.user.firstName} ${data.user.lastName}`,
         email: data.user.email,
-        role: data.user.userType as UserRole,
-        institutes: [], // Will be populated based on user data
+        role: mapUserTypeToRole(data.user.userType),
+        institutes: institutes,
         accessToken: data.access_token
       };
 
@@ -119,7 +154,35 @@ const Login = ({ onLogin }: LoginProps) => {
     }
   };
 
-  const handleMockLogin = (email: string, password: string, role: UserRole) => {
+  const handleMockLogin = async (email: string, password: string, role: UserRole) => {
+    // Even for mock login, we should try to validate against the backend first
+    try {
+      const response = await fetch(`${BASE_URL}/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const institutes = await fetchUserInstitutes(data.user.id, data.access_token);
+        
+        return {
+          id: data.user.id,
+          name: `${data.user.firstName} ${data.user.lastName}`,
+          email: data.user.email,
+          role: mapUserTypeToRole(data.user.userType),
+          institutes: institutes,
+          accessToken: data.access_token
+        };
+      }
+    } catch (error) {
+      console.log('Backend validation failed, using mock data...');
+    }
+
+    // Fallback to mock data if backend is not available
     const user = mockUsers.find(
       u => u.email === email && u.password === password && u.role === role
     );
@@ -146,28 +209,21 @@ const Login = ({ onLogin }: LoginProps) => {
       let user;
 
       if (useApiLogin) {
-        try {
-          user = await handleApiLogin(email, password);
-          toast({
-            title: "Success",
-            description: "Logged in successfully via API",
-          });
-        } catch (apiError) {
-          console.log('API login failed, trying mock login...');
-          user = handleMockLogin(email, password, selectedRole);
-          toast({
-            title: "Success",
-            description: "Logged in successfully via mock credentials",
-          });
-        }
-      } else {
-        user = handleMockLogin(email, password, selectedRole);
+        user = await handleApiLogin(email, password);
         toast({
           title: "Success",
-          description: "Logged in successfully via mock credentials",
+          description: `Logged in successfully as ${user.role}`,
+        });
+      } else {
+        user = await handleMockLogin(email, password, selectedRole);
+        toast({
+          title: "Success",
+          description: `Logged in successfully as ${user.role}`,
         });
       }
 
+      console.log('User logged in:', user);
+      console.log('User role:', user.role);
       onLogin(user);
     } catch (error) {
       console.error('Login failed:', error);
@@ -224,7 +280,7 @@ const Login = ({ onLogin }: LoginProps) => {
               </Button>
             </div>
             <p className="text-xs text-gray-500 mt-2">
-              {useApiLogin ? "Login via backend API" : "Login with demo credentials"}
+              {useApiLogin ? "Login via backend API" : "Login with demo credentials (validates with backend first)"}
             </p>
           </CardContent>
         </Card>
