@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 export type UserRole = 'SystemAdmin' | 'InstituteAdmin' | 'AttendanceMarker' | 'Teacher' | 'Student';
@@ -9,6 +8,7 @@ export interface User {
   email: string;
   role: UserRole;
   institutes: Institute[];
+  accessToken?: string;
 }
 
 export interface Institute {
@@ -44,6 +44,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const login = (userData: User) => {
     setUser(userData);
+    // Store access token in localStorage if provided
+    if (userData.accessToken) {
+      localStorage.setItem('access_token', userData.accessToken);
+    }
   };
 
   const logout = () => {
@@ -51,6 +55,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setSelectedInstitute(null);
     setSelectedClass(null);
     setSelectedSubject(null);
+    // Clear access token from localStorage
+    localStorage.removeItem('access_token');
   };
 
   const toggleDarkMode = () => {

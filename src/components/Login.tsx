@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,7 +5,8 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth, UserRole } from '@/contexts/AuthContext';
-import { Eye, EyeOff, GraduationCap } from 'lucide-react';
+import { Eye, EyeOff, GraduationCap, Wifi, WifiOff } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 // Mock user credentials for different roles
 const mockUsers = [
@@ -73,6 +73,8 @@ const Login = ({ onLogin }: LoginProps) => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [useApiLogin, setUseApiLogin] = useState(true);
+  const { toast } = useToast();
 
   const handleQuickLogin = (role: UserRole) => {
     const user = mockUsers.find(u => u.role === role);
@@ -83,31 +85,99 @@ const Login = ({ onLogin }: LoginProps) => {
     }
   };
 
+  const handleApiLogin = async (email: string, password: string) => {
+    try {
+      const response = await fetch(`${BASE_URL}/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Invalid credentials');
+      }
+
+      const data = await response.json();
+      
+      // Map API response to our user format
+      const user = {
+        id: data.user.id,
+        name: `${data.user.firstName} ${data.user.lastName}`,
+        email: data.user.email,
+        role: data.user.userType as UserRole,
+        institutes: [], // Will be populated based on user data
+        accessToken: data.access_token
+      };
+
+      return user;
+    } catch (error) {
+      throw new Error('API login failed');
+    }
+  };
+
+  const handleMockLogin = (email: string, password: string, role: UserRole) => {
+    const user = mockUsers.find(
+      u => u.email === email && u.password === password && u.role === role
+    );
+
+    if (!user) {
+      throw new Error('Invalid credentials or role mismatch');
+    }
+
+    return {
+      id: Math.random().toString(36).substr(2, 9),
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      institutes: user.institutes
+    };
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
 
-    // Simulate loading
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    try {
+      let user;
 
-    const user = mockUsers.find(
-      u => u.email === email && u.password === password && u.role === selectedRole
-    );
+      if (useApiLogin) {
+        try {
+          user = await handleApiLogin(email, password);
+          toast({
+            title: "Success",
+            description: "Logged in successfully via API",
+          });
+        } catch (apiError) {
+          console.log('API login failed, trying mock login...');
+          user = handleMockLogin(email, password, selectedRole);
+          toast({
+            title: "Success",
+            description: "Logged in successfully via mock credentials",
+          });
+        }
+      } else {
+        user = handleMockLogin(email, password, selectedRole);
+        toast({
+          title: "Success",
+          description: "Logged in successfully via mock credentials",
+        });
+      }
 
-    if (user) {
-      onLogin({
-        id: Math.random().toString(36).substr(2, 9),
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        institutes: user.institutes
+      onLogin(user);
+    } catch (error) {
+      console.error('Login failed:', error);
+      setError(error instanceof Error ? error.message : 'Login failed');
+      toast({
+        title: "Error",
+        description: "Login failed. Please check your credentials.",
+        variant: "destructive",
       });
-    } else {
-      setError('Invalid credentials or role mismatch');
+    } finally {
+      setIsLoading(false);
     }
-
-    setIsLoading(false);
   };
 
   return (
@@ -122,30 +192,69 @@ const Login = ({ onLogin }: LoginProps) => {
           <p className="text-gray-600 dark:text-gray-400 mt-2">Institute Learning Management System</p>
         </div>
 
+        {/* Login Mode Toggle */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm flex items-center gap-2">
+              Login Mode
+              {useApiLogin ? <Wifi className="w-4 h-4 text-green-600" /> : <WifiOff className="w-4 h-4 text-gray-500" />}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant={useApiLogin ? "default" : "outline"}
+                size="sm"
+                onClick={() => setUseApiLogin(true)}
+                className="flex-1"
+              >
+                API Login
+              </Button>
+              <Button
+                type="button"
+                variant={!useApiLogin ? "default" : "outline"}
+                size="sm"
+                onClick={() => setUseApiLogin(false)}
+                className="flex-1"
+              >
+                Mock Login
+              </Button>
+            </div>
+            <p className="text-xs text-gray-500 mt-2">
+              {useApiLogin ? "Login via backend API" : "Login with demo credentials"}
+            </p>
+          </CardContent>
+        </Card>
+
         {/* Login Form */}
         <Card>
           <CardHeader>
             <CardTitle>Sign In</CardTitle>
-            <CardDescription>Choose your role and enter your credentials</CardDescription>
+            <CardDescription>
+              {useApiLogin ? "Enter your API credentials" : "Choose your role and enter demo credentials"}
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleLogin} className="space-y-4">
-              {/* Role Selection */}
-              <div className="space-y-2">
-                <Label htmlFor="role">Role</Label>
-                <Select value={selectedRole} onValueChange={(value: UserRole) => setSelectedRole(value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select your role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="SystemAdmin">System Administrator</SelectItem>
-                    <SelectItem value="InstituteAdmin">Institute Administrator</SelectItem>
-                    <SelectItem value="Teacher">Teacher</SelectItem>
-                    <SelectItem value="AttendanceMarker">Attendance Marker</SelectItem>
-                    <SelectItem value="Student">Student</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              {/* Role Selection - Only show for mock login */}
+              {!useApiLogin && (
+                <div className="space-y-2">
+                  <Label htmlFor="role">Role</Label>
+                  <Select value={selectedRole} onValueChange={(value: UserRole) => setSelectedRole(value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select your role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="SystemAdmin">System Administrator</SelectItem>
+                      <SelectItem value="InstituteAdmin">Institute Administrator</SelectItem>
+                      <SelectItem value="Teacher">Teacher</SelectItem>
+                      <SelectItem value="AttendanceMarker">Attendance Marker</SelectItem>
+                      <SelectItem value="Student">Student</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
 
               {/* Email Input */}
               <div className="space-y-2">
@@ -203,71 +312,87 @@ const Login = ({ onLogin }: LoginProps) => {
           </CardContent>
         </Card>
 
-        {/* Quick Login Options */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm">Quick Login (Demo)</CardTitle>
-            <CardDescription className="text-xs">Click to auto-fill credentials for testing</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleQuickLogin('SystemAdmin')}
-                className="text-xs"
-              >
-                System Admin
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleQuickLogin('InstituteAdmin')}
-                className="text-xs"
-              >
-                Institute Admin
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleQuickLogin('Teacher')}
-                className="text-xs"
-              >
-                Teacher
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleQuickLogin('AttendanceMarker')}
-                className="text-xs"
-              >
-                Att. Marker
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleQuickLogin('Student')}
-                className="text-xs col-span-2"
-              >
-                Student
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Quick Login Options - Only show for mock login */}
+        {!useApiLogin && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm">Quick Login (Demo)</CardTitle>
+              <CardDescription className="text-xs">Click to auto-fill credentials for testing</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleQuickLogin('SystemAdmin')}
+                  className="text-xs"
+                >
+                  System Admin
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleQuickLogin('InstituteAdmin')}
+                  className="text-xs"
+                >
+                  Institute Admin
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleQuickLogin('Teacher')}
+                  className="text-xs"
+                >
+                  Teacher
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleQuickLogin('AttendanceMarker')}
+                  className="text-xs"
+                >
+                  Att. Marker
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleQuickLogin('Student')}
+                  className="text-xs col-span-2"
+                >
+                  Student
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
-        {/* Demo Credentials */}
-        <Card className="text-xs">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Demo Credentials</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 text-gray-600 dark:text-gray-400">
-            <div><strong>System Admin:</strong> admin@system.com / admin123</div>
-            <div><strong>Institute Admin:</strong> institute@cambridge.edu / institute123</div>
-            <div><strong>Teacher:</strong> teacher@cambridge.edu / teacher123</div>
-            <div><strong>Attendance Marker:</strong> marker@cambridge.edu / marker123</div>
-            <div><strong>Student:</strong> student@cambridge.edu / student123</div>
-          </CardContent>
-        </Card>
+        {/* API Demo Credentials */}
+        {useApiLogin && (
+          <Card className="text-xs">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm">API Demo Credentials</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2 text-gray-600 dark:text-gray-400">
+              <div><strong>Example:</strong> admin@example.com / password123</div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Demo Credentials - Only show for mock login */}
+        {!useApiLogin && (
+          <Card className="text-xs">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm">Demo Credentials</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2 text-gray-600 dark:text-gray-400">
+              <div><strong>System Admin:</strong> admin@system.com / admin123</div>
+              <div><strong>Institute Admin:</strong> institute@cambridge.edu / institute123</div>
+              <div><strong>Teacher:</strong> teacher@cambridge.edu / teacher123</div>
+              <div><strong>Attendance Marker:</strong> marker@cambridge.edu / marker123</div>
+              <div><strong>Student:</strong> student@cambridge.edu / student123</div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );
