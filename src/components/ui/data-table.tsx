@@ -5,6 +5,13 @@ import { Input } from '@/components/ui/input';
 import { Search, Plus, Edit, Trash2, Eye, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Badge } from '@/components/ui/badge';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 interface Column {
   key: string;
@@ -34,6 +41,12 @@ interface DataTableProps {
     condition?: (row: any) => boolean;
   }>;
   itemsPerPage?: number;
+  // Server-side pagination props
+  currentPage?: number;
+  totalItems?: number;
+  totalPages?: number;
+  onPageChange?: (page: number) => void;
+  onItemsPerPageChange?: (itemsPerPage: number) => void;
 }
 
 const DataTable = ({
@@ -50,21 +63,31 @@ const DataTable = ({
   allowEdit = true,
   allowDelete = true,
   customActions = [],
-  itemsPerPage = 10
+  itemsPerPage = 10,
+  currentPage = 1,
+  totalItems = 0,
+  totalPages = 1,
+  onPageChange,
+  onItemsPerPageChange
 }: DataTableProps) => {
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = React.useState('');
-  const [currentPage, setCurrentPage] = React.useState(1);
-
-  const filteredData = data.filter(row =>
+  
+  // Use server-side pagination if props are provided, otherwise use client-side
+  const isServerSidePagination = Boolean(onPageChange && totalItems);
+  
+  // Client-side pagination logic (fallback)
+  const filteredData = isServerSidePagination ? data : data.filter(row =>
     Object.values(row).some(value =>
       String(value).toLowerCase().includes(searchTerm.toLowerCase())
     )
   );
 
-  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedData = filteredData.slice(startIndex, startIndex + itemsPerPage);
+  const clientTotalPages = isServerSidePagination ? totalPages : Math.ceil(filteredData.length / itemsPerPage);
+  const startIndex = isServerSidePagination ? ((currentPage - 1) * itemsPerPage) : ((currentPage - 1) * itemsPerPage);
+  const paginatedData = isServerSidePagination ? data : filteredData.slice(startIndex, startIndex + itemsPerPage);
+  const displayTotalItems = isServerSidePagination ? totalItems : filteredData.length;
+  const displayTotalPages = isServerSidePagination ? totalPages : clientTotalPages;
 
   const canAdd = allowAdd && (user?.role === 'SystemAdmin' || user?.role === 'InstituteAdmin');
   const canEdit = allowEdit && (user?.role !== 'Student');
@@ -72,10 +95,36 @@ const DataTable = ({
 
   const hasActions = canEdit || canDelete || onView || onExport || customActions.length > 0;
 
-  const goToFirstPage = () => setCurrentPage(1);
-  const goToLastPage = () => setCurrentPage(totalPages);
-  const goToNextPage = () => setCurrentPage(prev => Math.min(prev + 1, totalPages));
-  const goToPrevPage = () => setCurrentPage(prev => Math.max(prev - 1, 1));
+  const goToFirstPage = () => {
+    if (onPageChange) {
+      onPageChange(1);
+    }
+  };
+  
+  const goToLastPage = () => {
+    if (onPageChange) {
+      onPageChange(displayTotalPages);
+    }
+  };
+  
+  const goToNextPage = () => {
+    if (onPageChange) {
+      onPageChange(Math.min(currentPage + 1, displayTotalPages));
+    }
+  };
+  
+  const goToPrevPage = () => {
+    if (onPageChange) {
+      onPageChange(Math.max(currentPage - 1, 1));
+    }
+  };
+
+  const handleItemsPerPageChange = (value: string) => {
+    const newItemsPerPage = parseInt(value);
+    if (onItemsPerPageChange) {
+      onItemsPerPageChange(newItemsPerPage);
+    }
+  };
 
   return (
     <div className="w-full">
@@ -93,16 +142,18 @@ const DataTable = ({
         )}
       </div>
 
-      {/* Search */}
-      <div className="relative mb-4">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-        <Input
-          placeholder={searchPlaceholder}
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10"
-        />
-      </div>
+      {/* Search - Only show for client-side pagination */}
+      {!isServerSidePagination && (
+        <div className="relative mb-4">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Input
+            placeholder={searchPlaceholder}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+      )}
 
       {/* Table Container - Fixed Height with Scrollbars */}
       <div className="border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 shadow-sm">
@@ -233,18 +284,34 @@ const DataTable = ({
         
         {/* Pagination Footer */}
         <div className="px-4 py-3 bg-gray-50 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="text-sm text-gray-700 dark:text-gray-300">
-            <span>
-              Showing {filteredData.length > 0 ? startIndex + 1 : 0} to {Math.min(startIndex + itemsPerPage, filteredData.length)} of {filteredData.length} results
-            </span>
-            {searchTerm && (
-              <span className="ml-2 text-xs text-gray-500">
-                (filtered from {data.length} total)
+          <div className="flex items-center gap-4">
+            <div className="text-sm text-gray-700 dark:text-gray-300">
+              <span>
+                Showing {displayTotalItems > 0 ? startIndex + 1 : 0} to {Math.min(startIndex + itemsPerPage, displayTotalItems)} of {displayTotalItems} results
               </span>
+            </div>
+            
+            {/* Items per page selector */}
+            {onItemsPerPageChange && (
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-700 dark:text-gray-300">Show:</span>
+                <Select value={itemsPerPage.toString()} onValueChange={handleItemsPerPageChange}>
+                  <SelectTrigger className="w-20 h-8">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="5">5</SelectItem>
+                    <SelectItem value="10">10</SelectItem>
+                    <SelectItem value="20">20</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                    <SelectItem value="100">100</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             )}
           </div>
           
-          {totalPages > 1 && (
+          {displayTotalPages > 1 && (
             <div className="flex items-center space-x-1">
               <Button
                 variant="outline"
@@ -270,7 +337,7 @@ const DataTable = ({
               
               <div className="flex items-center space-x-1 mx-2">
                 <span className="text-sm text-gray-700 dark:text-gray-300">
-                  Page {currentPage} of {totalPages}
+                  Page {currentPage} of {displayTotalPages}
                 </span>
               </div>
               
@@ -278,7 +345,7 @@ const DataTable = ({
                 variant="outline"
                 size="sm"
                 onClick={goToNextPage}
-                disabled={currentPage === totalPages}
+                disabled={currentPage === displayTotalPages}
                 className="h-8 w-8 p-0"
                 title="Next page"
               >
@@ -289,7 +356,7 @@ const DataTable = ({
                 variant="outline"
                 size="sm"
                 onClick={goToLastPage}
-                disabled={currentPage === totalPages}
+                disabled={currentPage === displayTotalPages}
                 className="h-8 w-8 p-0"
                 title="Last page"
               >
