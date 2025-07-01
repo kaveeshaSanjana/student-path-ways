@@ -8,6 +8,8 @@ import { useAuth, UserRole } from '@/contexts/AuthContext';
 import { Eye, EyeOff, GraduationCap, Wifi, WifiOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
+const BASE_URL = 'https://e2e0-2402-4000-2280-68b1-b149-ba1b-ef57-a0b9.ngrok-free.app';
+
 // Mock user credentials for different roles
 const mockUsers = [
   {

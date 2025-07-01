@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Eye, Plus, Search, Filter, Download, Upload, RefreshCw } from 'lucide-react';
-import { DataTable } from '@/components/ui/data-table';
+import DataTable from '@/components/ui/data-table';
 import CreateUserForm from '@/components/forms/CreateUserForm';
 import { useToast } from '@/hooks/use-toast';
 
@@ -112,8 +113,8 @@ const Users = () => {
     setCurrentPage(page);
   };
 
-  const handleItemsPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setItemsPerPage(parseInt(e.target.value));
+  const handleItemsPerPageChange = (newItemsPerPage: number) => {
+    setItemsPerPage(newItemsPerPage);
     setCurrentPage(1); // Reset to first page on items per page change
   };
 
@@ -161,53 +162,58 @@ const Users = () => {
     }
   };
 
+  const handleUserCreated = async () => {
+    await handleLoadData();
+    setIsCreateModalOpen(false);
+  };
+
   const columns = [
     {
-      accessorKey: 'id',
+      key: 'id',
       header: 'ID',
     },
     {
-      accessorKey: 'firstName',
+      key: 'firstName',
       header: 'First Name',
     },
     {
-      accessorKey: 'lastName',
+      key: 'lastName',
       header: 'Last Name',
     },
     {
-      accessorKey: 'email',
+      key: 'email',
       header: 'Email',
     },
     {
-      accessorKey: 'userType',
+      key: 'userType',
       header: 'User Type',
-      cell: ({ cell }) => (
-        <Badge variant="secondary">{cell.getValue()}</Badge>
+      render: (value: string) => (
+        <Badge variant="secondary">{value}</Badge>
       ),
     },
     {
-      accessorKey: 'status',
+      key: 'status',
       header: 'Status',
-      cell: ({ cell }) => (
+      render: (value: string) => (
         <Badge
           variant={
-            cell.getValue() === 'active'
-              ? 'success'
-              : cell.getValue() === 'inactive'
+            value === 'active'
+              ? 'default'
+              : value === 'inactive'
               ? 'destructive'
-              : 'default'
+              : 'secondary'
           }
         >
-          {cell.getValue()}
+          {value}
         </Badge>
       ),
     },
     {
-      accessorKey: 'location',
+      key: 'location',
       header: 'Location',
     },
     {
-      accessorKey: 'createdAt',
+      key: 'createdAt',
       header: 'Created At',
     },
   ];
@@ -280,45 +286,26 @@ const Users = () => {
                 <DialogHeader>
                   <DialogTitle>Create New User</DialogTitle>
                 </DialogHeader>
-                <CreateUserForm onClose={handleCloseCreateModal} onUserCreated={handleLoadData} />
+                <CreateUserForm onSubmit={handleUserCreated} onCancel={handleCloseCreateModal} />
               </DialogContent>
             </Dialog>
           </div>
         </CardHeader>
         <CardContent>
-          <DataTable columns={columns} data={users} isLoading={isLoading} />
-          <div className="flex items-center justify-between mt-4">
-            <Select value={itemsPerPage.toString()} onValueChange={(value) => handleItemsPerPageChange({ target: { value } } as any)}>
-              <SelectTrigger className="w-[70px]">
-                <SelectValue placeholder="10" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="5">5</SelectItem>
-                <SelectItem value="10">10</SelectItem>
-                <SelectItem value="20">20</SelectItem>
-                <SelectItem value="50">50</SelectItem>
-              </SelectContent>
-            </Select>
-            <div className="flex items-center space-x-2">
-              <Button
-                onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage === 1}
-                variant="outline"
-                size="sm"
-              >
-                Previous
-              </Button>
-              <span>{`Page ${currentPage} of ${totalPages}`}</span>
-              <Button
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === totalPages}
-                variant="outline"
-                size="sm"
-              >
-                Next
-              </Button>
-            </div>
-          </div>
+          <DataTable 
+            title="Users"
+            columns={columns} 
+            data={users}
+            currentPage={currentPage}
+            totalItems={totalUsers}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+            onItemsPerPageChange={handleItemsPerPageChange}
+            itemsPerPage={itemsPerPage}
+            allowAdd={false}
+            allowEdit={true}
+            allowDelete={true}
+          />
         </CardContent>
       </Card>
     </div>

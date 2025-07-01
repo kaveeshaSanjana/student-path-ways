@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -5,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Eye, Plus, Search, Pencil, Trash2, RefreshCw, Building2 } from 'lucide-react';
-import { DataTable } from '@/components/ui/data-table';
+import DataTable from '@/components/ui/data-table';
 import CreateInstituteForm from '@/components/forms/CreateInstituteForm';
 import { useToast } from '@/hooks/use-toast';
 
@@ -17,12 +18,22 @@ interface Institute {
   code: string;
   description: string;
   isActive: boolean;
+  email?: string;
+  phone?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  pinCode?: string;
+  imageUrl?: string;
 }
 
 const Institutes = () => {
   const [institutes, setInstitutes] = useState<Institute[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [selectedInstitute, setSelectedInstitute] = useState<Institute | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -61,46 +72,153 @@ const Institutes = () => {
     }
   };
 
+  const handleCreateInstitute = async (data: any) => {
+    try {
+      const response = await fetch(`${BASE_URL}/institutes`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log('Institute created:', result);
+      
+      toast({
+        title: "Success",
+        description: "Institute created successfully",
+      });
+      
+      setIsCreateDialogOpen(false);
+      handleLoadData();
+    } catch (error) {
+      console.error('Error creating institute:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create institute. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEditInstitute = async (data: any) => {
+    if (!selectedInstitute) return;
+
+    try {
+      const response = await fetch(`${BASE_URL}/institutes/${selectedInstitute.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log('Institute updated:', result);
+      
+      toast({
+        title: "Success",
+        description: "Institute updated successfully",
+      });
+      
+      setIsEditDialogOpen(false);
+      setSelectedInstitute(null);
+      handleLoadData();
+    } catch (error) {
+      console.error('Error updating institute:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update institute. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteInstitute = async (institute: Institute) => {
+    if (!confirm(`Are you sure you want to delete ${institute.name}?`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`${BASE_URL}/institutes/${institute.id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      toast({
+        title: "Success",
+        description: "Institute deleted successfully",
+      });
+      
+      handleLoadData();
+    } catch (error) {
+      console.error('Error deleting institute:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete institute. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEdit = (institute: Institute) => {
+    setSelectedInstitute(institute);
+    setIsEditDialogOpen(true);
+  };
+
   const columns = [
     {
-      accessorKey: 'name',
-      header: 'Name',
-    },
-    {
-      accessorKey: 'code',
-      header: 'Code',
-    },
-    {
-      accessorKey: 'description',
-      header: 'Description',
-    },
-    {
-      accessorKey: 'isActive',
-      header: 'Status',
-      cell: ({ row }) => (
-        <Badge variant={row.original.isActive ? 'success' : 'destructive'}>
-          {row.original.isActive ? 'Active' : 'Inactive'}
-        </Badge>
+      key: 'imageUrl',
+      header: 'Image',
+      render: (value: string) => (
+        value ? (
+          <img src={value} alt="Institute" className="w-10 h-10 rounded-full object-cover" />
+        ) : (
+          <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
+            <Building2 className="w-5 h-5 text-gray-400" />
+          </div>
+        )
       ),
     },
     {
-      id: 'actions',
-      header: 'Actions',
-      cell: ({ row }) => (
-        <div className="flex items-center space-x-2">
-          <Button variant="ghost" size="sm">
-            <Eye className="h-4 w-4 mr-2" />
-            View
-          </Button>
-          <Button variant="ghost" size="sm">
-            <Pencil className="h-4 w-4 mr-2" />
-            Edit
-          </Button>
-          <Button variant="ghost" size="sm" className="text-red-500">
-            <Trash2 className="h-4 w-4 mr-2" />
-            Delete
-          </Button>
-        </div>
+      key: 'name',
+      header: 'Name',
+    },
+    {
+      key: 'code',
+      header: 'Code',
+    },
+    {
+      key: 'email',
+      header: 'Email',
+    },
+    {
+      key: 'phone',
+      header: 'Phone',
+    },
+    {
+      key: 'city',
+      header: 'City',
+    },
+    {
+      key: 'isActive',
+      header: 'Status',
+      render: (value: boolean) => (
+        <Badge variant={value ? 'default' : 'destructive'}>
+          {value ? 'Active' : 'Inactive'}
+        </Badge>
       ),
     },
   ];
@@ -113,7 +231,7 @@ const Institutes = () => {
           Institutes
         </CardTitle>
         <div className="flex items-center space-x-2">
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={handleLoadData}>
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
           </Button>
@@ -124,23 +242,54 @@ const Institutes = () => {
                 Add Institute
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
+            <DialogContent className="sm:max-w-[600px]">
               <DialogHeader>
                 <DialogTitle>Create Institute</DialogTitle>
               </DialogHeader>
-              <CreateInstituteForm onClose={() => setIsCreateDialogOpen(false)} onInstituteCreated={handleLoadData} />
+              <CreateInstituteForm 
+                onSubmit={handleCreateInstitute} 
+                onCancel={() => setIsCreateDialogOpen(false)} 
+              />
             </DialogContent>
           </Dialog>
         </div>
       </div>
+
       <Card>
         <CardHeader>
           <CardTitle>Institutes List</CardTitle>
         </CardHeader>
         <CardContent>
-          <DataTable columns={columns} data={institutes} isLoading={isLoading} />
+          <DataTable 
+            title="Institutes"
+            columns={columns} 
+            data={institutes} 
+            onEdit={handleEdit}
+            onDelete={handleDeleteInstitute}
+            allowAdd={false}
+            allowEdit={true}
+            allowDelete={true}
+          />
         </CardContent>
       </Card>
+
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Edit Institute</DialogTitle>
+          </DialogHeader>
+          {selectedInstitute && (
+            <CreateInstituteForm 
+              onSubmit={handleEditInstitute} 
+              onCancel={() => {
+                setIsEditDialogOpen(false);
+                setSelectedInstitute(null);
+              }}
+              initialData={selectedInstitute}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
