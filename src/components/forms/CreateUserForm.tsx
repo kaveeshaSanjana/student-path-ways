@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -63,8 +62,20 @@ const CreateUserForm = ({ onSubmit, onCancel, initialData, isEditing = false }: 
     }
   });
 
+  const formatDateToMMDDYYYY = (dateString: string) => {
+    const date = new Date(dateString);
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${month}/${day}/${year}`;
+  };
+
   const handleSubmit = (data: UserFormData) => {
-    onSubmit(data);
+    const formattedData = {
+      ...data,
+      dateOfBirth: formatDateToMMDDYYYY(data.dateOfBirth)
+    };
+    onSubmit(formattedData);
   };
 
   return (
@@ -172,6 +183,7 @@ const CreateUserForm = ({ onSubmit, onCancel, initialData, isEditing = false }: 
                           <Input type="date" {...field} className="text-sm" />
                         </FormControl>
                         <FormMessage className="text-xs" />
+                        <p className="text-xs text-gray-500">Will be sent as MM/DD/YYYY format</p>
                       </FormItem>
                     )}
                   />
