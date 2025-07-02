@@ -54,12 +54,13 @@ const Sidebar = ({ isOpen, onClose, currentPage, onPageChange }: SidebarProps) =
       icon: GraduationCap,
       permission: 'view-students'
     },
-    {
+    // Remove teachers section for SystemAdmin
+    ...(user?.role !== 'SystemAdmin' ? [{
       id: 'teachers',
       label: 'Teachers',
       icon: UserCheck,
       permission: 'view-teachers'
-    },
+    }] : []),
     {
       id: 'grades',
       label: 'Grades',

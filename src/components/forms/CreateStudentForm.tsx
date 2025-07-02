@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -57,7 +56,9 @@ const CreateStudentForm = ({ onSubmit, onCancel, initialData, isEditing = false 
       gender: initialData?.gender || '',
       dateOfBirth: initialData?.dateOfBirth ? 
         (initialData.dateOfBirth.includes('/') ? 
-          initialData.dateOfBirth.split('/').reverse().join('-') : 
+          // Convert MM/DD/YYYY to YYYY-MM-DD for form display
+          initialData.dateOfBirth.split('/').reverse().join('-').replace(/(\d{4})-(\d{1,2})-(\d{1,2})/, 
+            (match, year, month, day) => `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`) : 
           initialData.dateOfBirth.split('T')[0]
         ) : '',
       isActive: initialData?.isActive ?? true,
@@ -65,18 +66,11 @@ const CreateStudentForm = ({ onSubmit, onCancel, initialData, isEditing = false 
     }
   });
 
-  const formatDateToMMDDYYYY = (dateString: string) => {
-    const date = new Date(dateString + 'T00:00:00');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const year = date.getFullYear();
-    return `${month}/${day}/${year}`;
-  };
-
   const handleSubmit = (data: StudentFormData) => {
+    // Send date in YYYY-MM-DD format (as it comes from the date input)
     const formattedData = {
       ...data,
-      dateOfBirth: formatDateToMMDDYYYY(data.dateOfBirth)
+      dateOfBirth: data.dateOfBirth // Keep YYYY-MM-DD format
     };
     
     // Remove password field if editing

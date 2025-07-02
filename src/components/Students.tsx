@@ -176,6 +176,12 @@ const Students = () => {
     try {
       const token = localStorage.getItem('authToken');
       
+      // Format date to YYYY-MM-DD before sending
+      const formattedStudentData = {
+        ...studentData,
+        dateOfBirth: studentData.dateOfBirth // Keep as YYYY-MM-DD format from date input
+      };
+      
       const response = await fetch(`${BASE_URL}/students`, {
         method: 'POST',
         headers: {
@@ -183,7 +189,7 @@ const Students = () => {
           'Content-Type': 'application/json',
           'ngrok-skip-browser-warning': 'true'
         },
-        body: JSON.stringify({ user: studentData })
+        body: JSON.stringify({ user: formattedStudentData })
       });
 
       if (!response.ok) {
@@ -207,15 +213,15 @@ const Students = () => {
     }
   };
 
-  const handleEditStudent = (student: any) => {
-    console.log('Edit student:', student);
-    setSelectedStudent(student);
-    setIsEditDialogOpen(true);
-  };
-
   const handleUpdateStudent = async (studentData: any) => {
     try {
       const token = localStorage.getItem('authToken');
+      
+      // Format date to YYYY-MM-DD before sending
+      const formattedStudentData = {
+        ...studentData,
+        dateOfBirth: studentData.dateOfBirth // Keep as YYYY-MM-DD format from date input
+      };
       
       const response = await fetch(`${BASE_URL}/students/${selectedStudent.id}`, {
         method: 'PATCH',
@@ -224,7 +230,7 @@ const Students = () => {
           'Content-Type': 'application/json',
           'ngrok-skip-browser-warning': 'true'
         },
-        body: JSON.stringify(studentData)
+        body: JSON.stringify(formattedStudentData)
       });
 
       if (!response.ok) {
