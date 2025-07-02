@@ -1,101 +1,165 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Badge } from '@/components/ui/badge';
-import { Eye, Plus, Search, Pencil, Trash2, RefreshCw, Building2 } from 'lucide-react';
-import DataTable from '@/components/ui/data-table';
-import CreateInstituteForm from '@/components/forms/CreateInstituteForm';
+import { Label } from '@/components/ui/label';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import { useAuth } from '@/contexts/AuthContext';
+import { PlusIcon, PencilIcon, TrashIcon, SearchIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-
-const BASE_URL = 'https://e2e0-2402-4000-2280-68b1-b149-ba1b-ef57-a0b9.ngrok-free.app';
-
-interface Institute {
-  id: string;
-  name: string;
-  code: string;
-  description: string;
-  isActive: boolean;
-  email?: string;
-  phone?: string;
-  address?: string;
-  city?: string;
-  state?: string;
-  country?: string;
-  pinCode?: string;
-  imageUrl?: string;
-}
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { Switch } from "@/components/ui/switch"
+import { cn } from "@/lib/utils"
 
 const Institutes = () => {
-  const [institutes, setInstitutes] = useState<Institute[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [selectedInstitute, setSelectedInstitute] = useState<Institute | null>(null);
+  const [institutes, setInstitutes] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const { user } = useAuth();
   const { toast } = useToast();
 
-  useEffect(() => {
-    handleLoadData();
-  }, []);
+  const itemsPerPage = 10;
 
-  const handleLoadData = async () => {
-    setIsLoading(true);
-    console.log('Loading institutes data...');
-    
+  const getBaseUrl = () => {
+    return localStorage.getItem('baseUrl') || 'http://localhost:3000';
+  };
+
+  const fetchInstitutes = async (page: number = 1) => {
     try {
-      const response = await fetch(`${BASE_URL}/institutes`);
+      console.log('Loading institutes data...');
+      setLoading(true);
+      setError(null);
       
+      const baseUrl = getBaseUrl();
+      const response = await fetch(`${baseUrl}/institutes?page=${page}&limit=${itemsPerPage}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const data = await response.json();
-      console.log('Institutes data loaded:', data);
+      console.log('Institutes data:', data);
       
-      setInstitutes(Array.isArray(data) ? data : []);
-      
-      toast({
-        title: "Success",
-        description: `Loaded ${Array.isArray(data) ? data.length : 0} institutes successfully`,
-      });
+      if (Array.isArray(data)) {
+        setInstitutes(data);
+        setTotalPages(Math.ceil(data.length / itemsPerPage));
+      } else if (data.institutes && Array.isArray(data.institutes)) {
+        setInstitutes(data.institutes);
+        setTotalPages(Math.ceil((data.total || data.institutes.length) / itemsPerPage));
+      } else {
+        console.error('Unexpected data format:', data);
+        setInstitutes([]);
+      }
     } catch (error) {
       console.error('Error loading institutes:', error);
+      setError('Failed to load institutes. Please try again.');
       toast({
         title: "Error",
-        description: "Failed to load institutes data. Please try again.",
+        description: "Failed to load institutes. Please try again.",
         variant: "destructive",
       });
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  const handleCreateInstitute = async (data: any) => {
+  useEffect(() => {
+    fetchInstitutes();
+  }, []);
+
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+  };
+
+  const filteredInstitutes = institutes.filter(institute =>
+    institute.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    institute.code.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+    fetchInstitutes(newPage);
+  };
+
+  const [newInstitute, setNewInstitute] = useState({
+    name: '',
+    code: '',
+    description: '',
+    isActive: true,
+  });
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setNewInstitute(prevState => ({
+      ...prevState,
+      [name]: value,
+    }));
+  };
+
+  const handleIsActiveChange = (checked: boolean) => {
+    setNewInstitute(prevState => ({
+      ...prevState,
+      isActive: checked,
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     try {
-      const response = await fetch(`${BASE_URL}/institutes`, {
+      const baseUrl = getBaseUrl();
+      const response = await fetch(`${baseUrl}/institutes`, {
         method: 'POST',
         headers: {
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify(newInstitute),
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error('Failed to create institute');
       }
 
-      const result = await response.json();
-      console.log('Institute created:', result);
-      
       toast({
         title: "Success",
         description: "Institute created successfully",
       });
-      
-      setIsCreateDialogOpen(false);
-      handleLoadData();
+
+      // Refresh the institutes list
+      await fetchInstitutes(currentPage);
+      setShowCreateForm(false);
+      setNewInstitute({ name: '', code: '', description: '', isActive: true });
     } catch (error) {
       console.error('Error creating institute:', error);
       toast({
@@ -106,63 +170,28 @@ const Institutes = () => {
     }
   };
 
-  const handleEditInstitute = async (data: any) => {
-    if (!selectedInstitute) return;
-
+  const handleDeleteInstitute = async (instituteId: string) => {
     try {
-      const response = await fetch(`${BASE_URL}/institutes/${selectedInstitute.id}`, {
-        method: 'PUT',
+      const baseUrl = getBaseUrl();
+      const response = await fetch(`${baseUrl}/institutes/${instituteId}`, {
+        method: 'DELETE',
         headers: {
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(data),
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const result = await response.json();
-      console.log('Institute updated:', result);
-      
-      toast({
-        title: "Success",
-        description: "Institute updated successfully",
-      });
-      
-      setIsEditDialogOpen(false);
-      setSelectedInstitute(null);
-      handleLoadData();
-    } catch (error) {
-      console.error('Error updating institute:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update institute. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleDeleteInstitute = async (institute: Institute) => {
-    if (!confirm(`Are you sure you want to delete ${institute.name}?`)) {
-      return;
-    }
-
-    try {
-      const response = await fetch(`${BASE_URL}/institutes/${institute.id}`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error('Failed to delete institute');
       }
 
       toast({
         title: "Success",
         description: "Institute deleted successfully",
       });
-      
-      handleLoadData();
+
+      // Refresh the institutes list
+      await fetchInstitutes(currentPage);
     } catch (error) {
       console.error('Error deleting institute:', error);
       toast({
@@ -173,123 +202,159 @@ const Institutes = () => {
     }
   };
 
-  const handleEdit = (institute: Institute) => {
-    setSelectedInstitute(institute);
-    setIsEditDialogOpen(true);
-  };
-
-  const columns = [
-    {
-      key: 'imageUrl',
-      header: 'Image',
-      render: (value: string) => (
-        value ? (
-          <img src={value} alt="Institute" className="w-10 h-10 rounded-full object-cover" />
-        ) : (
-          <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
-            <Building2 className="w-5 h-5 text-gray-400" />
-          </div>
-        )
-      ),
-    },
-    {
-      key: 'name',
-      header: 'Name',
-    },
-    {
-      key: 'code',
-      header: 'Code',
-    },
-    {
-      key: 'email',
-      header: 'Email',
-    },
-    {
-      key: 'phone',
-      header: 'Phone',
-    },
-    {
-      key: 'city',
-      header: 'City',
-    },
-    {
-      key: 'isActive',
-      header: 'Status',
-      render: (value: boolean) => (
-        <Badge variant={value ? 'default' : 'destructive'}>
-          {value ? 'Active' : 'Inactive'}
-        </Badge>
-      ),
-    },
-  ];
-
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <CardTitle className="text-2xl flex items-center">
-          <Building2 className="mr-2 h-6 w-6" />
-          Institutes
-        </CardTitle>
+        <h1 className="text-2xl font-bold">Institutes</h1>
         <div className="flex items-center space-x-2">
-          <Button variant="outline" size="sm" onClick={handleLoadData}>
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
-          </Button>
-          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+          <div className="relative">
+            <Input
+              type="text"
+              placeholder="Search institutes..."
+              value={searchTerm}
+              onChange={handleSearch}
+              className="pr-10"
+            />
+            <SearchIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
+          </div>
+          <Dialog>
             <DialogTrigger asChild>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
+              <Button variant="primary">
+                <PlusIcon className="mr-2 h-4 w-4" />
                 Add Institute
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px]">
+            <DialogContent className="sm:max-w-[425px]">
               <DialogHeader>
-                <DialogTitle>Create Institute</DialogTitle>
+                <DialogTitle>Add Institute</DialogTitle>
+                <DialogDescription>
+                  Create a new institute by entering the details below.
+                </DialogDescription>
               </DialogHeader>
-              <CreateInstituteForm 
-                onSubmit={handleCreateInstitute} 
-                onCancel={() => setIsCreateDialogOpen(false)} 
-              />
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="name" className="text-right">
+                    Name
+                  </Label>
+                  <Input
+                    type="text"
+                    id="name"
+                    name="name"
+                    value={newInstitute.name}
+                    onChange={handleInputChange}
+                    className="col-span-3"
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="code" className="text-right">
+                    Code
+                  </Label>
+                  <Input
+                    type="text"
+                    id="code"
+                    name="code"
+                    value={newInstitute.code}
+                    onChange={handleInputChange}
+                    className="col-span-3"
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="description" className="text-right">
+                    Description
+                  </Label>
+                  <Input
+                    id="description"
+                    name="description"
+                    value={newInstitute.description}
+                    onChange={handleInputChange}
+                    className="col-span-3"
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="active" className="text-right">
+                    Active
+                  </Label>
+                  <Switch
+                    id="active"
+                    checked={newInstitute.isActive}
+                    onCheckedChange={handleIsActiveChange}
+                    className="col-span-3"
+                  />
+                </div>
+              </div>
+              <Button type="submit" onClick={handleSubmit}>Create Institute</Button>
             </DialogContent>
           </Dialog>
         </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Institutes List</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <DataTable 
-            title="Institutes"
-            columns={columns} 
-            data={institutes} 
-            onEdit={handleEdit}
-            onDelete={handleDeleteInstitute}
-            allowAdd={false}
-            allowEdit={true}
-            allowDelete={true}
-          />
-        </CardContent>
-      </Card>
+      {loading ? (
+        <p>Loading institutes...</p>
+      ) : error ? (
+        <p className="text-red-500">{error}</p>
+      ) : filteredInstitutes.length > 0 ? (
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[100px]">Code</TableHead>
+                <TableHead>Name</TableHead>
+                <TableHead>Description</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredInstitutes.map(institute => (
+                <TableRow key={institute.id}>
+                  <TableCell className="font-medium">{institute.code}</TableCell>
+                  <TableCell>{institute.name}</TableCell>
+                  <TableCell>{institute.description}</TableCell>
+                  <TableCell>{institute.isActive ? 'Active' : 'Inactive'}</TableCell>
+                  <TableCell className="text-right">
+                    <Button variant="ghost" size="sm">
+                      <PencilIcon className="h-4 w-4 mr-2" />
+                      Edit
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => handleDeleteInstitute(institute.id)}>
+                      <TrashIcon className="h-4 w-4 mr-2" />
+                      Delete
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      ) : (
+        <p>No institutes found.</p>
+      )}
 
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>Edit Institute</DialogTitle>
-          </DialogHeader>
-          {selectedInstitute && (
-            <CreateInstituteForm 
-              onSubmit={handleEditInstitute} 
-              onCancel={() => {
-                setIsEditDialogOpen(false);
-                setSelectedInstitute(null);
-              }}
-              initialData={selectedInstitute}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
+      {institutes.length > 0 && (
+        <div className="flex justify-between items-center mt-4">
+          <p className="text-sm text-gray-500">
+            Showing page {currentPage} of {totalPages}
+          </p>
+          <div className="flex space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={currentPage === 1}
+              onClick={() => handlePageChange(currentPage - 1)}
+            >
+              Previous
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={currentPage === totalPages}
+              onClick={() => handlePageChange(currentPage + 1)}
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

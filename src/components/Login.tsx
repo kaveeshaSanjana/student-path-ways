@@ -6,10 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth, UserRole } from '@/contexts/AuthContext';
-import { Eye, EyeOff, GraduationCap, Wifi, WifiOff } from 'lucide-react';
+import { Eye, EyeOff, GraduationCap, Wifi, WifiOff, Settings } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-
-const BASE_URL = 'https://e2e0-2402-4000-2280-68b1-b149-ba1b-ef57-a0b9.ngrok-free.app';
 
 // Mock user credentials for different roles
 const mockUsers = [
@@ -72,8 +70,10 @@ interface LoginProps {
 const Login = ({ onLogin }: LoginProps) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [baseUrl, setBaseUrl] = useState('http://localhost:3000');
   const [selectedRole, setSelectedRole] = useState<UserRole>('Student');
   const [showPassword, setShowPassword] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [useApiLogin, setUseApiLogin] = useState(true);
@@ -88,21 +88,25 @@ const Login = ({ onLogin }: LoginProps) => {
     }
   };
 
-  // Map API user types to frontend roles
+  // Updated user type mapping to handle backend enum
   const mapUserTypeToRole = (userType: string): UserRole => {
     const typeMapping: Record<string, UserRole> = {
       'STUDENT': 'Student',
       'TEACHER': 'Teacher',
-      'ADMIN': 'SystemAdmin',
+      'SUPER_ADMIN': 'SystemAdmin',
+      'SUPERADMIN': 'SystemAdmin',
       'INSTITUTE_ADMIN': 'InstituteAdmin',
-      'ATTENDANCE_MARKER': 'AttendanceMarker'
+      'ATTEDANCE_MARKER': 'AttendanceMarker',
+      'ATTENDANCE_MARKER': 'AttendanceMarker',
+      'PARENT': 'Student' // Map parent to student for now
     };
     return typeMapping[userType.toUpperCase()] || 'Student';
   };
 
   const fetchUserInstitutes = async (userId: string, accessToken: string) => {
     try {
-      const response = await fetch(`${BASE_URL}/users/${userId}/institutes`, {
+      console.log(`Fetching institutes for user ${userId}...`);
+      const response = await fetch(`${baseUrl}/users/${userId}/institutes`, {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
@@ -111,7 +115,10 @@ const Login = ({ onLogin }: LoginProps) => {
 
       if (response.ok) {
         const institutes = await response.json();
+        console.log('Fetched institutes:', institutes);
         return Array.isArray(institutes) ? institutes : [];
+      } else {
+        console.error('Failed to fetch institutes:', response.status, response.statusText);
       }
     } catch (error) {
       console.error('Error fetching user institutes:', error);
@@ -121,7 +128,8 @@ const Login = ({ onLogin }: LoginProps) => {
 
   const handleApiLogin = async (email: string, password: string) => {
     try {
-      const response = await fetch(`${BASE_URL}/auth/login`, {
+      console.log(`Attempting API login to ${baseUrl}/auth/login`);
+      const response = await fetch(`${baseUrl}/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -130,10 +138,13 @@ const Login = ({ onLogin }: LoginProps) => {
       });
 
       if (!response.ok) {
-        throw new Error('Invalid credentials');
+        const errorText = await response.text();
+        console.error('API login failed:', response.status, response.statusText, errorText);
+        throw new Error(`Login failed: ${response.status} ${response.statusText}`);
       }
 
       const data = await response.json();
+      console.log('API login response:', data);
       
       // Fetch user institutes if available
       const institutes = await fetchUserInstitutes(data.user.id, data.access_token);
@@ -148,16 +159,19 @@ const Login = ({ onLogin }: LoginProps) => {
         accessToken: data.access_token
       };
 
+      console.log('Mapped user:', user);
       return user;
     } catch (error) {
-      throw new Error('API login failed');
+      console.error('API login error:', error);
+      throw error;
     }
   };
 
   const handleMockLogin = async (email: string, password: string, role: UserRole) => {
     // Even for mock login, we should try to validate against the backend first
     try {
-      const response = await fetch(`${BASE_URL}/auth/login`, {
+      console.log(`Attempting backend validation for mock login to ${baseUrl}/auth/login`);
+      const response = await fetch(`${baseUrl}/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -205,6 +219,9 @@ const Login = ({ onLogin }: LoginProps) => {
     setError('');
     setIsLoading(true);
 
+    // Store base URL in localStorage for other components to use
+    localStorage.setItem('baseUrl', baseUrl);
+
     try {
       let user;
 
@@ -249,6 +266,42 @@ const Login = ({ onLogin }: LoginProps) => {
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">EduManage</h1>
           <p className="text-gray-600 dark:text-gray-400 mt-2">Institute Learning Management System</p>
         </div>
+
+        {/* Base URL Configuration */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Settings className="w-4 h-4" />
+              Development Settings
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowSettings(!showSettings)}
+                className="ml-auto"
+              >
+                {showSettings ? 'Hide' : 'Show'}
+              </Button>
+            </CardTitle>
+          </CardHeader>
+          {showSettings && (
+            <CardContent>
+              <div className="space-y-2">
+                <Label htmlFor="baseUrl">Backend URL</Label>
+                <Input
+                  id="baseUrl"
+                  type="url"
+                  placeholder="Enter backend URL"
+                  value={baseUrl}
+                  onChange={(e) => setBaseUrl(e.target.value)}
+                />
+                <p className="text-xs text-gray-500">
+                  Set the backend API URL for development
+                </p>
+              </div>
+            </CardContent>
+          )}
+        </Card>
 
         {/* Login Mode Toggle */}
         <Card>
