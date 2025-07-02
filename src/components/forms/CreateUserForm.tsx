@@ -65,11 +65,18 @@ const CreateUserForm = ({ onSubmit, onCancel, initialData, isEditing = false }: 
     }
   });
 
+  const formatDateToMMDDYYYY = (dateString: string) => {
+    const date = new Date(dateString + 'T00:00:00');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${month}/${day}/${year}`;
+  };
+
   const handleSubmit = (data: UserFormData) => {
-    // Send date in YYYY-MM-DD format (no conversion needed as HTML date input already provides this format)
     const formattedData = {
       ...data,
-      dateOfBirth: data.dateOfBirth // Keep original YYYY-MM-DD format
+      dateOfBirth: formatDateToMMDDYYYY(data.dateOfBirth)
     };
     onSubmit(formattedData);
   };
@@ -204,7 +211,7 @@ const CreateUserForm = ({ onSubmit, onCancel, initialData, isEditing = false }: 
                           <Input type="date" {...field} className="text-sm" />
                         </FormControl>
                         <FormMessage className="text-xs" />
-                        <p className="text-xs text-gray-500">Will be sent as YYYY-MM-DD format</p>
+                        <p className="text-xs text-gray-500">Will be sent as MM/DD/YYYY format</p>
                       </FormItem>
                     )}
                   />
@@ -359,32 +366,23 @@ const CreateUserForm = ({ onSubmit, onCancel, initialData, isEditing = false }: 
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-sm">User Type *</FormLabel>
-                        {isEditing ? (
+                        <Select 
+                          onValueChange={field.onChange} 
+                          defaultValue={field.value}
+                          disabled={isEditing}
+                        >
                           <FormControl>
-                            <Input 
-                              value={field.value} 
-                              readOnly 
-                              className="text-sm bg-gray-100 cursor-not-allowed" 
-                            />
+                            <SelectTrigger className={`text-sm ${isEditing ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                              <SelectValue placeholder="Select user type" />
+                            </SelectTrigger>
                           </FormControl>
-                        ) : (
-                          <Select 
-                            onValueChange={field.onChange} 
-                            defaultValue={field.value}
-                          >
-                            <FormControl>
-                              <SelectTrigger className="text-sm">
-                                <SelectValue placeholder="Select user type" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="SUPER_ADMIN">Super Admin</SelectItem>
-                              <SelectItem value="INSTITUTE_ADMIN">Institute Admin</SelectItem>
-                              <SelectItem value="TEACHER">Teacher</SelectItem>
-                              <SelectItem value="ATTEDANCE_MARKER">Attendance Marker</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        )}
+                          <SelectContent>
+                            <SelectItem value="SUPER_ADMIN">Super Admin</SelectItem>
+                            <SelectItem value="INSTITUTE_ADMIN">Institute Admin</SelectItem>
+                            <SelectItem value="TEACHER">Teacher</SelectItem>
+                            <SelectItem value="ATTEDANCE_MARKER">Attendance Marker</SelectItem>
+                          </SelectContent>
+                        </Select>
                         <FormMessage className="text-xs" />
                         <FormDescription className="text-xs text-amber-600">
                           {isEditing ? 'User type cannot be changed after creation' : 'Student and Parent types cannot be created through this form'}
