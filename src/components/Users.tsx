@@ -96,8 +96,6 @@ const Users = () => {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
-  const [showViewUser, setShowViewUser] = useState(false);
-  const [viewingUser, setViewingUser] = useState<User | null>(null);
   const { user: currentUser } = useAuth();
   const { toast } = useToast();
 
@@ -175,19 +173,6 @@ const Users = () => {
       });
 
       console.log('Response status:', response.status);
-
-      if (response.status === 404) {
-        // Handle 404 specifically
-        if (searchById.trim()) {
-          setError(`User with ID "${searchById.trim()}" not found.`);
-        } else {
-          setError('No users found matching the current filters. Please try adjusting your search criteria.');
-        }
-        setUsers([]);
-        setTotalPages(1);
-        setTotalItems(0);
-        return;
-      }
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -359,12 +344,6 @@ const Users = () => {
 
   const onCreateUserSubmit = async (values: z.infer<typeof CreateUserSchema>) => {
     try {
-      // Format the date to YYYY-MM-DD
-      const formattedValues = {
-        ...values,
-        dateOfBirth: values.dateOfBirth // Already in YYYY-MM-DD format from date input
-      };
-
       const baseUrl = getBaseUrl();
       const response = await fetch(`${baseUrl}/users`, {
         method: 'POST',
@@ -373,7 +352,7 @@ const Users = () => {
           'Content-Type': 'application/json',
           'ngrok-skip-browser-warning': 'true'
         },
-        body: JSON.stringify(formattedValues),
+        body: JSON.stringify(values),
       });
   
       if (!response.ok) {
@@ -460,11 +439,6 @@ const Users = () => {
       isActive: user.isActive
     });
     setShowEditForm(true);
-  };
-
-  const handleViewUser = (user: User) => {
-    setViewingUser(user);
-    setShowViewUser(true);
   };
 
   const handlePageChange = (newPage: number) => {
@@ -970,7 +944,7 @@ const Users = () => {
                     <TableCell>{user.email}</TableCell>
                     <TableCell>{user.phone}</TableCell>
                     <TableCell>{user.userType}</TableCell>
-                    <TableCell>{user.gender || 'N/A'}</TableCell>
+                    <TableCell>{user.gender}</TableCell>
                     <TableCell>{user.city}</TableCell>
                     <TableCell>
                       <span className={`px-2 py-1 text-xs rounded-full ${
@@ -982,14 +956,6 @@ const Users = () => {
                       </span>
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => handleViewUser(user)}
-                        className="mr-2"
-                      >
-                        View
-                      </Button>
                       <Button 
                         variant="ghost" 
                         size="sm"
@@ -1351,143 +1317,6 @@ const Users = () => {
               </div>
             </form>
           </Form>
-        </DialogContent>
-      </Dialog>
-
-      {/* View User Dialog */}
-      <Dialog open={showViewUser} onOpenChange={setShowViewUser}>
-        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>User Details</DialogTitle>
-            <DialogDescription>
-              Complete information about the user
-            </DialogDescription>
-          </DialogHeader>
-          {viewingUser && (
-            <div className="space-y-6">
-              {/* Profile Image */}
-              {viewingUser.imageUrl && (
-                <div className="flex justify-center">
-                  <img 
-                    src={viewingUser.imageUrl} 
-                    alt={`${viewingUser.firstName} ${viewingUser.lastName}`}
-                    className="w-24 h-24 rounded-full object-cover border-2 border-gray-200"
-                  />
-                </div>
-              )}
-              
-              {/* Personal Information */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-sm font-medium text-gray-500">First Name</Label>
-                  <p className="text-sm font-medium">{viewingUser.firstName}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-gray-500">Last Name</Label>
-                  <p className="text-sm font-medium">{viewingUser.lastName}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-gray-500">Email</Label>
-                  <p className="text-sm">{viewingUser.email}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-gray-500">Phone</Label>
-                  <p className="text-sm">{viewingUser.phone}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-gray-500">User Type</Label>
-                  <p className="text-sm">{viewingUser.userType}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-gray-500">Gender</Label>
-                  <p className="text-sm">{viewingUser.gender || 'Not specified'}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-gray-500">Date of Birth</Label>
-                  <p className="text-sm">{viewingUser.dateOfBirth ? new Date(viewingUser.dateOfBirth).toLocaleDateString() : 'Not specified'}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-gray-500">NIC</Label>
-                  <p className="text-sm">{viewingUser.nic}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-gray-500">Birth Certificate No</Label>
-                  <p className="text-sm">{viewingUser.birthCertificateNo}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-gray-500">Status</Label>
-                  <span className={`px-2 py-1 text-xs rounded-full ${
-                    viewingUser.isActive 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-red-100 text-red-800'
-                  }`}>
-                    {viewingUser.isActive ? 'Active' : 'Inactive'}
-                  </span>
-                </div>
-              </div>
-
-              {/* Address Information */}
-              <div>
-                <h3 className="text-lg font-semibold mb-3">Address Information</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="col-span-2">
-                    <Label className="text-sm font-medium text-gray-500">Address Line 1</Label>
-                    <p className="text-sm">{viewingUser.addressLine1}</p>
-                  </div>
-                  {viewingUser.addressLine2 && (
-                    <div className="col-span-2">
-                      <Label className="text-sm font-medium text-gray-500">Address Line 2</Label>
-                      <p className="text-sm">{viewingUser.addressLine2}</p>
-                    </div>
-                  )}
-                  <div>
-                    <Label className="text-sm font-medium text-gray-500">City</Label>
-                    <p className="text-sm">{viewingUser.city}</p>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium text-gray-500">District</Label>
-                    <p className="text-sm">{viewingUser.district}</p>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium text-gray-500">Province</Label>
-                    <p className="text-sm">{viewingUser.province}</p>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium text-gray-500">Postal Code</Label>
-                    <p className="text-sm">{viewingUser.postalCode}</p>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium text-gray-500">Country</Label>
-                    <p className="text-sm">{viewingUser.country}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* System Information */}
-              <div>
-                <h3 className="text-lg font-semibold mb-3">System Information</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-sm font-medium text-gray-500">User ID</Label>
-                    <p className="text-sm font-mono">{viewingUser.id}</p>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium text-gray-500">Created At</Label>
-                    <p className="text-sm">{new Date(viewingUser.createdAt).toLocaleString()}</p>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium text-gray-500">Updated At</Label>
-                    <p className="text-sm">{new Date(viewingUser.updatedAt).toLocaleString()}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-          <div className="flex justify-end">
-            <Button variant="outline" onClick={() => setShowViewUser(false)}>
-              Close
-            </Button>
-          </div>
         </DialogContent>
       </Dialog>
     </div>

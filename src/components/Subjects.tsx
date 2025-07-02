@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import DataTable from '@/components/ui/data-table';
-import { useAuth } from '@/contexts/AuthContext';
-import { AccessControl } from '@/utils/permissions';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { AccessControl } from '@/utils/permissions';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import CreateSubjectForm from '@/components/forms/CreateSubjectForm';
@@ -14,29 +13,62 @@ interface SubjectsProps {
   apiLevel?: 'institute' | 'class' | 'subject';
 }
 
-interface Subject {
-  id: string;
-  code: string;
-  name: string;
-  description?: string;
-  category?: string;
-  creditHours?: number;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
+const mockSubjects = [
+  {
+    id: '1',
+    code: 'MATH101',
+    name: 'Mathematics',
+    class: 'Grade 10 - A',
+    teacher: 'Mr. Smith',
+    credits: 3,
+    description: 'Basic mathematics course for grade 10 students.',
+    status: 'Active',
+    institute: 'Main Campus'
+  },
+  {
+    id: '2',
+    code: 'SCI101',
+    name: 'Science',
+    class: 'Grade 10 - A',
+    teacher: 'Mrs. Johnson',
+    credits: 4,
+    description: 'Introduction to science for grade 10 students.',
+    status: 'Active',
+    institute: 'Main Campus'
+  },
+  {
+    id: '3',
+    code: 'ENG101',
+    name: 'English',
+    class: 'Grade 10 - B',
+    teacher: 'Mr. Williams',
+    credits: 3,
+    description: 'English language and literature course for grade 10 students.',
+    status: 'Active',
+    institute: 'Main Campus'
+  },
+  {
+    id: '4',
+    code: 'HIST101',
+    name: 'History',
+    class: 'Grade 11 - Science',
+    teacher: 'Ms. Brown',
+    credits: 3,
+    description: 'World history course for grade 11 students.',
+    status: 'Inactive',
+    institute: 'Science Branch'
+  }
+];
 
 const Subjects = ({ apiLevel = 'institute' }: SubjectsProps) => {
   const { user, selectedInstitute, selectedClass } = useAuth();
   const { toast } = useToast();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
-  const [subjectsData, setSubjectsData] = useState<Subject[]>([]);
+  const [selectedSubject, setSelectedSubject] = useState<any>(null);
+  const [subjectsData, setSubjectsData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [dataLoaded, setDataLoaded] = useState(false);
-
-  const baseUrl = localStorage.getItem('baseUrl') || 'https://a174-123-231-85-77.ngrok-free.app';
 
   const handleLoadData = async () => {
     setIsLoading(true);
@@ -44,41 +76,29 @@ const Subjects = ({ apiLevel = 'institute' }: SubjectsProps) => {
     console.log(`Current context - Institute: ${selectedInstitute?.name}, Class: ${selectedClass?.name}`);
     
     try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch(`${baseUrl}/subjects`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'ngrok-skip-browser-warning': 'true'
-        },
-      });
-
-      if (response.status === 404) {
-        setSubjectsData([]);
-        setDataLoaded(true);
-        toast({
-          title: "No Subjects Found",
-          description: "There are no subjects available according to the current filters.",
-          variant: "default"
-        });
-        return;
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Simulate filtering based on API level
+      let filteredData = mockSubjects;
+      if (apiLevel === 'class' && selectedClass) {
+        // Class level: show subjects for selected class
+        filteredData = mockSubjects.filter(subject => subject.class === selectedClass.name);
+      } else if (apiLevel === 'institute' && selectedInstitute) {
+        // Institute level: show subjects for selected institute
+        filteredData = mockSubjects.filter(subject => subject.institute === selectedInstitute.name);
       }
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      setSubjectsData(data);
+      
+      setSubjectsData(filteredData);
       setDataLoaded(true);
       toast({
         title: "Data Loaded",
-        description: `Successfully loaded ${data.length} subjects.`
+        description: `Successfully loaded ${filteredData.length} subjects.`
       });
-    } catch (error: any) {
-      console.error('Error loading subjects:', error);
+    } catch (error) {
       toast({
         title: "Load Failed",
-        description: "Failed to load subjects data. Please check if the backend is running.",
+        description: "Failed to load subjects data.",
         variant: "destructive"
       });
     } finally {
@@ -87,140 +107,68 @@ const Subjects = ({ apiLevel = 'institute' }: SubjectsProps) => {
   };
 
   useEffect(() => {
-    if (dataLoaded) {
-      handleLoadData();
-    }
+    handleLoadData();
   }, [apiLevel, selectedInstitute, selectedClass]);
 
   const subjectsColumns = [
     { key: 'code', header: 'Subject Code' },
     { key: 'name', header: 'Subject Name' },
+    { key: 'class', header: 'Class' },
+    { key: 'teacher', header: 'Teacher' },
+    { key: 'credits', header: 'Credits' },
+    { key: 'institute', header: 'Institute' },
     { key: 'description', header: 'Description' },
-    { key: 'category', header: 'Category' },
-    { key: 'creditHours', header: 'Credit Hours' },
     { 
-      key: 'isActive', 
+      key: 'status', 
       header: 'Status',
-      render: (value: boolean) => (
-        <Badge variant={value ? 'default' : 'secondary'}>
-          {value ? 'Active' : 'Inactive'}
+      render: (value: string) => (
+        <Badge variant={value === 'Active' ? 'default' : 'secondary'}>
+          {value}
         </Badge>
       )
-    },
-    { 
-      key: 'createdAt', 
-      header: 'Created At',
-      render: (value: string) => new Date(value).toLocaleDateString()
     }
   ];
 
-  const handleCreateSubject = async (subjectData: any) => {
-    try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch(`${baseUrl}/subjects`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-          'ngrok-skip-browser-warning': 'true'
-        },
-        body: JSON.stringify(subjectData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to create subject');
-      }
-
-      const newSubject = await response.json();
-      setSubjectsData(prev => [...prev, newSubject]);
-      toast({
-        title: "Subject Created",
-        description: `Subject ${subjectData.name} has been created successfully.`
-      });
-      setIsCreateDialogOpen(false);
-    } catch (error: any) {
-      toast({
-        title: "Creation Failed",
-        description: error.message,
-        variant: "destructive"
-      });
-    }
+  const handleCreateSubject = (subjectData: any) => {
+    console.log('Creating subject:', subjectData);
+    toast({
+      title: "Subject Created",
+      description: `Subject ${subjectData.name} has been created successfully.`
+    });
+    setIsCreateDialogOpen(false);
   };
 
-  const handleEditSubject = (subjectData: Subject) => {
+  const handleEditSubject = (subjectData: any) => {
+    console.log('Editing subject:', subjectData);
     setSelectedSubject(subjectData);
     setIsEditDialogOpen(true);
   };
 
-  const handleUpdateSubject = async (subjectData: any) => {
-    if (!selectedSubject) return;
-
-    try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch(`${baseUrl}/subjects/${selectedSubject.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-          'ngrok-skip-browser-warning': 'true'
-        },
-        body: JSON.stringify(subjectData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to update subject');
-      }
-
-      const updatedSubject = await response.json();
-      setSubjectsData(prev => prev.map(subject => 
-        subject.id === selectedSubject.id ? updatedSubject : subject
-      ));
-      toast({
-        title: "Subject Updated",
-        description: `Subject ${subjectData.name} has been updated successfully.`
-      });
-      setIsEditDialogOpen(false);
-      setSelectedSubject(null);
-    } catch (error: any) {
-      toast({
-        title: "Update Failed",
-        description: error.message,
-        variant: "destructive"
-      });
-    }
+  const handleUpdateSubject = (subjectData: any) => {
+    console.log('Updating subject:', subjectData);
+    toast({
+      title: "Subject Updated",
+      description: `Subject ${subjectData.name} has been updated successfully.`
+    });
+    setIsEditDialogOpen(false);
+    setSelectedSubject(null);
   };
 
-  const handleDeleteSubject = async (subjectData: Subject) => {
-    try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch(`${baseUrl}/subjects/${subjectData.id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'ngrok-skip-browser-warning': 'true'
-        },
-      });
+  const handleDeleteSubject = (subjectData: any) => {
+    console.log('Deleting subject:', subjectData);
+    toast({
+      title: "Subject Deleted",
+      description: `Subject ${subjectData.name} has been deleted.`,
+      variant: "destructive"
+    });
+  };
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to delete subject');
-      }
-
-      setSubjectsData(prev => prev.filter(subject => subject.id !== subjectData.id));
-      toast({
-        title: "Subject Deleted",
-        description: `Subject ${subjectData.name} has been deleted.`,
-        variant: "destructive"
-      });
-    } catch (error: any) {
-      toast({
-        title: "Deletion Failed",
-        description: error.message,
-        variant: "destructive"
-      });
-    }
+  const handleViewSubject = (subjectData: any) => {
+    console.log('View subject:', subjectData);
+    toast({
+      title: "Subject Viewed",
+      description: `Viewing subject: ${subjectData.name}`
+    });
   };
 
   const userRole = user?.role || 'Student';
@@ -228,12 +176,22 @@ const Subjects = ({ apiLevel = 'institute' }: SubjectsProps) => {
   const canEdit = AccessControl.hasPermission(userRole, 'edit-subject');
   const canDelete = AccessControl.hasPermission(userRole, 'delete-subject');
 
+  const getTitle = () => {
+    let title = 'All Subjects';
+    if (apiLevel === 'class' && selectedClass) {
+      title += ` (${selectedClass.name})`;
+    } else if (apiLevel === 'institute' && selectedInstitute) {
+      title += ` (${selectedInstitute.name})`;
+    }
+    return title;
+  };
+
   return (
     <div className="space-y-6">
       {!dataLoaded ? (
         <div className="text-center py-12">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-            All Subjects {apiLevel === 'institute' ? `(${selectedInstitute?.name || 'All Institutes'})` : ''}
+            {getTitle()}
           </h2>
           <p className="text-gray-600 dark:text-gray-400 mb-6">
             Click the button below to load subjects data
@@ -279,14 +237,15 @@ const Subjects = ({ apiLevel = 'institute' }: SubjectsProps) => {
               )}
             </Button>
           </div>
-
+          
           <DataTable
-            title={`All Subjects ${apiLevel === 'institute' ? `(${selectedInstitute?.name || 'All Institutes'})` : ''}`}
+            title={getTitle()}
             data={subjectsData}
             columns={subjectsColumns}
             onAdd={canAdd ? () => setIsCreateDialogOpen(true) : undefined}
             onEdit={canEdit ? handleEditSubject : undefined}
             onDelete={canDelete ? handleDeleteSubject : undefined}
+            onView={handleViewSubject}
             searchPlaceholder="Search subjects..."
           />
         </>
