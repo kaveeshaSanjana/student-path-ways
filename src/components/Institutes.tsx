@@ -71,8 +71,12 @@ const Institutes = () => {
         page: page.toString(),
         limit: itemsPerPage.toString(),
         search: search,
-        isActive: isActive
       });
+      
+      // Only add isActive filter if it's not 'all'
+      if (isActive !== 'all') {
+        queryParams.append('isActive', isActive);
+      }
       
       const response = await fetch(`${baseUrl}/institutes?${queryParams}`, {
         headers: {
@@ -320,7 +324,7 @@ const Institutes = () => {
             <SelectContent>
               <SelectItem value="true">Active</SelectItem>
               <SelectItem value="false">Inactive</SelectItem>
-              <SelectItem value="">All</SelectItem>
+              <SelectItem value="all">All</SelectItem>
             </SelectContent>
           </Select>
           <Button variant="default" onClick={() => setShowCreateDialog(true)}>
