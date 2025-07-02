@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,6 +30,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import CreateInstituteForm from '@/components/forms/CreateInstituteForm';
 
 const Institutes = () => {
@@ -38,6 +46,7 @@ const Institutes = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isActiveFilter, setIsActiveFilter] = useState('true');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showViewDialog, setShowViewDialog] = useState(false);
@@ -51,14 +60,21 @@ const Institutes = () => {
     return localStorage.getItem('baseUrl') || 'https://a174-123-231-85-77.ngrok-free.app';
   };
 
-  const fetchInstitutes = async (page: number = 1) => {
+  const fetchInstitutes = async (page: number = 1, search: string = '', isActive: string = 'true') => {
     try {
       console.log('Loading institutes data...');
       setLoading(true);
       setError(null);
       
       const baseUrl = getBaseUrl();
-      const response = await fetch(`${baseUrl}/institutes?page=${page}&limit=${itemsPerPage}`, {
+      const queryParams = new URLSearchParams({
+        page: page.toString(),
+        limit: itemsPerPage.toString(),
+        search: search,
+        isActive: isActive
+      });
+      
+      const response = await fetch(`${baseUrl}/institutes?${queryParams}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
           'Content-Type': 'application/json',
@@ -84,12 +100,12 @@ const Institutes = () => {
       const data = await response.json();
       console.log('Institutes data:', data);
       
-      if (Array.isArray(data)) {
+      if (data.data && Array.isArray(data.data)) {
+        setInstitutes(data.data);
+        setTotalPages(data.meta?.totalPages || 1);
+      } else if (Array.isArray(data)) {
         setInstitutes(data);
         setTotalPages(Math.ceil(data.length / itemsPerPage));
-      } else if (data.institutes && Array.isArray(data.institutes)) {
-        setInstitutes(data.institutes);
-        setTotalPages(Math.ceil((data.total || data.institutes.length) / itemsPerPage));
       } else {
         console.error('Unexpected data format:', data);
         setInstitutes([]);
@@ -131,21 +147,21 @@ const Institutes = () => {
   };
 
   useEffect(() => {
-    fetchInstitutes();
-  }, []);
+    fetchInstitutes(currentPage, searchTerm, isActiveFilter);
+  }, [currentPage, searchTerm, isActiveFilter]);
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
+    setCurrentPage(1); // Reset to first page when searching
   };
 
-  const filteredInstitutes = institutes.filter(institute =>
-    institute.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    institute.code.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const handleActiveFilterChange = (value: string) => {
+    setIsActiveFilter(value);
+    setCurrentPage(1); // Reset to first page when filtering
+  };
 
   const handlePageChange = (newPage: number) => {
     setCurrentPage(newPage);
-    fetchInstitutes(newPage);
   };
 
   const handleCreateInstitute = async (instituteData: any) => {
@@ -170,7 +186,7 @@ const Institutes = () => {
         description: "Institute created successfully",
       });
 
-      await fetchInstitutes(currentPage);
+      await fetchInstitutes(currentPage, searchTerm, isActiveFilter);
       setShowCreateDialog(false);
     } catch (error) {
       console.error('Error creating institute:', error);
@@ -199,6 +215,9 @@ const Institutes = () => {
   const handleUpdateInstitute = async (instituteData: any) => {
     try {
       const baseUrl = getBaseUrl();
+      // Remove id from the data to prevent updating it
+      const { id, createdAt, updatedAt, isActive, ...updateData } = instituteData;
+      
       const response = await fetch(`${baseUrl}/institutes/${selectedInstitute.id}`, {
         method: 'PUT',
         headers: {
@@ -206,7 +225,7 @@ const Institutes = () => {
           'Content-Type': 'application/json',
           'ngrok-skip-browser-warning': 'true',
         },
-        body: JSON.stringify(instituteData),
+        body: JSON.stringify(updateData),
       });
 
       if (!response.ok) {
@@ -218,7 +237,7 @@ const Institutes = () => {
         description: "Institute updated successfully",
       });
 
-      await fetchInstitutes(currentPage);
+      await fetchInstitutes(currentPage, searchTerm, isActiveFilter);
       setShowEditDialog(false);
       setSelectedInstitute(null);
     } catch (error) {
@@ -254,7 +273,7 @@ const Institutes = () => {
         description: "Institute deleted successfully",
       });
 
-      await fetchInstitutes(currentPage);
+      await fetchInstitutes(currentPage, searchTerm, isActiveFilter);
     } catch (error) {
       console.error('Error deleting institute:', error);
       toast({
@@ -294,6 +313,16 @@ const Institutes = () => {
             />
             <SearchIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
           </div>
+          <Select value={isActiveFilter} onValueChange={handleActiveFilterChange}>
+            <SelectTrigger className="w-32">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="true">Active</SelectItem>
+              <SelectItem value="false">Inactive</SelectItem>
+              <SelectItem value="">All</SelectItem>
+            </SelectContent>
+          </Select>
           <Button variant="default" onClick={() => setShowCreateDialog(true)}>
             <PlusIcon className="mr-2 h-4 w-4" />
             Add Institute
@@ -305,7 +334,7 @@ const Institutes = () => {
         <p>Loading institutes...</p>
       ) : error ? (
         <p className="text-red-500">{error}</p>
-      ) : filteredInstitutes.length > 0 ? (
+      ) : institutes.length > 0 ? (
         <div className="rounded-md border">
           <Table>
             <TableHeader>
@@ -320,7 +349,7 @@ const Institutes = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredInstitutes.map(institute => (
+              {institutes.map(institute => (
                 <TableRow key={institute.id}>
                   <TableCell className="font-medium">{institute.code}</TableCell>
                   <TableCell>{institute.name}</TableCell>
