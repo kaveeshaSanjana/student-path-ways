@@ -1,283 +1,620 @@
-import React, { useState, useEffect } from 'react';
-import DataTable from '@/components/ui/data-table';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { RefreshCw } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
-import { AccessControl } from '@/utils/permissions';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { useToast } from '@/hooks/use-toast';
-import CreateSubjectForm from '@/components/forms/CreateSubjectForm';
 
-interface SubjectsProps {
-  apiLevel?: 'institute' | 'class' | 'subject';
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
+import { PlusIcon, PencilIcon, TrashIcon, SearchIcon, RefreshCwIcon } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
+import { Switch } from "@/components/ui/switch"
+import { z } from "zod"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { useForm } from "react-hook-form"
+
+interface Subject {
+  id: string;
+  code: string;
+  name: string;
+  description?: string;
+  category?: string;
+  creditHours?: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
-const mockSubjects = [
-  {
-    id: '1',
-    code: 'MATH101',
-    name: 'Mathematics',
-    class: 'Grade 10 - A',
-    teacher: 'Mr. Smith',
-    credits: 3,
-    description: 'Basic mathematics course for grade 10 students.',
-    status: 'Active',
-    institute: 'Main Campus'
-  },
-  {
-    id: '2',
-    code: 'SCI101',
-    name: 'Science',
-    class: 'Grade 10 - A',
-    teacher: 'Mrs. Johnson',
-    credits: 4,
-    description: 'Introduction to science for grade 10 students.',
-    status: 'Active',
-    institute: 'Main Campus'
-  },
-  {
-    id: '3',
-    code: 'ENG101',
-    name: 'English',
-    class: 'Grade 10 - B',
-    teacher: 'Mr. Williams',
-    credits: 3,
-    description: 'English language and literature course for grade 10 students.',
-    status: 'Active',
-    institute: 'Main Campus'
-  },
-  {
-    id: '4',
-    code: 'HIST101',
-    name: 'History',
-    class: 'Grade 11 - Science',
-    teacher: 'Ms. Brown',
-    credits: 3,
-    description: 'World history course for grade 11 students.',
-    status: 'Inactive',
-    institute: 'Science Branch'
-  }
-];
-
-const Subjects = ({ apiLevel = 'institute' }: SubjectsProps) => {
-  const { user, selectedInstitute, selectedClass } = useAuth();
+const Subjects = () => {
+  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showEditForm, setShowEditForm] = useState(false);
+  const [editingSubject, setEditingSubject] = useState<Subject | null>(null);
+  const { user: currentUser } = useAuth();
   const { toast } = useToast();
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [selectedSubject, setSelectedSubject] = useState<any>(null);
-  const [subjectsData, setSubjectsData] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [dataLoaded, setDataLoaded] = useState(false);
 
-  const handleLoadData = async () => {
-    setIsLoading(true);
-    console.log(`Loading subjects data for API level: ${apiLevel}`);
-    console.log(`Current context - Institute: ${selectedInstitute?.name}, Class: ${selectedClass?.name}`);
+  const getBaseUrl = () => {
+    return localStorage.getItem('baseUrl') || 'http://localhost:3000';
+  };
+
+  const fetchSubjects = async () => {
+    try {
+      console.log('Loading subjects data...');
+      setLoading(true);
+      setError(null);
+      
+      const baseUrl = getBaseUrl();
+      const url = `${baseUrl}/subjects`;
+      
+      console.log('API URL:', url);
+      
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+          'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true'
+        },
+      });
+
+      console.log('Response status:', response.status);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('Subjects data:', data);
+      
+      if (Array.isArray(data)) {
+        setSubjects(data);
+      } else if (data.data && Array.isArray(data.data)) {
+        setSubjects(data.data);
+      } else {
+        console.error('Unexpected data format:', data);
+        setSubjects([]);
+      }
+    } catch (error) {
+      console.error('Error loading subjects:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load subjects';
+      setError(errorMessage);
+      toast({
+        title: "Error",
+        description: errorMessage + ". Please check if backend is running.",
+        variant: "destructive",
+      });
+      setSubjects([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteSubject = async (subjectId: string) => {
+    try {
+      const baseUrl = getBaseUrl();
+      const response = await fetch(`${baseUrl}/subjects/${subjectId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+          'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true'
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete subject');
+      }
+
+      toast({
+        title: "Success",
+        description: "Subject deleted successfully",
+      });
+
+      // Refresh the subjects list
+      await fetchSubjects();
+    } catch (error) {
+      console.error('Error deleting subject:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete subject. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const CreateSubjectSchema = z.object({
+    code: z.string().min(1, "Subject code is required").max(50, "Code must be 50 characters or less"),
+    name: z.string().min(1, "Subject name is required").max(255, "Name must be 255 characters or less"),
+    description: z.string().optional(),
+    category: z.string().max(100, "Category must be 100 characters or less").optional(),
+    creditHours: z.number().min(1, "Credit hours must be at least 1").max(1000, "Credit hours must be 1000 or less").optional(),
+    isActive: z.boolean().default(true)
+  });
+
+  const createForm = useForm<z.infer<typeof CreateSubjectSchema>>({
+    resolver: zodResolver(CreateSubjectSchema),
+    defaultValues: {
+      code: "",
+      name: "",
+      description: "",
+      category: "",
+      creditHours: undefined,
+      isActive: true
+    },
+  });
+
+  const editForm = useForm<z.infer<typeof CreateSubjectSchema>>({
+    resolver: zodResolver(CreateSubjectSchema),
+    defaultValues: {
+      code: "",
+      name: "",
+      description: "",
+      category: "",
+      creditHours: undefined,
+      isActive: true
+    },
+  });
+
+  const onCreateSubjectSubmit = async (values: z.infer<typeof CreateSubjectSchema>) => {
+    try {
+      const baseUrl = getBaseUrl();
+      const response = await fetch(`${baseUrl}/subjects`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+          'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true'
+        },
+        body: JSON.stringify(values),
+      });
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to create subject');
+      }
+  
+      toast({
+        title: "Success",
+        description: "Subject created successfully",
+      });
+  
+      // Refresh the subjects list
+      await fetchSubjects();
+      setShowCreateForm(false);
+      createForm.reset();
+    } catch (error) {
+      console.error('Error creating subject:', error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to create subject. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const onEditSubjectSubmit = async (values: z.infer<typeof CreateSubjectSchema>) => {
+    if (!editingSubject) return;
     
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Simulate filtering based on API level
-      let filteredData = mockSubjects;
-      if (apiLevel === 'class' && selectedClass) {
-        // Class level: show subjects for selected class
-        filteredData = mockSubjects.filter(subject => subject.class === selectedClass.name);
-      } else if (apiLevel === 'institute' && selectedInstitute) {
-        // Institute level: show subjects for selected institute
-        filteredData = mockSubjects.filter(subject => subject.institute === selectedInstitute.name);
+      const baseUrl = getBaseUrl();
+      const response = await fetch(`${baseUrl}/subjects/${editingSubject.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+          'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true'
+        },
+        body: JSON.stringify(values),
+      });
+  
+      if (!response.ok) {
+        throw new Error('Failed to update subject');
       }
-      
-      setSubjectsData(filteredData);
-      setDataLoaded(true);
+  
       toast({
-        title: "Data Loaded",
-        description: `Successfully loaded ${filteredData.length} subjects.`
+        title: "Success",
+        description: "Subject updated successfully",
       });
+  
+      // Refresh the subjects list
+      await fetchSubjects();
+      setShowEditForm(false);
+      setEditingSubject(null);
+      editForm.reset();
     } catch (error) {
+      console.error('Error updating subject:', error);
       toast({
-        title: "Load Failed",
-        description: "Failed to load subjects data.",
-        variant: "destructive"
+        title: "Error",
+        description: "Failed to update subject. Please try again.",
+        variant: "destructive",
       });
-    } finally {
-      setIsLoading(false);
     }
   };
 
-  useEffect(() => {
-    handleLoadData();
-  }, [apiLevel, selectedInstitute, selectedClass]);
-
-  const subjectsColumns = [
-    { key: 'code', header: 'Subject Code' },
-    { key: 'name', header: 'Subject Name' },
-    { key: 'class', header: 'Class' },
-    { key: 'teacher', header: 'Teacher' },
-    { key: 'credits', header: 'Credits' },
-    { key: 'institute', header: 'Institute' },
-    { key: 'description', header: 'Description' },
-    { 
-      key: 'status', 
-      header: 'Status',
-      render: (value: string) => (
-        <Badge variant={value === 'Active' ? 'default' : 'secondary'}>
-          {value}
-        </Badge>
-      )
-    }
-  ];
-
-  const handleCreateSubject = (subjectData: any) => {
-    console.log('Creating subject:', subjectData);
-    toast({
-      title: "Subject Created",
-      description: `Subject ${subjectData.name} has been created successfully.`
+  const handleEditSubject = (subject: Subject) => {
+    setEditingSubject(subject);
+    editForm.reset({
+      code: subject.code,
+      name: subject.name,
+      description: subject.description || "",
+      category: subject.category || "",
+      creditHours: subject.creditHours,
+      isActive: subject.isActive
     });
-    setIsCreateDialogOpen(false);
-  };
-
-  const handleEditSubject = (subjectData: any) => {
-    console.log('Editing subject:', subjectData);
-    setSelectedSubject(subjectData);
-    setIsEditDialogOpen(true);
-  };
-
-  const handleUpdateSubject = (subjectData: any) => {
-    console.log('Updating subject:', subjectData);
-    toast({
-      title: "Subject Updated",
-      description: `Subject ${subjectData.name} has been updated successfully.`
-    });
-    setIsEditDialogOpen(false);
-    setSelectedSubject(null);
-  };
-
-  const handleDeleteSubject = (subjectData: any) => {
-    console.log('Deleting subject:', subjectData);
-    toast({
-      title: "Subject Deleted",
-      description: `Subject ${subjectData.name} has been deleted.`,
-      variant: "destructive"
-    });
-  };
-
-  const handleViewSubject = (subjectData: any) => {
-    console.log('View subject:', subjectData);
-    toast({
-      title: "Subject Viewed",
-      description: `Viewing subject: ${subjectData.name}`
-    });
-  };
-
-  const userRole = user?.role || 'Student';
-  const canAdd = AccessControl.hasPermission(userRole, 'create-subject');
-  const canEdit = AccessControl.hasPermission(userRole, 'edit-subject');
-  const canDelete = AccessControl.hasPermission(userRole, 'delete-subject');
-
-  const getTitle = () => {
-    let title = 'All Subjects';
-    if (apiLevel === 'class' && selectedClass) {
-      title += ` (${selectedClass.name})`;
-    } else if (apiLevel === 'institute' && selectedInstitute) {
-      title += ` (${selectedInstitute.name})`;
-    }
-    return title;
+    setShowEditForm(true);
   };
 
   return (
     <div className="space-y-6">
-      {!dataLoaded ? (
-        <div className="text-center py-12">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-            {getTitle()}
-          </h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-6">
-            Click the button below to load subjects data
-          </p>
-          <Button 
-            onClick={handleLoadData} 
-            disabled={isLoading}
-            className="bg-blue-600 hover:bg-blue-700"
-          >
-            {isLoading ? (
-              <>
-                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                Loading Data...
-              </>
-            ) : (
-              <>
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Load Data
-              </>
-            )}
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Subjects Management</h1>
+        <div className="flex items-center space-x-2">
+          <Button onClick={fetchSubjects} variant="outline">
+            <RefreshCwIcon className="mr-2 h-4 w-4" />
+            Load Data
           </Button>
+          <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
+            <DialogTrigger asChild>
+              <Button variant="default">
+                <PlusIcon className="mr-2 h-4 w-4" />
+                Create Subject
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[600px]">
+              <DialogHeader>
+                <DialogTitle>Create Subject</DialogTitle>
+                <DialogDescription>
+                  Add a new subject to the system
+                </DialogDescription>
+              </DialogHeader>
+              <Form {...createForm}>
+                <form onSubmit={createForm.handleSubmit(onCreateSubjectSubmit)} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={createForm.control}
+                      name="code"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Subject Code</FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g., CS101" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={createForm.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Subject Name</FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g., Computer Science Fundamentals" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <FormField
+                    control={createForm.control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Description</FormLabel>
+                        <FormControl>
+                          <Textarea placeholder="Subject description..." {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={createForm.control}
+                      name="category"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Category</FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g., Science, Arts" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={createForm.control}
+                      name="creditHours"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Credit Hours</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="number" 
+                              placeholder="e.g., 3" 
+                              {...field}
+                              onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : undefined)}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <FormField
+                    control={createForm.control}
+                    name="isActive"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                        <div className="space-y-0.5">
+                          <FormLabel className="text-base">Active Status</FormLabel>
+                          <FormDescription>
+                            Set whether the subject is active
+                          </FormDescription>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="flex justify-end space-x-2">
+                    <Button type="button" variant="outline" onClick={() => setShowCreateForm(false)}>
+                      Cancel
+                    </Button>
+                    <Button type="submit">Create Subject</Button>
+                  </div>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </div>
+
+      {/* Results */}
+      {loading ? (
+        <div className="text-center p-8">
+          <p>Loading subjects...</p>
+        </div>
+      ) : error ? (
+        <div className="text-center p-8">
+          <Card className="border-red-200">
+            <CardContent className="pt-6">
+              <p className="text-red-600 font-medium">Error Loading Subjects</p>
+              <p className="text-red-500 text-sm mt-2">{error}</p>
+              <Button 
+                variant="outline" 
+                onClick={() => fetchSubjects()} 
+                className="mt-4"
+              >
+                Retry
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      ) : subjects.length > 0 ? (
+        <div className="space-y-4">
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Code</TableHead>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Category</TableHead>
+                  <TableHead>Credit Hours</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {subjects.map(subject => (
+                  <TableRow key={subject.id}>
+                    <TableCell className="font-medium">{subject.code}</TableCell>
+                    <TableCell>{subject.name}</TableCell>
+                    <TableCell>{subject.category || 'N/A'}</TableCell>
+                    <TableCell>{subject.creditHours || 'N/A'}</TableCell>
+                    <TableCell>
+                      <span className={`px-2 py-1 text-xs rounded-full ${
+                        subject.isActive 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-red-100 text-red-800'
+                      }`}>
+                        {subject.isActive ? 'Active' : 'Inactive'}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => handleEditSubject(subject)}
+                        className="mr-2"
+                      >
+                        <PencilIcon className="h-4 w-4 mr-2" />
+                        Edit
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => handleDeleteSubject(subject.id)}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <TrashIcon className="h-4 w-4 mr-2" />
+                        Delete
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </div>
       ) : (
-        <>
-          <div className="flex justify-between items-center">
-            <div></div>
-            <Button 
-              onClick={handleLoadData} 
-              disabled={isLoading}
-              variant="outline"
-              size="sm"
-            >
-              {isLoading ? (
-                <>
-                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                  Refreshing...
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  Refresh Data
-                </>
-              )}
-            </Button>
-          </div>
-          
-          <DataTable
-            title={getTitle()}
-            data={subjectsData}
-            columns={subjectsColumns}
-            onAdd={canAdd ? () => setIsCreateDialogOpen(true) : undefined}
-            onEdit={canEdit ? handleEditSubject : undefined}
-            onDelete={canDelete ? handleDeleteSubject : undefined}
-            onView={handleViewSubject}
-            searchPlaceholder="Search subjects..."
-          />
-        </>
+        <div className="text-center p-8">
+          <p>No subjects found. Click "Load Data" to fetch subjects.</p>
+        </div>
       )}
 
-      {/* Create Dialog */}
-      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Create New Subject</DialogTitle>
-          </DialogHeader>
-          <CreateSubjectForm
-            onSubmit={handleCreateSubject}
-            onCancel={() => setIsCreateDialogOpen(false)}
-          />
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      {/* Edit Subject Dialog */}
+      <Dialog open={showEditForm} onOpenChange={setShowEditForm}>
+        <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
             <DialogTitle>Edit Subject</DialogTitle>
+            <DialogDescription>
+              Update subject information
+            </DialogDescription>
           </DialogHeader>
-          <CreateSubjectForm
-            initialData={selectedSubject}
-            onSubmit={handleUpdateSubject}
-            onCancel={() => {
-              setIsEditDialogOpen(false);
-              setSelectedSubject(null);
-            }}
-          />
+          <Form {...editForm}>
+            <form onSubmit={editForm.handleSubmit(onEditSubjectSubmit)} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={editForm.control}
+                  name="code"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Subject Code</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., CS101" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={editForm.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Subject Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., Computer Science Fundamentals" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={editForm.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description</FormLabel>
+                    <FormControl>
+                      <Textarea placeholder="Subject description..." {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={editForm.control}
+                  name="category"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Category</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., Science, Arts" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={editForm.control}
+                  name="creditHours"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Credit Hours</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          placeholder="e.g., 3" 
+                          {...field}
+                          onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : undefined)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={editForm.control}
+                name="isActive"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Active Status</FormLabel>
+                      <FormDescription>
+                        Set whether the subject is active
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <div className="flex justify-end space-x-2">
+                <Button type="button" variant="outline" onClick={() => {
+                  setShowEditForm(false);
+                  setEditingSubject(null);
+                }}>
+                  Cancel
+                </Button>
+                <Button type="submit">Update Subject</Button>
+              </div>
+            </form>
+          </Form>
         </DialogContent>
       </Dialog>
     </div>
