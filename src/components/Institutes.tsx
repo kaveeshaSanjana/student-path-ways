@@ -129,6 +129,7 @@ const Institutes = () => {
 
   const fetchInstituteById = async (id: string) => {
     try {
+      console.log('Fetching institute by ID:', id);
       const baseUrl = getBaseUrl();
       const response = await fetch(`${baseUrl}/institutes/${id}`, {
         headers: {
@@ -143,6 +144,7 @@ const Institutes = () => {
       }
 
       const data = await response.json();
+      console.log('Institute data by ID:', data);
       return data;
     } catch (error) {
       console.error('Error fetching institute by ID:', error);
@@ -204,13 +206,15 @@ const Institutes = () => {
 
   const handleEditInstitute = async (id: string) => {
     try {
+      console.log('Editing institute with ID:', id);
       const instituteData = await fetchInstituteById(id);
       setSelectedInstitute(instituteData);
       setShowEditDialog(true);
     } catch (error) {
+      console.error('Error fetching institute for edit:', error);
       toast({
         title: "Error",
-        description: "Failed to fetch institute details.",
+        description: "Failed to fetch institute details for editing.",
         variant: "destructive",
       });
     }
@@ -218,12 +222,25 @@ const Institutes = () => {
 
   const handleUpdateInstitute = async (instituteData: any) => {
     try {
+      console.log('Updating institute:', selectedInstitute?.id, instituteData);
       const baseUrl = getBaseUrl();
-      // Remove id from the data to prevent updating it
-      const { id, createdAt, updatedAt, isActive, ...updateData } = instituteData;
+      
+      // Prepare data for PATCH - exclude id and system fields
+      const updateData = {
+        name: instituteData.name,
+        code: instituteData.code,
+        email: instituteData.email,
+        phone: instituteData.phone,
+        address: instituteData.address,
+        city: instituteData.city,
+        state: instituteData.state,
+        country: instituteData.country,
+        pinCode: instituteData.pinCode,
+        imageUrl: instituteData.imageUrl || ''
+      };
       
       const response = await fetch(`${baseUrl}/institutes/${selectedInstitute.id}`, {
-        method: 'PUT',
+        method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
           'Content-Type': 'application/json',
@@ -233,6 +250,8 @@ const Institutes = () => {
       });
 
       if (!response.ok) {
+        const errorData = await response.text();
+        console.error('Update failed:', errorData);
         throw new Error('Failed to update institute');
       }
 

@@ -33,6 +33,8 @@ interface CreateInstituteFormProps {
 const CreateInstituteForm = ({ onSubmit, onCancel, initialData }: CreateInstituteFormProps) => {
   const isEditing = !!initialData;
   
+  console.log('Form initialData:', initialData);
+  
   const form = useForm<InstituteFormData>({
     resolver: zodResolver(instituteSchema),
     defaultValues: {
@@ -50,6 +52,7 @@ const CreateInstituteForm = ({ onSubmit, onCancel, initialData }: CreateInstitut
   });
 
   const handleSubmit = (data: InstituteFormData) => {
+    console.log('Form submitted with data:', data);
     onSubmit(data);
   };
 
@@ -84,9 +87,17 @@ const CreateInstituteForm = ({ onSubmit, onCancel, initialData }: CreateInstitut
                   <FormItem>
                     <FormLabel>Institute Code</FormLabel>
                     <FormControl>
-                      <Input placeholder="CIS002" {...field} disabled={isEditing} />
+                      <Input 
+                        placeholder="CIS002" 
+                        {...field} 
+                        disabled={isEditing}
+                        className={isEditing ? "bg-gray-100 cursor-not-allowed" : ""}
+                      />
                     </FormControl>
                     <FormMessage />
+                    {isEditing && (
+                      <p className="text-xs text-gray-500">Institute code cannot be changed</p>
+                    )}
                   </FormItem>
                 )}
               />
