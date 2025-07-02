@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -21,16 +20,41 @@ import {
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
-const Sidebar = () => {
+interface SidebarProps {
+  isOpen?: boolean;
+  onClose?: () => void;
+  currentPage?: string;
+  onPageChange?: (page: string) => void;
+}
+
+const Sidebar = ({ isOpen, onClose, currentPage, onPageChange }: SidebarProps) => {
   const location = useLocation();
   const { user, logout } = useAuth();
 
   const isActive = (path: string) => {
+    // If currentPage is provided (from Index.tsx), use it for comparison
+    if (currentPage && onPageChange) {
+      const pageFromPath = path === '/' ? 'dashboard' : path.substring(1);
+      return currentPage === pageFromPath;
+    }
+    // Otherwise use location.pathname (for App.tsx routing)
     return location.pathname === path;
   };
 
   const handleLogout = () => {
     logout();
+  };
+
+  const handleNavClick = (path: string) => {
+    // If onPageChange is provided (from Index.tsx), use it
+    if (onPageChange) {
+      const page = path === '/' ? 'dashboard' : path.substring(1);
+      onPageChange(page);
+      if (onClose) {
+        onClose();
+      }
+    }
+    // For App.tsx routing, Link component handles navigation automatically
   };
 
   const systemAdminNavItems = [
@@ -87,6 +111,47 @@ const Sidebar = () => {
       navItems = [{ path: '/', icon: Home, label: 'Dashboard' }];
   }
 
+  const renderNavItem = (item: any) => {
+    const Icon = item.icon;
+    const isItemActive = isActive(item.path);
+    
+    // If onPageChange is provided (Index.tsx), render as button
+    if (onPageChange) {
+      return (
+        <button
+          key={item.path}
+          onClick={() => handleNavClick(item.path)}
+          className={cn(
+            "flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors w-full text-left",
+            isItemActive
+              ? "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
+              : "text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+          )}
+        >
+          <Icon className="mr-3 h-4 w-4" />
+          {item.label}
+        </button>
+      );
+    }
+    
+    // Otherwise render as Link (App.tsx)
+    return (
+      <Link
+        key={item.path}
+        to={item.path}
+        className={cn(
+          "flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+          isItemActive
+            ? "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
+            : "text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+        )}
+      >
+        <Icon className="mr-3 h-4 w-4" />
+        {item.label}
+      </Link>
+    );
+  };
+
   return (
     <div className="h-full flex flex-col bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800">
       {/* Logo/Brand */}
@@ -102,24 +167,7 @@ const Sidebar = () => {
 
       {/* Navigation */}
       <nav className="flex-1 p-4 space-y-2">
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          return (
-            <Link
-              key={item.path}
-              to={item.path}
-              className={cn(
-                "flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                isActive(item.path)
-                  ? "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
-                  : "text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
-              )}
-            >
-              <Icon className="mr-3 h-4 w-4" />
-              {item.label}
-            </Link>
-          );
-        })}
+        {navItems.map(renderNavItem)}
       </nav>
 
       {/* User Info & Logout */}
@@ -146,12 +194,24 @@ const Sidebar = () => {
         </div>
         
         <div className="mt-4 space-y-2">
-          <Link to="/profile">
-            <Button variant="ghost" size="sm" className="w-full justify-start">
-              <Settings className="mr-2 h-4 w-4" />
-              Profile
-            </Button>
-          </Link>
+          {onPageChange ? (
+            <button
+              onClick={() => handleNavClick('/profile')}
+              className="w-full"
+            >
+              <Button variant="ghost" size="sm" className="w-full justify-start">
+                <Settings className="mr-2 h-4 w-4" />
+                Profile
+              </Button>
+            </button>
+          ) : (
+            <Link to="/profile">
+              <Button variant="ghost" size="sm" className="w-full justify-start">
+                <Settings className="mr-2 h-4 w-4" />
+                Profile
+              </Button>
+            </Link>
+          )}
           
           <Button 
             variant="ghost" 
