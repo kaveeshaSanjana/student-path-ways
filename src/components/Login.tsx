@@ -110,13 +110,19 @@ const Login = ({ onLogin }: LoginProps) => {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true'
         },
       });
 
       if (response.ok) {
-        const institutes = await response.json();
-        console.log('Fetched institutes:', institutes);
-        return Array.isArray(institutes) ? institutes : [];
+        const contentType = response.headers.get('Content-Type');
+        if (contentType && contentType.includes('application/json')) {
+          const institutes = await response.json();
+          console.log('Fetched institutes:', institutes);
+          return Array.isArray(institutes) ? institutes : [];
+        } else {
+          console.error('Non-JSON response for institutes:', await response.text());
+        }
       } else {
         console.error('Failed to fetch institutes:', response.status, response.statusText);
       }
@@ -133,6 +139,7 @@ const Login = ({ onLogin }: LoginProps) => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true'
         },
         body: JSON.stringify({ email, password }),
       });
@@ -175,6 +182,7 @@ const Login = ({ onLogin }: LoginProps) => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true'
         },
         body: JSON.stringify({ email, password }),
       });
@@ -247,7 +255,7 @@ const Login = ({ onLogin }: LoginProps) => {
       setError(error instanceof Error ? error.message : 'Login failed');
       toast({
         title: "Error",
-        description: "Login failed. Please check your credentials.",
+        description: "Login failed. Please check your credentials and backend connection.",
         variant: "destructive",
       });
     } finally {
@@ -272,7 +280,7 @@ const Login = ({ onLogin }: LoginProps) => {
           <CardHeader className="pb-3">
             <CardTitle className="text-sm flex items-center gap-2">
               <Settings className="w-4 h-4" />
-              Development Settings
+              Backend Configuration
               <Button
                 type="button"
                 variant="ghost"
@@ -296,7 +304,10 @@ const Login = ({ onLogin }: LoginProps) => {
                   onChange={(e) => setBaseUrl(e.target.value)}
                 />
                 <p className="text-xs text-gray-500">
-                  Set the backend API URL for development
+                  Current: {baseUrl}
+                </p>
+                <p className="text-xs text-orange-600">
+                  For ngrok: Add --host-header=localhost:3000 flag when starting tunnel
                 </p>
               </div>
             </CardContent>

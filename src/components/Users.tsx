@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/table"
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { PlusIcon, PencilIcon, TrashIcon, SearchIcon } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -75,15 +76,32 @@ const Users = () => {
       setError(null);
       
       const baseUrl = getBaseUrl();
+      console.log('Using base URL:', baseUrl);
+      
       const response = await fetch(`${baseUrl}/users?page=${page}&limit=${itemsPerPage}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
           'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true'
         },
       });
 
+      console.log('Response status:', response.status);
+      console.log('Response headers:', response.headers);
+
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error('API Error:', errorText);
         throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const contentType = response.headers.get('Content-Type');
+      console.log('Content-Type:', contentType);
+
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error('Non-JSON response:', text.substring(0, 200));
+        throw new Error('Server returned non-JSON response');
       }
 
       const data = await response.json();
@@ -104,10 +122,11 @@ const Users = () => {
       }
     } catch (error) {
       console.error('Error loading users:', error);
-      setError('Failed to load users. Please try again.');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load users';
+      setError(errorMessage);
       toast({
         title: "Error",
-        description: "Failed to load users. Please try again.",
+        description: errorMessage + ". Please check if backend is running.",
         variant: "destructive",
       });
     } finally {
@@ -116,8 +135,10 @@ const Users = () => {
   };
 
   useEffect(() => {
-    fetchUsers();
-  }, []);
+    if (currentUser?.role === 'SystemAdmin') {
+      fetchUsers();
+    }
+  }, [currentUser]);
 
   useEffect(() => {
     const filtered = users.filter(user => {
@@ -151,6 +172,7 @@ const Users = () => {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
           'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true'
         },
       });
 
@@ -210,6 +232,7 @@ const Users = () => {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
           'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true'
         },
         body: JSON.stringify(values),
       });
@@ -226,6 +249,7 @@ const Users = () => {
       // Refresh the users list
       await fetchUsers(currentPage);
       setShowCreateForm(false);
+      form.reset();
     } catch (error) {
       console.error('Error creating user:', error);
       toast({
@@ -236,19 +260,32 @@ const Users = () => {
     }
   }
 
+  // Don't show Users section if not SystemAdmin
+  if (currentUser?.role !== 'SystemAdmin') {
+    return (
+      <div className="text-center p-8">
+        <h2 className="text-xl font-semibold text-gray-600">Access Denied</h2>
+        <p className="text-gray-500 mt-2">You don't have permission to view this section.</p>
+      </div>
+    );
+  }
+
   return (
     <div>
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-semibold">Users</h2>
-
-        <div className="space-x-2">
-          <Input
-            type="text"
-            placeholder="Search by name"
-            value={searchTerm}
-            onChange={handleSearchChange}
-          />
-          <Select value={selectedRole} onValueChange={handleRoleChange}>
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="text-2xl font-bold">Users Management</h1>
+        <div className="flex items-center space-x-2">
+          <div className="relative">
+            <Input
+              type="text"
+              placeholder="Search users..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pr-10"
+            />
+            <SearchIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
+          </div>
+          <Select value={selectedRole} onValueChange={setSelectedRole}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Filter by role" />
             </SelectTrigger>
@@ -263,13 +300,16 @@ const Users = () => {
           </Select>
           <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
             <DialogTrigger asChild>
-              <Button variant="default">Create User</Button>
+              <Button variant="default">
+                <PlusIcon className="mr-2 h-4 w-4" />
+                Create User
+              </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
               <DialogHeader>
                 <DialogTitle>Create User</DialogTitle>
                 <DialogDescription>
-                  Make changes to your profile here. Click save when you're done.
+                  Create a new user account with the specified details.
                 </DialogDescription>
               </DialogHeader>
               <Form {...form}>
@@ -350,7 +390,7 @@ const Users = () => {
                       </FormItem>
                     )}
                   />
-                  <Button type="submit">Create</Button>
+                  <Button type="submit">Create User</Button>
                 </form>
               </Form>
             </DialogContent>
@@ -359,11 +399,27 @@ const Users = () => {
       </div>
 
       {loading ? (
-        <p>Loading users...</p>
+        <div className="text-center p-8">
+          <p>Loading users...</p>
+        </div>
       ) : error ? (
-        <p className="text-red-500">{error}</p>
-      ) : (
-        <div className="overflow-x-auto">
+        <div className="text-center p-8">
+          <Card className="border-red-200">
+            <CardContent className="pt-6">
+              <p className="text-red-600 font-medium">Error Loading Users</p>
+              <p className="text-red-500 text-sm mt-2">{error}</p>
+              <Button 
+                variant="outline" 
+                onClick={() => fetchUsers()} 
+                className="mt-4"
+              >
+                Retry
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      ) : filteredUsers.length > 0 ? (
+        <div className="rounded-md border">
           <Table>
             <TableHeader>
               <TableRow>
@@ -376,12 +432,17 @@ const Users = () => {
             <TableBody>
               {filteredUsers.map(user => (
                 <TableRow key={user.id}>
-                  <TableCell className="font-medium">{user.name}</TableCell>
+                  <TableCell className="font-medium">{user.name || `${user.firstName} ${user.lastName}`}</TableCell>
                   <TableCell>{user.email}</TableCell>
-                  <TableCell>{user.role}</TableCell>
+                  <TableCell>{user.role || user.userType}</TableCell>
                   <TableCell className="text-right">
+                    <Button variant="ghost" size="sm">
+                      <PencilIcon className="h-4 w-4 mr-2" />
+                      Edit
+                    </Button>
                     {currentUser?.email !== user.email && (
                       <Button variant="ghost" size="sm" onClick={() => handleDeleteUser(user.id)}>
+                        <TrashIcon className="h-4 w-4 mr-2" />
                         Delete
                       </Button>
                     )}
@@ -391,29 +452,37 @@ const Users = () => {
             </TableBody>
           </Table>
         </div>
+      ) : (
+        <div className="text-center p-8">
+          <p>No users found.</p>
+        </div>
       )}
 
-      <div className="flex justify-between items-center mt-4">
-        <span>Total Users: {filteredUsers.length}</span>
-        <div className="flex space-x-2">
-          <Button
-            disabled={currentPage === 1}
-            onClick={() => handlePageChange(currentPage - 1)}
-            variant="outline"
-            size="sm"
-          >
-            Previous
-          </Button>
-          <Button
-            disabled={currentPage === totalPages}
-            onClick={() => handlePageChange(currentPage + 1)}
-            variant="outline"
-            size="sm"
-          >
-            Next
-          </Button>
+      {users.length > 0 && (
+        <div className="flex justify-between items-center mt-4">
+          <p className="text-sm text-gray-500">
+            Showing page {currentPage} of {totalPages} ({filteredUsers.length} users)
+          </p>
+          <div className="flex space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={currentPage === 1}
+              onClick={() => handlePageChange(currentPage - 1)}
+            >
+              Previous
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={currentPage === totalPages}
+              onClick={() => handlePageChange(currentPage + 1)}
+            >
+              Next
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };
