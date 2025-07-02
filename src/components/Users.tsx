@@ -107,9 +107,9 @@ const Users = () => {
   
   // Filter states
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedUserType, setSelectedUserType] = useState<string>('');
-  const [selectedGender, setSelectedGender] = useState<string>('');
-  const [selectedStatus, setSelectedStatus] = useState<string>('');
+  const [selectedUserType, setSelectedUserType] = useState<string>('all');
+  const [selectedGender, setSelectedGender] = useState<string>('all');
+  const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [searchById, setSearchById] = useState('');
 
   const getBaseUrl = () => {
@@ -130,13 +130,13 @@ const Users = () => {
     if (searchTerm.trim()) {
       params.append('search', searchTerm.trim());
     }
-    if (selectedUserType) {
+    if (selectedUserType && selectedUserType !== 'all') {
       params.append('userType', selectedUserType);
     }
-    if (selectedGender) {
+    if (selectedGender && selectedGender !== 'all') {
       params.append('gender', selectedGender);
     }
-    if (selectedStatus) {
+    if (selectedStatus && selectedStatus !== 'all') {
       params.append('isActive', selectedStatus);
     }
     
@@ -452,9 +452,9 @@ const Users = () => {
 
   const handleReset = () => {
     setSearchTerm('');
-    setSelectedUserType('');
-    setSelectedGender('');
-    setSelectedStatus('');
+    setSelectedUserType('all');
+    setSelectedGender('all');
+    setSelectedStatus('all');
     setSearchById('');
     setCurrentPage(1);
     setUsers([]);
@@ -836,7 +836,7 @@ const Users = () => {
                   <SelectValue placeholder="All Types" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Types</SelectItem>
+                  <SelectItem value="all">All Types</SelectItem>
                   <SelectItem value="SUPER_ADMIN">Super Admin</SelectItem>
                   <SelectItem value="INSTITUTE_ADMIN">Institute Admin</SelectItem>
                   <SelectItem value="TEACHER">Teacher</SelectItem>
@@ -858,7 +858,7 @@ const Users = () => {
                   <SelectValue placeholder="All Genders" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Genders</SelectItem>
+                  <SelectItem value="all">All Genders</SelectItem>
                   <SelectItem value="MALE">Male</SelectItem>
                   <SelectItem value="FEMALE">Female</SelectItem>
                   <SelectItem value="OTHER">Other</SelectItem>
@@ -877,7 +877,7 @@ const Users = () => {
                   <SelectValue placeholder="All Status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Status</SelectItem>
+                  <SelectItem value="all">All Status</SelectItem>
                   <SelectItem value="true">Active</SelectItem>
                   <SelectItem value="false">Inactive</SelectItem>
                 </SelectContent>
