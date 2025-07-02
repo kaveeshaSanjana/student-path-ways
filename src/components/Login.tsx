@@ -160,6 +160,8 @@ const Login = ({ onLogin }: LoginProps) => {
       const user = {
         id: data.user.id,
         name: `${data.user.firstName} ${data.user.lastName}`,
+        firstName: data.user.firstName,
+        lastName: data.user.lastName,
         email: data.user.email,
         role: mapUserTypeToRole(data.user.userType),
         institutes: institutes,
@@ -194,6 +196,8 @@ const Login = ({ onLogin }: LoginProps) => {
         return {
           id: data.user.id,
           name: `${data.user.firstName} ${data.user.lastName}`,
+          firstName: data.user.firstName,
+          lastName: data.user.lastName,
           email: data.user.email,
           role: mapUserTypeToRole(data.user.userType),
           institutes: institutes,
@@ -213,9 +217,12 @@ const Login = ({ onLogin }: LoginProps) => {
       throw new Error('Invalid credentials or role mismatch');
     }
 
+    const nameParts = user.name.split(' ');
     return {
       id: Math.random().toString(36).substr(2, 9),
       name: user.name,
+      firstName: nameParts[0],
+      lastName: nameParts.slice(1).join(' '),
       email: user.email,
       role: user.role,
       institutes: user.institutes

@@ -128,12 +128,15 @@ const Sidebar = () => {
           <div className="flex items-center space-x-3">
             <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
               <span className="text-white text-sm font-medium">
-                {user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}
+                {user?.firstName?.charAt(0) || user?.name?.charAt(0) || 'U'}
+                {user?.lastName?.charAt(0) || user?.name?.split(' ')[1]?.charAt(0) || ''}
               </span>
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                {user?.firstName} {user?.lastName}
+                {user?.firstName && user?.lastName 
+                  ? `${user.firstName} ${user.lastName}` 
+                  : user?.name || 'User'}
               </p>
               <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
                 {user?.email}

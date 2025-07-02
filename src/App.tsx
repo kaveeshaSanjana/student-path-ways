@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { Toaster } from '@/components/ui/toaster';
@@ -42,9 +42,15 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 };
 
 const AppLayout = ({ children }: { children: React.ReactNode }) => {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  const handleMenuClick = () => {
+    setIsSidebarOpen(!isSidebarOpen);
+  };
+
   return (
     <div className="h-screen flex flex-col">
-      <Header />
+      <Header onMenuClick={handleMenuClick} />
       <div className="flex flex-1 overflow-hidden">
         <div className="w-64 flex-shrink-0">
           <Sidebar />
@@ -58,12 +64,16 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
 };
 
 const AppContent = () => {
-  const { user } = useAuth();
+  const { user, login } = useAuth();
+
+  const handleLogin = (userData: any) => {
+    login(userData);
+  };
 
   if (!user) {
     return (
       <Routes>
-        <Route path="/login" element={<Login />} />
+        <Route path="/login" element={<Login onLogin={handleLogin} />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     );

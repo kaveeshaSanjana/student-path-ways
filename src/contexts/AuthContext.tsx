@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 export type UserRole = 'SystemAdmin' | 'InstituteAdmin' | 'AttendanceMarker' | 'Teacher' | 'Student';
@@ -5,6 +6,8 @@ export type UserRole = 'SystemAdmin' | 'InstituteAdmin' | 'AttendanceMarker' | '
 export interface User {
   id: string;
   name: string;
+  firstName?: string;
+  lastName?: string;
   email: string;
   role: UserRole;
   institutes: Institute[];
@@ -21,6 +24,7 @@ export interface Institute {
 
 interface AuthContextType {
   user: User | null;
+  loading: boolean;
   login: (user: User) => void;
   logout: () => void;
   selectedInstitute: Institute | null;
@@ -37,6 +41,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(false);
   const [selectedInstitute, setSelectedInstitute] = useState<Institute | null>(null);
   const [selectedClass, setSelectedClass] = useState<any>(null);
   const [selectedSubject, setSelectedSubject] = useState<any>(null);
@@ -67,6 +72,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   return (
     <AuthContext.Provider value={{
       user,
+      loading,
       login,
       logout,
       selectedInstitute,
