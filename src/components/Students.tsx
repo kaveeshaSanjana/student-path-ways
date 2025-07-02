@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import DataTable from '@/components/ui/data-table';
 import { Badge } from '@/components/ui/badge';
@@ -293,6 +292,12 @@ const Students = () => {
     console.log('View student details:', student);
     setSelectedStudent(student);
     setIsViewDialogOpen(true);
+  };
+
+  const handleEditStudent = (student: any) => {
+    console.log('Edit student:', student);
+    setSelectedStudent(student);
+    setIsEditDialogOpen(true);
   };
 
   const studentsColumns = [
