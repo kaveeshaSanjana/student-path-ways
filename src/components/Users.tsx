@@ -263,7 +263,7 @@ const Users = () => {
           </Select>
           <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
             <DialogTrigger asChild>
-              <Button variant="primary">Create User</Button>
+              <Button variant="default">Create User</Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
               <DialogHeader>

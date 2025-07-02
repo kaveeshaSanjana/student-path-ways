@@ -219,7 +219,7 @@ const Institutes = () => {
           </div>
           <Dialog>
             <DialogTrigger asChild>
-              <Button variant="primary">
+              <Button variant="default">
                 <PlusIcon className="mr-2 h-4 w-4" />
                 Add Institute
               </Button>
