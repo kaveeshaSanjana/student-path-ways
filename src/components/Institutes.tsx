@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -63,6 +62,7 @@ const Institutes = () => {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
           'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true',
         },
       });
 
@@ -114,6 +114,7 @@ const Institutes = () => {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
           'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true',
         },
       });
 
@@ -155,6 +156,7 @@ const Institutes = () => {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
           'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true',
         },
         body: JSON.stringify(instituteData),
       });
@@ -202,6 +204,7 @@ const Institutes = () => {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
           'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true',
         },
         body: JSON.stringify(instituteData),
       });
@@ -238,6 +241,7 @@ const Institutes = () => {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
           'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true',
         },
       });
 
