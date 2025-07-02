@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/table"
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { PlusIcon, PencilIcon, TrashIcon, SearchIcon, RefreshCwIcon } from 'lucide-react';
+import { PlusIcon, PencilIcon, TrashIcon, SearchIcon, RefreshCwIcon, EyeIcon, CheckCircleIcon } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -111,6 +111,9 @@ const Users = () => {
   const [selectedGender, setSelectedGender] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [searchById, setSearchById] = useState('');
+
+  const [viewingUser, setViewingUser] = useState<User | null>(null);
+  const [showViewDialog, setShowViewDialog] = useState(false);
 
   const getBaseUrl = () => {
     return localStorage.getItem('baseUrl') || 'http://localhost:3000';
@@ -221,6 +224,44 @@ const Users = () => {
     }
   };
 
+  const handleActivateUser = async (userId: string) => {
+    try {
+      const baseUrl = getBaseUrl();
+      const response = await fetch(`${baseUrl}/users/${userId}/activate`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+          'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true'
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to activate user');
+      }
+
+      toast({
+        title: "Success",
+        description: "User activated successfully",
+      });
+
+      // Refresh the users list
+      await fetchUsers();
+    } catch (error) {
+      console.error('Error activating user:', error);
+      toast({
+        title: "Error",
+        description: "Failed to activate user. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleViewUser = (user: User) => {
+    setViewingUser(user);
+    setShowViewDialog(true);
+  };
+
   const handleDeleteUser = async (userId: string) => {
     try {
       const baseUrl = getBaseUrl();
@@ -272,7 +313,8 @@ const Users = () => {
     country: z.string().min(2, "Country is required."),
     gender: z.enum(['MALE', 'FEMALE', 'OTHER']),
     dateOfBirth: z.string().min(1, "Date of birth is required."),
-    isActive: z.boolean().default(true)
+    isActive: z.boolean().default(true),
+    imageUrl: z.string().optional()
   });
 
   const EditUserSchema = z.object({
@@ -280,7 +322,7 @@ const Users = () => {
     lastName: z.string().min(2, "Last Name must be at least 2 characters."),
     email: z.string().email("Invalid email address."),
     phone: z.string().min(10, "Phone number must be at least 10 characters."),
-    userType: z.enum(['SUPER_ADMIN', 'INSTITUTE_ADMIN', 'TEACHER', 'ATTEDANCE_MARKER', 'STUDENT', 'PARENT']),
+    userType: z.enum(['SUPER_ADMIN', 'INSTITUTE_ADMIN', 'TEACHER', 'ATTEDANCE_MARKER']),
     nic: z.string().min(10, "NIC must be at least 10 characters."),
     birthCertificateNo: z.string().min(5, "Birth certificate number is required."),
     addressLine1: z.string().min(5, "Address line 1 is required."),
@@ -292,7 +334,8 @@ const Users = () => {
     country: z.string().min(2, "Country is required."),
     gender: z.enum(['MALE', 'FEMALE', 'OTHER']),
     dateOfBirth: z.string().min(1, "Date of birth is required."),
-    isActive: z.boolean().default(true)
+    isActive: z.boolean().default(true),
+    imageUrl: z.string().optional()
   });
   
   const createForm = useForm<z.infer<typeof CreateUserSchema>>({
@@ -315,7 +358,8 @@ const Users = () => {
       country: "Sri Lanka",
       gender: 'MALE',
       dateOfBirth: "",
-      isActive: true
+      isActive: true,
+      imageUrl: ""
     },
   });
 
@@ -338,13 +382,21 @@ const Users = () => {
       country: "Sri Lanka",
       gender: 'MALE',
       dateOfBirth: "",
-      isActive: true
+      isActive: true,
+      imageUrl: ""
     },
   });
 
   const onCreateUserSubmit = async (values: z.infer<typeof CreateUserSchema>) => {
     try {
       const baseUrl = getBaseUrl();
+      
+      // Format date to MM/DD/YYYY
+      const formattedValues = {
+        ...values,
+        dateOfBirth: formatDateToMMDDYYYY(values.dateOfBirth)
+      };
+      
       const response = await fetch(`${baseUrl}/users`, {
         method: 'POST',
         headers: {
@@ -352,7 +404,7 @@ const Users = () => {
           'Content-Type': 'application/json',
           'ngrok-skip-browser-warning': 'true'
         },
-        body: JSON.stringify(values),
+        body: JSON.stringify(formattedValues),
       });
   
       if (!response.ok) {
@@ -383,6 +435,29 @@ const Users = () => {
     
     try {
       const baseUrl = getBaseUrl();
+      
+      // Format date to MM/DD/YYYY and exclude system fields
+      const formattedValues = {
+        firstName: values.firstName,
+        lastName: values.lastName,
+        email: values.email,
+        phone: values.phone,
+        userType: values.userType,
+        nic: values.nic,
+        birthCertificateNo: values.birthCertificateNo,
+        addressLine1: values.addressLine1,
+        addressLine2: values.addressLine2,
+        city: values.city,
+        district: values.district,
+        province: values.province,
+        postalCode: values.postalCode,
+        country: values.country,
+        gender: values.gender,
+        dateOfBirth: formatDateToMMDDYYYY(values.dateOfBirth),
+        isActive: values.isActive,
+        imageUrl: values.imageUrl
+      };
+      
       const response = await fetch(`${baseUrl}/users/${editingUser.id}`, {
         method: 'PATCH',
         headers: {
@@ -390,7 +465,7 @@ const Users = () => {
           'Content-Type': 'application/json',
           'ngrok-skip-browser-warning': 'true'
         },
-        body: JSON.stringify(values),
+        body: JSON.stringify(formattedValues),
       });
   
       if (!response.ok) {
@@ -417,6 +492,14 @@ const Users = () => {
     }
   };
 
+  const formatDateToMMDDYYYY = (dateString: string) => {
+    const date = new Date(dateString + 'T00:00:00');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${month}/${day}/${year}`;
+  };
+
   const handleEditUser = (user: User) => {
     setEditingUser(user);
     editForm.reset({
@@ -436,7 +519,8 @@ const Users = () => {
       country: user.country,
       gender: user.gender as any,
       dateOfBirth: user.dateOfBirth ? user.dateOfBirth.split('T')[0] : "",
-      isActive: user.isActive
+      isActive: user.isActive,
+      imageUrl: user.imageUrl || ""
     });
     setShowEditForm(true);
   };
@@ -583,6 +667,9 @@ const Users = () => {
                             </SelectContent>
                           </Select>
                           <FormMessage />
+                          <FormDescription className="text-xs text-amber-600">
+                            Student and Parent types cannot be created through this form
+                          </FormDescription>
                         </FormItem>
                       )}
                     />
@@ -650,6 +737,7 @@ const Users = () => {
                             <Input type="date" {...field} />
                           </FormControl>
                           <FormMessage />
+                          <p className="text-xs text-gray-500">Will be sent as MM/DD/YYYY format</p>
                         </FormItem>
                       )}
                     />
@@ -754,6 +842,23 @@ const Users = () => {
                       )}
                     />
                   </div>
+
+                  <FormField
+                    control={createForm.control}
+                    name="imageUrl"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Profile Image URL</FormLabel>
+                        <FormControl>
+                          <Input placeholder="https://example.com/image.jpg" {...field} />
+                        </FormControl>
+                        <FormDescription className="text-xs">
+                          Optional: Enter a URL for the user's profile image
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
                   <FormField
                     control={createForm.control}
@@ -956,25 +1061,46 @@ const Users = () => {
                       </span>
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => handleEditUser(user)}
-                      >
-                        <PencilIcon className="h-4 w-4 mr-2" />
-                        Edit
-                      </Button>
-                      {currentUser?.email !== user.email && (
+                      <div className="flex justify-end space-x-1">
                         <Button 
                           variant="ghost" 
-                          size="sm" 
-                          onClick={() => handleDeleteUser(user.id)}
-                          className="text-red-600 hover:text-red-700"
+                          size="sm"
+                          onClick={() => handleViewUser(user)}
                         >
-                          <TrashIcon className="h-4 w-4 mr-2" />
-                          Delete
+                          <EyeIcon className="h-4 w-4 mr-2" />
+                          View
                         </Button>
-                      )}
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleEditUser(user)}
+                        >
+                          <PencilIcon className="h-4 w-4 mr-2" />
+                          Edit
+                        </Button>
+                        {!user.isActive && (
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => handleActivateUser(user.id)}
+                            className="text-green-600 hover:text-green-700"
+                          >
+                            <CheckCircleIcon className="h-4 w-4 mr-2" />
+                            Activate
+                          </Button>
+                        )}
+                        {currentUser?.email !== user.email && (
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => handleDeleteUser(user.id)}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <TrashIcon className="h-4 w-4 mr-2" />
+                            Delete
+                          </Button>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -1110,11 +1236,12 @@ const Users = () => {
                           <SelectItem value="INSTITUTE_ADMIN">Institute Admin</SelectItem>
                           <SelectItem value="TEACHER">Teacher</SelectItem>
                           <SelectItem value="ATTEDANCE_MARKER">Attendance Marker</SelectItem>
-                          <SelectItem value="STUDENT">Student</SelectItem>
-                          <SelectItem value="PARENT">Parent</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
+                      <FormDescription className="text-xs text-amber-600">
+                        Student and Parent types cannot be set through this form
+                      </FormDescription>
                     </FormItem>
                   )}
                 />
@@ -1181,6 +1308,7 @@ const Users = () => {
                       <Input type="date" {...field} />
                     </FormControl>
                     <FormMessage />
+                    <p className="text-xs text-gray-500">Will be sent as MM/DD/YYYY format</p>
                   </FormItem>
                 )}
               />
@@ -1287,6 +1415,23 @@ const Users = () => {
 
               <FormField
                 control={editForm.control}
+                name="imageUrl"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Profile Image URL</FormLabel>
+                    <FormControl>
+                      <Input placeholder="https://example.com/image.jpg" {...field} />
+                    </FormControl>
+                    <FormDescription className="text-xs">
+                      Optional: Enter a URL for the user's profile image
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={editForm.control}
                 name="isActive"
                 render={({ field }) => (
                   <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
@@ -1317,6 +1462,120 @@ const Users = () => {
               </div>
             </form>
           </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* View User Dialog */}
+      <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>User Details</DialogTitle>
+            <DialogDescription>
+              Complete information for {viewingUser?.firstName} {viewingUser?.lastName}
+            </DialogDescription>
+          </DialogHeader>
+          {viewingUser && (
+            <div className="space-y-4">
+              {viewingUser.imageUrl && (
+                <div className="flex justify-center">
+                  <img 
+                    src={viewingUser.imageUrl} 
+                    alt="Profile" 
+                    className="w-24 h-24 rounded-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
+                </div>
+              )}
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="font-semibold">First Name</Label>
+                  <p className="text-sm">{viewingUser.firstName}</p>
+                </div>
+                <div>
+                  <Label className="font-semibold">Last Name</Label>
+                  <p className="text-sm">{viewingUser.lastName}</p>
+                </div>
+                <div>
+                  <Label className="font-semibold">Email</Label>
+                  <p className="text-sm">{viewingUser.email}</p>
+                </div>
+                <div>
+                  <Label className="font-semibold">Phone</Label>
+                  <p className="text-sm">{viewingUser.phone}</p>
+                </div>
+                <div>
+                  <Label className="font-semibold">User Type</Label>
+                  <p className="text-sm">{viewingUser.userType}</p>
+                </div>
+                <div>
+                  <Label className="font-semibold">Gender</Label>
+                  <p className="text-sm">{viewingUser.gender}</p>
+                </div>
+                <div>
+                  <Label className="font-semibold">Date of Birth</Label>
+                  <p className="text-sm">{viewingUser.dateOfBirth}</p>
+                </div>
+                <div>
+                  <Label className="font-semibold">NIC</Label>
+                  <p className="text-sm">{viewingUser.nic}</p>
+                </div>
+                <div className="col-span-2">
+                  <Label className="font-semibold">Birth Certificate No</Label>
+                  <p className="text-sm">{viewingUser.birthCertificateNo}</p>
+                </div>
+                <div className="col-span-2">
+                  <Label className="font-semibold">Address</Label>
+                  <p className="text-sm">
+                    {viewingUser.addressLine1}
+                    {viewingUser.addressLine2 && `, ${viewingUser.addressLine2}`}
+                  </p>
+                </div>
+                <div>
+                  <Label className="font-semibold">City</Label>
+                  <p className="text-sm">{viewingUser.city}</p>
+                </div>
+                <div>
+                  <Label className="font-semibold">District</Label>
+                  <p className="text-sm">{viewingUser.district}</p>
+                </div>
+                <div>
+                  <Label className="font-semibold">Province</Label>
+                  <p className="text-sm">{viewingUser.province}</p>
+                </div>
+                <div>
+                  <Label className="font-semibold">Postal Code</Label>
+                  <p className="text-sm">{viewingUser.postalCode}</p>
+                </div>
+                <div>
+                  <Label className="font-semibold">Country</Label>
+                  <p className="text-sm">{viewingUser.country}</p>
+                </div>
+                <div>
+                  <Label className="font-semibold">Status</Label>
+                  <span className={`px-2 py-1 text-xs rounded-full ${
+                    viewingUser.isActive 
+                      ? 'bg-green-100 text-green-800' 
+                      : 'bg-red-100 text-red-800'
+                  }`}>
+                    {viewingUser.isActive ? 'Active' : 'Inactive'}
+                  </span>
+                </div>
+                <div>
+                  <Label className="font-semibold">Created At</Label>
+                  <p className="text-sm">{new Date(viewingUser.createdAt).toLocaleString()}</p>
+                </div>
+              </div>
+              
+              <div className="flex justify-end">
+                <Button variant="outline" onClick={() => setShowViewDialog(false)}>
+                  Close
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

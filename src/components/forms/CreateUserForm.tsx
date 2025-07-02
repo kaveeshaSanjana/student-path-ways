@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -6,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 
 const userSchema = z.object({
   firstName: z.string().min(2, 'First name must be at least 2 characters'),
@@ -26,7 +27,8 @@ const userSchema = z.object({
   country: z.string().min(2, 'Country is required'),
   gender: z.string().min(1, 'Gender is required'),
   dateOfBirth: z.string().min(1, 'Date of birth is required'),
-  isActive: z.boolean().default(true)
+  isActive: z.boolean().default(true),
+  imageUrl: z.string().optional()
 });
 
 type UserFormData = z.infer<typeof userSchema>;
@@ -58,12 +60,13 @@ const CreateUserForm = ({ onSubmit, onCancel, initialData, isEditing = false }: 
       country: initialData?.country || 'Sri Lanka',
       gender: initialData?.gender || '',
       dateOfBirth: initialData?.dateOfBirth ? initialData.dateOfBirth.split('T')[0] : '',
-      isActive: initialData?.isActive ?? true
+      isActive: initialData?.isActive ?? true,
+      imageUrl: initialData?.imageUrl || ''
     }
   });
 
   const formatDateToMMDDYYYY = (dateString: string) => {
-    const date = new Date(dateString);
+    const date = new Date(dateString + 'T00:00:00');
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
     const year = date.getFullYear();
@@ -90,6 +93,31 @@ const CreateUserForm = ({ onSubmit, onCancel, initialData, isEditing = false }: 
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 sm:space-y-6">
+              {/* Profile Image */}
+              <div className="space-y-3 sm:space-y-4">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">Profile Image</h3>
+                <FormField
+                  control={form.control}
+                  name="imageUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm">Profile Image URL</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="https://example.com/image.jpg" 
+                          {...field} 
+                          className="text-sm" 
+                        />
+                      </FormControl>
+                      <FormDescription className="text-xs">
+                        Optional: Enter a URL for the user's profile image
+                      </FormDescription>
+                      <FormMessage className="text-xs" />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
               {/* Personal Information */}
               <div className="space-y-3 sm:space-y-4">
                 <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">Personal Information</h3>
@@ -341,7 +369,7 @@ const CreateUserForm = ({ onSubmit, onCancel, initialData, isEditing = false }: 
                         <Select 
                           onValueChange={field.onChange} 
                           defaultValue={field.value}
-                          disabled={isEditing} // Disable user type editing
+                          disabled={isEditing}
                         >
                           <FormControl>
                             <SelectTrigger className={`text-sm ${isEditing ? 'opacity-50 cursor-not-allowed' : ''}`}>
@@ -353,13 +381,12 @@ const CreateUserForm = ({ onSubmit, onCancel, initialData, isEditing = false }: 
                             <SelectItem value="INSTITUTE_ADMIN">Institute Admin</SelectItem>
                             <SelectItem value="TEACHER">Teacher</SelectItem>
                             <SelectItem value="ATTEDANCE_MARKER">Attendance Marker</SelectItem>
-                            {/* Note: STUDENT and PARENT creation restricted as per requirements */}
                           </SelectContent>
                         </Select>
                         <FormMessage className="text-xs" />
-                        {isEditing && (
-                          <p className="text-xs text-amber-600">User type cannot be changed after creation</p>
-                        )}
+                        <FormDescription className="text-xs text-amber-600">
+                          {isEditing ? 'User type cannot be changed after creation' : 'Student and Parent types cannot be created through this form'}
+                        </FormDescription>
                       </FormItem>
                     )}
                   />
