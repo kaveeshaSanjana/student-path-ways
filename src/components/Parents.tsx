@@ -119,7 +119,6 @@ const Parents = () => {
   const [totalItems, setTotalItems] = useState(0);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [searchTerm, setSearchTerm] = useState('');
-  const [relationshipFilter, setRelationshipFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('true');
   const { toast } = useToast();
 
@@ -130,19 +129,27 @@ const Parents = () => {
       setLoading(true);
       const token = localStorage.getItem('token');
       
+      if (!token) {
+        toast({
+          title: "Authentication Error",
+          description: "Please login to access this page.",
+          variant: "destructive"
+        });
+        return;
+      }
+
       const params = new URLSearchParams({
         page: currentPage.toString(),
         limit: itemsPerPage.toString(),
         isActive: statusFilter
       });
 
+      // Only add search parameter if it has a value
       if (searchTerm.trim()) {
         params.append('search', searchTerm.trim());
       }
 
-      if (relationshipFilter && relationshipFilter !== 'all') {
-        params.append('relationship', relationshipFilter);
-      }
+      console.log('Fetching parents with params:', params.toString());
 
       const response = await fetch(`${API_BASE_URL}/parents?${params}`, {
         headers: {
@@ -153,10 +160,12 @@ const Parents = () => {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch parents');
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const data: ParentsResponse = await response.json();
+      console.log('Parents data received:', data);
+      
       setParents(data.data);
       setTotalPages(data.meta.totalPages);
       setTotalItems(data.meta.total);
@@ -175,6 +184,16 @@ const Parents = () => {
   const fetchChildren = async (parentId: string) => {
     try {
       const token = localStorage.getItem('token');
+      
+      if (!token) {
+        toast({
+          title: "Authentication Error",
+          description: "Please login to access this page.",
+          variant: "destructive"
+        });
+        return;
+      }
+
       const response = await fetch(`${API_BASE_URL}/parents/${parentId}/children`, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -201,7 +220,7 @@ const Parents = () => {
 
   useEffect(() => {
     fetchParents();
-  }, [currentPage, itemsPerPage, searchTerm, relationshipFilter, statusFilter]);
+  }, [currentPage, itemsPerPage, searchTerm, statusFilter]);
 
   const handleViewParent = (parent: Parent) => {
     setSelectedParent(parent);
@@ -353,7 +372,7 @@ const Parents = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">Search</label>
               <div className="relative">
@@ -365,21 +384,6 @@ const Parents = () => {
                   className="pl-9"
                 />
               </div>
-            </div>
-            
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Relationship</label>
-              <Select value={relationshipFilter} onValueChange={setRelationshipFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="All relationships" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All relationships</SelectItem>
-                  <SelectItem value="Father">Father</SelectItem>
-                  <SelectItem value="Mother">Mother</SelectItem>
-                  <SelectItem value="Guardian">Guardian</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
 
             <div className="space-y-2">
@@ -546,6 +550,54 @@ const Parents = () => {
           )}
         </DialogContent>
       </Dialog>
+    </div>
+  );
+};
+
+const renderChildrenSection = (children: ChildData[], title: string) => {
+  if (children.length === 0) return null;
+
+  return (
+    <div className="mb-6">
+      <h4 className="text-lg font-semibold mb-3 text-blue-700">{title}</h4>
+      <div className="space-y-4">
+        {children.map((child) => (
+          <Card key={child.id} className="p-4">
+            <div className="flex items-start space-x-4">
+              <Avatar className="h-12 w-12">
+                <AvatarImage src={child.user.imageUrl} alt={child.user.firstName} />
+                <AvatarFallback>
+                  {child.user.firstName.charAt(0)}{child.user.lastName.charAt(0)}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 space-y-2">
+                <div className="flex items-center justify-between">
+                  <h5 className="font-semibold text-lg">
+                    {child.user.firstName} {child.user.lastName}
+                  </h5>
+                  <Badge variant={child.user.isActive ? "default" : "secondary"}>
+                    {child.user.isActive ? "Active" : "Inactive"}
+                  </Badge>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <div className="space-y-1">
+                    <p><strong>Student ID:</strong> {child.studentId || 'Not assigned'}</p>
+                    <p><strong>Email:</strong> {child.user.email}</p>
+                    <p><strong>Phone:</strong> {child.user.phone}</p>
+                    <p><strong>Date of Birth:</strong> {child.user.dateOfBirth}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p><strong>Emergency Contact:</strong> {child.emergencyContact}</p>
+                    <p><strong>Blood Group:</strong> {child.bloodGroup}</p>
+                    <p><strong>Allergies:</strong> {child.allergies || 'None'}</p>
+                    <p><strong>Medical Conditions:</strong> {child.medicalConditions || 'None'}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 };
