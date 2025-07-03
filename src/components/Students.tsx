@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import DataTable from '@/components/ui/data-table';
 import CreateStudentForm from '@/components/forms/CreateStudentForm';
-import { Eye, Users, Phone, Mail, MapPin, BookOpen, Search, Filter, Plus } from 'lucide-react';
+import { Eye, Users, Phone, Mail, MapPin, BookOpen, Search, Filter, Plus, RefreshCw } from 'lucide-react';
 
 interface Student {
   id: string;
@@ -67,25 +66,30 @@ interface StudentsResponse {
 
 const Students = () => {
   const [students, setStudents] = useState<Student[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [dataLoaded, setDataLoaded] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('true');
+  const [statusFilter, setStatusFilter] = useState('all');
   const { toast } = useToast();
 
   const API_BASE_URL = 'http://localhost:3000';
 
   const getAuthToken = () => {
-    // Try multiple possible token keys
+    // Try multiple possible token keys and check sessionStorage too
     const token = localStorage.getItem('access_token') || 
                   localStorage.getItem('token') || 
-                  localStorage.getItem('authToken');
+                  localStorage.getItem('authToken') ||
+                  sessionStorage.getItem('access_token') ||
+                  sessionStorage.getItem('token') ||
+                  sessionStorage.getItem('authToken');
     console.log('Auth token check:', token ? 'Token found' : 'No token found');
     return token;
   };
@@ -95,7 +99,9 @@ const Students = () => {
     
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      'ngrok-skip-browser-warning': 'true'
+      'ngrok-skip-browser-warning': 'true',
+      'Cache-Control': 'no-cache',
+      'Pragma': 'no-cache'
     };
 
     if (token) {
@@ -111,22 +117,33 @@ const Students = () => {
       
       const params = new URLSearchParams({
         page: currentPage.toString(),
-        limit: itemsPerPage.toString(),
-        isActive: statusFilter
+        limit: itemsPerPage.toString()
       });
+
+      // Only add isActive if it's not 'all'
+      if (statusFilter !== 'all') {
+        params.append('isActive', statusFilter);
+      }
 
       if (searchTerm.trim()) {
         params.append('search', searchTerm.trim());
       }
 
       console.log('Fetching students with params:', params.toString());
+      console.log('Using headers:', getApiHeaders());
 
       const response = await fetch(`${API_BASE_URL}/students?${params}`, {
+        method: 'GET',
         headers: getApiHeaders()
       });
 
+      console.log('Response status:', response.status);
+      console.log('Response headers:', response.headers);
+
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        console.error('Response error:', errorText);
+        throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
       }
 
       const data: StudentsResponse = await response.json();
@@ -135,16 +152,21 @@ const Students = () => {
       setStudents(data.data);
       setTotalPages(data.meta.totalPages);
       setTotalItems(data.meta.total);
+      setDataLoaded(true);
     } catch (error) {
       console.error('Error fetching students:', error);
       toast({
         title: "Error",
-        description: "Failed to fetch students data",
+        description: error instanceof Error ? error.message : "Failed to fetch students data",
         variant: "destructive"
       });
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleLoadData = () => {
+    fetchStudents();
   };
 
   const handleCreateStudent = async (studentData: any) => {
@@ -166,7 +188,8 @@ const Students = () => {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
       }
 
       toast({
@@ -180,19 +203,101 @@ const Students = () => {
       console.error('Failed to create student:', error);
       toast({
         title: "Creation Failed",
-        description: "Failed to create student.",
+        description: error instanceof Error ? error.message : "Failed to create student.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleUpdateStudent = async (studentData: any) => {
+    if (!selectedStudent) return;
+    
+    try {
+      const formattedData = {
+        ...studentData,
+        dateOfBirth: studentData.dateOfBirth ? 
+          new Date(studentData.dateOfBirth).toISOString().split('T')[0] : 
+          new Date().toISOString().split('T')[0]
+      };
+
+      const response = await fetch(`${API_BASE_URL}/students/${selectedStudent.userId}`, {
+        method: 'PATCH',
+        headers: getApiHeaders(),
+        body: JSON.stringify(formattedData)
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
+      }
+
+      toast({
+        title: "Student Updated",
+        description: `Student ${studentData.firstName} ${studentData.lastName} has been updated successfully.`
+      });
+      
+      setShowEditDialog(false);
+      setSelectedStudent(null);
+      fetchStudents();
+    } catch (error) {
+      console.error('Failed to update student:', error);
+      toast({
+        title: "Update Failed",
+        description: error instanceof Error ? error.message : "Failed to update student.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleDeleteStudent = async (student: Student) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/students/${student.userId}`, {
+        method: 'DELETE',
+        headers: getApiHeaders()
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
+      }
+
+      toast({
+        title: "Student Deleted",
+        description: `Student ${student.user.firstName} ${student.user.lastName} has been deleted.`,
+        variant: "destructive"
+      });
+      
+      fetchStudents();
+    } catch (error) {
+      console.error('Failed to delete student:', error);
+      toast({
+        title: "Delete Failed",
+        description: error instanceof Error ? error.message : "Failed to delete student.",
         variant: "destructive"
       });
     }
   };
 
   useEffect(() => {
-    fetchStudents();
+    if (!dataLoaded) {
+      handleLoadData();
+    }
+  }, []);
+
+  useEffect(() => {
+    if (dataLoaded) {
+      fetchStudents();
+    }
   }, [currentPage, itemsPerPage, searchTerm, statusFilter]);
 
   const handleViewStudent = (student: Student) => {
     setSelectedStudent(student);
     setShowViewDialog(true);
+  };
+
+  const handleEditStudent = (student: Student) => {
+    setSelectedStudent(student);
+    setShowEditDialog(true);
   };
 
   const columns = [
@@ -255,17 +360,6 @@ const Students = () => {
     }
   ];
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading students...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -281,61 +375,113 @@ const Students = () => {
         </div>
       </div>
 
-      {/* Filters */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Filter className="h-5 w-5" />
-            Filters
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Search</label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Search students..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9"
-                />
+      {!dataLoaded ? (
+        <div className="text-center py-12">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+            Students Data
+          </h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
+            Click the button below to load students data
+          </p>
+          <Button 
+            onClick={handleLoadData} 
+            disabled={loading}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            {loading ? (
+              <>
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                Loading Data...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Load Data
+              </>
+            )}
+          </Button>
+        </div>
+      ) : (
+        <>
+          {/* Filters */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Filter className="h-5 w-5" />
+                Filters
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Search</label>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Input
+                      placeholder="Search students..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-9"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Status</label>
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Status</SelectItem>
+                      <SelectItem value="true">Active</SelectItem>
+                      <SelectItem value="false">Inactive</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex items-end">
+                  <Button 
+                    onClick={handleLoadData} 
+                    disabled={loading}
+                    variant="outline"
+                    size="sm"
+                  >
+                    {loading ? (
+                      <>
+                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                        Refreshing...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                        Refresh Data
+                      </>
+                    )}
+                  </Button>
+                </div>
               </div>
-            </div>
+            </CardContent>
+          </Card>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Status</label>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="true">Active</SelectItem>
-                  <SelectItem value="false">Inactive</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <DataTable
-        title="Students List"
-        data={students}
-        columns={columns}
-        onAdd={() => setShowCreateDialog(true)}
-        onView={handleViewStudent}
-        searchPlaceholder="Search students..."
-        allowEdit={false}
-        allowDelete={false}
-        currentPage={currentPage}
-        totalItems={totalItems}
-        totalPages={totalPages}
-        onPageChange={setCurrentPage}
-        itemsPerPage={itemsPerPage}
-        onItemsPerPageChange={setItemsPerPage}
-      />
+          <DataTable
+            title="Students List"
+            data={students}
+            columns={columns}
+            onAdd={() => setShowCreateDialog(true)}
+            onView={handleViewStudent}
+            onEdit={handleEditStudent}
+            onDelete={handleDeleteStudent}
+            searchPlaceholder="Search students..."
+            currentPage={currentPage}
+            totalItems={totalItems}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            itemsPerPage={itemsPerPage}
+            onItemsPerPageChange={setItemsPerPage}
+          />
+        </>
+      )}
 
       {/* Create Dialog */}
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
@@ -346,6 +492,23 @@ const Students = () => {
           <CreateStudentForm
             onSubmit={handleCreateStudent}
             onCancel={() => setShowCreateDialog(false)}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Dialog */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Student</DialogTitle>
+          </DialogHeader>
+          <CreateStudentForm
+            initialData={selectedStudent}
+            onSubmit={handleUpdateStudent}
+            onCancel={() => {
+              setShowEditDialog(false);
+              setSelectedStudent(null);
+            }}
           />
         </DialogContent>
       </Dialog>

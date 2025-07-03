@@ -122,8 +122,8 @@ const Parents = () => {
   const [totalItems, setTotalItems] = useState(0);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('true');
-  const [relationshipFilter, setRelationshipFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [relationshipFilter, setRelationshipFilter] = useState('all');
   const { toast } = useToast();
 
   const API_BASE_URL = 'http://localhost:3000';
@@ -156,15 +156,20 @@ const Parents = () => {
 
       const params = new URLSearchParams({
         page: currentPage.toString(),
-        limit: itemsPerPage.toString(),
-        isActive: statusFilter
+        limit: itemsPerPage.toString()
       });
+
+      // Only add isActive if it's not 'all'
+      if (statusFilter !== 'all') {
+        params.append('isActive', statusFilter);
+      }
 
       if (searchTerm.trim()) {
         params.append('search', searchTerm.trim());
       }
 
-      if (relationshipFilter) {
+      // Only add relationship if it's not 'all'
+      if (relationshipFilter !== 'all') {
         params.append('relationship', relationshipFilter);
       }
 
@@ -251,13 +256,32 @@ const Parents = () => {
     setShowEditDialog(true);
   };
 
-  const handleDeleteParent = (parent: Parent) => {
-    console.log('Delete parent:', parent);
-    toast({
-      title: "Parent Deleted",
-      description: `Parent ${parent.user.firstName} ${parent.user.lastName} has been deleted.`,
-      variant: "destructive"
-    });
+  const handleDeleteParent = async (parent: Parent) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/parents/${parent.userId}`, {
+        method: 'DELETE',
+        headers: getApiHeaders()
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete parent');
+      }
+
+      toast({
+        title: "Parent Deleted",
+        description: `Parent ${parent.user.firstName} ${parent.user.lastName} has been deleted.`,
+        variant: "destructive"
+      });
+      
+      await fetchParents();
+    } catch (error) {
+      console.error('Error deleting parent:', error);
+      toast({
+        title: "Delete Failed",
+        description: "Failed to delete parent. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleCreateParent = async (parentData: any) => {
@@ -297,13 +321,37 @@ const Parents = () => {
   const handleUpdateParent = async (parentData: any) => {
     if (!selectedParent) return;
     
-    console.log('Update parent:', parentData);
-    toast({
-      title: "Parent Updated",
-      description: `Parent ${parentData.firstName} ${parentData.lastName} has been updated successfully.`
-    });
-    setShowEditDialog(false);
-    setSelectedParent(null);
+    try {
+      setLoading(true);
+      
+      const response = await fetch(`${API_BASE_URL}/parents/${selectedParent.userId}`, {
+        method: 'PATCH',
+        headers: getApiHeaders(),
+        body: JSON.stringify(parentData)
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update parent');
+      }
+
+      toast({
+        title: "Parent Updated",
+        description: `Parent ${parentData.firstName} ${parentData.lastName} has been updated successfully.`
+      });
+      
+      setShowEditDialog(false);
+      setSelectedParent(null);
+      await fetchParents();
+    } catch (error) {
+      console.error('Error updating parent:', error);
+      toast({
+        title: "Update Failed",
+        description: "Failed to update parent. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const columns = [
@@ -483,7 +531,7 @@ const Parents = () => {
                       <SelectValue placeholder="All relationships" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All relationships</SelectItem>
+                      <SelectItem value="all">All relationships</SelectItem>
                       <SelectItem value="father">Father</SelectItem>
                       <SelectItem value="mother">Mother</SelectItem>
                       <SelectItem value="guardian">Guardian</SelectItem>
@@ -498,6 +546,7 @@ const Parents = () => {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="all">All Status</SelectItem>
                       <SelectItem value="true">Active</SelectItem>
                       <SelectItem value="false">Inactive</SelectItem>
                     </SelectContent>
