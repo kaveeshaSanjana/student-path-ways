@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -103,7 +102,7 @@ const Parents = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
-  const [relationshipFilter, setRelationshipFilter] = useState('');
+  const [relationshipFilter, setRelationshipFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('true');
   const { toast } = useToast();
 
@@ -124,7 +123,7 @@ const Parents = () => {
         params.append('search', searchTerm.trim());
       }
 
-      if (relationshipFilter) {
+      if (relationshipFilter && relationshipFilter !== 'all') {
         params.append('relationship', relationshipFilter);
       }
 
@@ -313,7 +312,7 @@ const Parents = () => {
                   <SelectValue placeholder="All relationships" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All relationships</SelectItem>
+                  <SelectItem value="all">All relationships</SelectItem>
                   <SelectItem value="Father">Father</SelectItem>
                   <SelectItem value="Mother">Mother</SelectItem>
                   <SelectItem value="Guardian">Guardian</SelectItem>
