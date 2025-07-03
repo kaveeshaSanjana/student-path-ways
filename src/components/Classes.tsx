@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import DataTable from '@/components/ui/data-table';
 import { useAuth } from '@/contexts/AuthContext';
@@ -56,6 +55,10 @@ interface ApiResponse {
 }
 
 const BASE_URL = 'http://localhost:3000';
+
+const getBaseUrl = () => {
+  return localStorage.getItem('baseUrl') || 'http://localhost:3000';
+};
 
 const Classes = ({ apiLevel = 'institute' }: ClassesProps) => {
   const { user, setSelectedClass, selectedInstitute } = useAuth();
@@ -138,7 +141,8 @@ const Classes = ({ apiLevel = 'institute' }: ClassesProps) => {
         params.append('grade', gradeFilter);
       }
 
-      const url = `${BASE_URL}/institute-classes?${params.toString()}`;
+      const baseUrl = getBaseUrl();
+      const url = `${baseUrl}/institute-classes?${params.toString()}`;
       console.log(`API Request URL: ${url}`);
 
       const response = await fetch(url, {
@@ -251,7 +255,8 @@ const Classes = ({ apiLevel = 'institute' }: ClassesProps) => {
         requireTeacherVerification: true
       };
 
-      const response = await fetch(`${BASE_URL}/institute-classes`, {
+      const baseUrl = getBaseUrl();
+      const response = await fetch(`${baseUrl}/institute-classes`, {
         method: 'POST',
         headers,
         body: JSON.stringify(formattedData)
@@ -302,7 +307,8 @@ const Classes = ({ apiLevel = 'institute' }: ClassesProps) => {
         level: parseInt(classData.level || selectedClassData.level.toString())
       };
 
-      const response = await fetch(`${BASE_URL}/institute-classes/${selectedClassData.id}`, {
+      const baseUrl = getBaseUrl();
+      const response = await fetch(`${baseUrl}/institute-classes/${selectedClassData.id}`, {
         method: 'PATCH',
         headers,
         body: JSON.stringify(formattedData)
@@ -365,7 +371,8 @@ const Classes = ({ apiLevel = 'institute' }: ClassesProps) => {
     if (!headers || !selectedClassData) return;
 
     try {
-      const response = await fetch(`${BASE_URL}/institute-classes/${selectedClassData.id}/enable-enrollment`, {
+      const baseUrl = getBaseUrl();
+      const response = await fetch(`${baseUrl}/institute-classes/${selectedClassData.id}/enable-enrollment`, {
         method: 'POST',
         headers,
         body: JSON.stringify({
@@ -401,7 +408,8 @@ const Classes = ({ apiLevel = 'institute' }: ClassesProps) => {
     if (!headers) return;
 
     try {
-      const response = await fetch(`${BASE_URL}/institute-classes/${classData.id}/disable-enrollment`, {
+      const baseUrl = getBaseUrl();
+      const response = await fetch(`${baseUrl}/institute-classes/${classData.id}/disable-enrollment`, {
         method: 'POST',
         headers
       });

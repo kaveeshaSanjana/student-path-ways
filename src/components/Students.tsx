@@ -8,16 +8,12 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import DataTable from '@/components/ui/data-table';
+import { GraduationCap, Phone, Mail, MapPin, Heart, RefreshCw } from 'lucide-react';
 import CreateStudentForm from '@/components/forms/CreateStudentForm';
-import { Eye, Users, Phone, Mail, MapPin, BookOpen, Search, Filter, Plus, RefreshCw } from 'lucide-react';
 
 interface Student {
-  id: string;
   userId: string;
   studentId: string;
-  fatherId: string | null;
-  motherId: string | null;
-  guardianId: string | null;
   emergencyContact: string;
   medicalConditions: string;
   allergies: string;
@@ -78,19 +74,17 @@ const Students = () => {
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [gradeFilter, setGradeFilter] = useState('all');
   const { toast } = useToast();
 
-  const API_BASE_URL = 'http://localhost:3000';
+  const getBaseUrl = () => {
+    return localStorage.getItem('baseUrl') || 'http://localhost:3000';
+  };
 
   const getAuthToken = () => {
-    // Try multiple possible token keys and check sessionStorage too
     const token = localStorage.getItem('access_token') || 
                   localStorage.getItem('token') || 
-                  localStorage.getItem('authToken') ||
-                  sessionStorage.getItem('access_token') ||
-                  sessionStorage.getItem('token') ||
-                  sessionStorage.getItem('authToken');
-    console.log('Auth token check:', token ? 'Token found' : 'No token found');
+                  localStorage.getItem('authToken');
     return token;
   };
 
@@ -99,9 +93,7 @@ const Students = () => {
     
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      'ngrok-skip-browser-warning': 'true',
-      'Cache-Control': 'no-cache',
-      'Pragma': 'no-cache'
+      'ngrok-skip-browser-warning': 'true'
     };
 
     if (token) {
@@ -114,13 +106,12 @@ const Students = () => {
   const fetchStudents = async () => {
     try {
       setLoading(true);
-      
+
       const params = new URLSearchParams({
         page: currentPage.toString(),
         limit: itemsPerPage.toString()
       });
 
-      // Only add isActive if it's not 'all'
       if (statusFilter !== 'all') {
         params.append('isActive', statusFilter);
       }
@@ -129,21 +120,19 @@ const Students = () => {
         params.append('search', searchTerm.trim());
       }
 
-      console.log('Fetching students with params:', params.toString());
-      console.log('Using headers:', getApiHeaders());
+      if (gradeFilter !== 'all') {
+        params.append('grade', gradeFilter);
+      }
 
-      const response = await fetch(`${API_BASE_URL}/students?${params}`, {
-        method: 'GET',
+      console.log('Fetching students with params:', params.toString());
+
+      const baseUrl = getBaseUrl();
+      const response = await fetch(`${baseUrl}/students?${params}`, {
         headers: getApiHeaders()
       });
 
-      console.log('Response status:', response.status);
-      console.log('Response headers:', response.headers);
-
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Response error:', errorText);
-        throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const data: StudentsResponse = await response.json();
@@ -157,7 +146,7 @@ const Students = () => {
       console.error('Error fetching students:', error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to fetch students data",
+        description: "Failed to fetch students data",
         variant: "destructive"
       });
     } finally {
@@ -165,122 +154,9 @@ const Students = () => {
     }
   };
 
-  const handleLoadData = () => {
-    fetchStudents();
-  };
-
-  const handleCreateStudent = async (studentData: any) => {
-    try {
-      console.log('Creating student:', studentData);
-      
-      // Format date to YYYY-MM-DD
-      const formattedData = {
-        ...studentData,
-        dateOfBirth: studentData.dateOfBirth ? 
-          new Date(studentData.dateOfBirth).toISOString().split('T')[0] : 
-          new Date().toISOString().split('T')[0]
-      };
-
-      const response = await fetch(`${API_BASE_URL}/students`, {
-        method: 'POST',
-        headers: getApiHeaders(),
-        body: JSON.stringify(formattedData)
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
-      }
-
-      toast({
-        title: "Student Created",
-        description: `Student ${studentData.firstName} ${studentData.lastName} has been created successfully.`
-      });
-      
-      setShowCreateDialog(false);
-      fetchStudents();
-    } catch (error) {
-      console.error('Failed to create student:', error);
-      toast({
-        title: "Creation Failed",
-        description: error instanceof Error ? error.message : "Failed to create student.",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleUpdateStudent = async (studentData: any) => {
-    if (!selectedStudent) return;
-    
-    try {
-      const formattedData = {
-        ...studentData,
-        dateOfBirth: studentData.dateOfBirth ? 
-          new Date(studentData.dateOfBirth).toISOString().split('T')[0] : 
-          new Date().toISOString().split('T')[0]
-      };
-
-      const response = await fetch(`${API_BASE_URL}/students/${selectedStudent.userId}`, {
-        method: 'PATCH',
-        headers: getApiHeaders(),
-        body: JSON.stringify(formattedData)
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
-      }
-
-      toast({
-        title: "Student Updated",
-        description: `Student ${studentData.firstName} ${studentData.lastName} has been updated successfully.`
-      });
-      
-      setShowEditDialog(false);
-      setSelectedStudent(null);
-      fetchStudents();
-    } catch (error) {
-      console.error('Failed to update student:', error);
-      toast({
-        title: "Update Failed",
-        description: error instanceof Error ? error.message : "Failed to update student.",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleDeleteStudent = async (student: Student) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/students/${student.userId}`, {
-        method: 'DELETE',
-        headers: getApiHeaders()
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
-      }
-
-      toast({
-        title: "Student Deleted",
-        description: `Student ${student.user.firstName} ${student.user.lastName} has been deleted.`,
-        variant: "destructive"
-      });
-      
-      fetchStudents();
-    } catch (error) {
-      console.error('Failed to delete student:', error);
-      toast({
-        title: "Delete Failed",
-        description: error instanceof Error ? error.message : "Failed to delete student.",
-        variant: "destructive"
-      });
-    }
-  };
-
   useEffect(() => {
     if (!dataLoaded) {
-      handleLoadData();
+      fetchStudents();
     }
   }, []);
 
@@ -288,7 +164,7 @@ const Students = () => {
     if (dataLoaded) {
       fetchStudents();
     }
-  }, [currentPage, itemsPerPage, searchTerm, statusFilter]);
+  }, [currentPage, itemsPerPage, searchTerm, statusFilter, gradeFilter]);
 
   const handleViewStudent = (student: Student) => {
     setSelectedStudent(student);
@@ -300,6 +176,107 @@ const Students = () => {
     setShowEditDialog(true);
   };
 
+  const handleDeleteStudent = async (student: Student) => {
+    try {
+      const baseUrl = getBaseUrl();
+      const response = await fetch(`${baseUrl}/students/${student.userId}`, {
+        method: 'DELETE',
+        headers: getApiHeaders()
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete student');
+      }
+
+      toast({
+        title: "Student Deleted",
+        description: `Student ${student.user.firstName} ${student.user.lastName} has been deleted.`,
+        variant: "destructive"
+      });
+      
+      await fetchStudents();
+    } catch (error) {
+      console.error('Error deleting student:', error);
+      toast({
+        title: "Delete Failed",
+        description: "Failed to delete student. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleCreateStudent = async (studentData: any) => {
+    try {
+      setLoading(true);
+      
+      const headers = getApiHeaders();
+      const baseUrl = getBaseUrl();
+      const response = await fetch(`${baseUrl}/students`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(studentData)
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create student');
+      }
+
+      toast({
+        title: "Student Created",
+        description: `Student ${studentData.firstName} ${studentData.lastName} has been created successfully.`
+      });
+      
+      setShowCreateDialog(false);
+      await fetchStudents();
+    } catch (error) {
+      console.error('Error creating student:', error);
+      toast({
+        title: "Creation Failed",
+        description: "Failed to create student. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdateStudent = async (studentData: any) => {
+    if (!selectedStudent) return;
+    
+    try {
+      setLoading(true);
+      
+      const baseUrl = getBaseUrl();
+      const response = await fetch(`${baseUrl}/students/${selectedStudent.userId}`, {
+        method: 'PATCH',
+        headers: getApiHeaders(),
+        body: JSON.stringify(studentData)
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update student');
+      }
+
+      toast({
+        title: "Student Updated",
+        description: `Student ${studentData.firstName} ${studentData.lastName} has been updated successfully.`
+      });
+      
+      setShowEditDialog(false);
+      setSelectedStudent(null);
+      await fetchStudents();
+    } catch (error) {
+      console.error('Error updating student:', error);
+      toast({
+        title: "Update Failed",
+        description: "Failed to update student. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const columns = [
     {
       key: 'user.firstName',
@@ -307,7 +284,7 @@ const Students = () => {
       render: (value: any, row: Student) => (
         <div className="flex items-center space-x-3">
           <Avatar className="h-10 w-10">
-            <AvatarImage src={row.user.imageUrl || ''} alt={row.user.firstName} />
+            <AvatarImage src={row.user.imageUrl} alt={row.user.firstName} />
             <AvatarFallback>
               {row.user.firstName.charAt(0)}{row.user.lastName.charAt(0)}
             </AvatarFallback>
@@ -317,13 +294,6 @@ const Students = () => {
             <p className="text-sm text-gray-500">{row.user.email}</p>
           </div>
         </div>
-      )
-    },
-    {
-      key: 'studentId',
-      header: 'Student ID',
-      render: (value: string) => (
-        <Badge variant="outline">{value || 'Not assigned'}</Badge>
       )
     },
     {
@@ -343,11 +313,9 @@ const Students = () => {
       )
     },
     {
-      key: 'user.dateOfBirth',
-      header: 'Date of Birth',
-      render: (value: string) => (
-        <span>{new Date(value).toLocaleDateString()}</span>
-      )
+      key: 'studentId',
+      header: 'Student ID',
+      render: (value: string) => value || 'N/A'
     },
     {
       key: 'user.isActive',
@@ -368,7 +336,7 @@ const Students = () => {
           <p className="text-gray-600 mt-1">Manage student accounts and information</p>
         </div>
         <div className="flex items-center space-x-2">
-          <Users className="h-8 w-8 text-blue-600" />
+          <GraduationCap className="h-8 w-8 text-blue-600" />
           <Badge variant="outline" className="text-sm">
             {totalItems} Total Students
           </Badge>
@@ -384,7 +352,7 @@ const Students = () => {
             Click the button below to load students data
           </p>
           <Button 
-            onClick={handleLoadData} 
+            onClick={fetchStudents} 
             disabled={loading}
             className="bg-blue-600 hover:bg-blue-700"
           >
@@ -403,82 +371,79 @@ const Students = () => {
         </div>
       ) : (
         <>
-          {/* Filters */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Filter className="h-5 w-5" />
-                Filters
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Search</label>
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <Input
-                      placeholder="Search students..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-9"
-                    />
-                  </div>
-                </div>
+          <div className="flex flex-wrap gap-4 items-end mb-6">
+            <div className="flex-1 min-w-[200px]">
+              <Input
+                placeholder="Search students..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full"
+              />
+            </div>
+            
+            <div className="min-w-[150px]">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="true">Active</SelectItem>
+                  <SelectItem value="false">Inactive</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Status</label>
-                  <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Status</SelectItem>
-                      <SelectItem value="true">Active</SelectItem>
-                      <SelectItem value="false">Inactive</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+            <div className="min-w-[150px]">
+              <Select value={gradeFilter} onValueChange={setGradeFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Grade" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Grades</SelectItem>
+                  {Array.from({ length: 12 }, (_, i) => i + 1).map(grade => (
+                    <SelectItem key={grade} value={grade.toString()}>
+                      Grade {grade}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-                <div className="flex items-end">
-                  <Button 
-                    onClick={handleLoadData} 
-                    disabled={loading}
-                    variant="outline"
-                    size="sm"
-                  >
-                    {loading ? (
-                      <>
-                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                        Refreshing...
-                      </>
-                    ) : (
-                      <>
-                        <RefreshCw className="h-4 w-4 mr-2" />
-                        Refresh Data
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+            <Button 
+              onClick={fetchStudents} 
+              disabled={loading}
+              variant="outline"
+            >
+              {loading ? (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  Refreshing...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Refresh
+                </>
+              )}
+            </Button>
+          </div>
 
           <DataTable
-            title="Students List"
+            title=""
             data={students}
             columns={columns}
             onAdd={() => setShowCreateDialog(true)}
-            onView={handleViewStudent}
             onEdit={handleEditStudent}
             onDelete={handleDeleteStudent}
+            onView={handleViewStudent}
             searchPlaceholder="Search students..."
             currentPage={currentPage}
             totalItems={totalItems}
             totalPages={totalPages}
             onPageChange={setCurrentPage}
-            itemsPerPage={itemsPerPage}
             onItemsPerPageChange={setItemsPerPage}
+            itemsPerPage={itemsPerPage}
           />
         </>
       )}
@@ -513,95 +478,79 @@ const Students = () => {
         </DialogContent>
       </Dialog>
 
-      {/* View Student Dialog */}
+      {/* View Dialog */}
       <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Student Details</DialogTitle>
-            <DialogDescription>
-              Complete information about the student
-            </DialogDescription>
           </DialogHeader>
-          
           {selectedStudent && (
-            <div className="space-y-6">
+            <div className="space-y-4">
               <div className="flex items-center space-x-4">
-                <Avatar className="h-20 w-20">
-                  <AvatarImage src={selectedStudent.user.imageUrl || ''} alt={selectedStudent.user.firstName} />
-                  <AvatarFallback className="text-2xl">
+                <Avatar className="h-16 w-16">
+                  <AvatarImage src={selectedStudent.user.imageUrl} alt={selectedStudent.user.firstName} />
+                  <AvatarFallback>
                     {selectedStudent.user.firstName.charAt(0)}{selectedStudent.user.lastName.charAt(0)}
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <h3 className="text-2xl font-bold">{selectedStudent.user.firstName} {selectedStudent.user.lastName}</h3>
-                  <p className="text-gray-600">Student ID: {selectedStudent.studentId || 'Not assigned'}</p>
+                  <h3 className="text-xl font-semibold">
+                    {selectedStudent.user.firstName} {selectedStudent.user.lastName}
+                  </h3>
+                  <p className="text-gray-600">Student ID: {selectedStudent.studentId}</p>
                   <Badge variant={selectedStudent.user.isActive ? "default" : "secondary"}>
                     {selectedStudent.user.isActive ? "Active" : "Inactive"}
                   </Badge>
                 </div>
               </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Personal Information</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="flex items-center space-x-2">
-                      <Mail className="h-4 w-4 text-gray-500" />
-                      <span>{selectedStudent.user.email}</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Phone className="h-4 w-4 text-gray-500" />
-                      <span>{selectedStudent.user.phone}</span>
-                    </div>
-                    <p><strong>Date of Birth:</strong> {selectedStudent.user.dateOfBirth}</p>
-                    <p><strong>Gender:</strong> {selectedStudent.user.gender}</p>
-                    <p><strong>NIC:</strong> {selectedStudent.user.nic}</p>
-                    <p><strong>Birth Certificate:</strong> {selectedStudent.user.birthCertificateNo}</p>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Medical Information</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <p><strong>Blood Group:</strong> {selectedStudent.bloodGroup}</p>
-                    <p><strong>Emergency Contact:</strong> {selectedStudent.emergencyContact}</p>
-                    <p><strong>Allergies:</strong> {selectedStudent.allergies || 'None'}</p>
-                    <p><strong>Medical Conditions:</strong> {selectedStudent.medicalConditions || 'None'}</p>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Address Information</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="flex items-start space-x-2">
-                      <MapPin className="h-4 w-4 text-gray-500 mt-1" />
-                      <div>
-                        {selectedStudent.user.addressLine1 && <p>{selectedStudent.user.addressLine1}</p>}
-                        {selectedStudent.user.addressLine2 && <p>{selectedStudent.user.addressLine2}</p>}
-                        <p>{selectedStudent.user.city}, {selectedStudent.user.district}</p>
-                        <p>{selectedStudent.user.province}, {selectedStudent.user.country}</p>
-                        <p>{selectedStudent.user.postalCode}</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Account Information</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <p><strong>User Type:</strong> {selectedStudent.user.userType}</p>
-                    <p><strong>Created:</strong> {new Date(selectedStudent.user.createdAt).toLocaleDateString()}</p>
-                    <p><strong>Last Updated:</strong> {new Date(selectedStudent.user.updatedAt).toLocaleDateString()}</p>
-                  </CardContent>
-                </Card>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Email:</label>
+                  <p className="text-sm">{selectedStudent.user.email}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Phone:</label>
+                  <p className="text-sm">{selectedStudent.user.phone}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Emergency Contact:</label>
+                  <p className="text-sm">{selectedStudent.emergencyContact}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Blood Group:</label>
+                  <p className="text-sm">{selectedStudent.bloodGroup}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Date of Birth:</label>
+                  <p className="text-sm">{selectedStudent.user.dateOfBirth}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Gender:</label>
+                  <p className="text-sm">{selectedStudent.user.gender}</p>
+                </div>
+              </div>
+              
+              <div>
+                <label className="text-sm font-medium text-gray-500">Address:</label>
+                <p className="text-sm">
+                  {selectedStudent.user.addressLine1}
+                  {selectedStudent.user.addressLine2 && `, ${selectedStudent.user.addressLine2}`}
+                  <br />
+                  {selectedStudent.user.city}, {selectedStudent.user.district}, {selectedStudent.user.province}
+                  <br />
+                  {selectedStudent.user.postalCode}, {selectedStudent.user.country}
+                </p>
+              </div>
+              
+              <div>
+                <label className="text-sm font-medium text-gray-500">Allergies:</label>
+                <p className="text-sm">{selectedStudent.allergies || 'None'}</p>
+              </div>
+              
+              <div>
+                <label className="text-sm font-medium text-gray-500">Medical Conditions:</label>
+                <p className="text-sm">{selectedStudent.medicalConditions || 'None'}</p>
               </div>
             </div>
           )}

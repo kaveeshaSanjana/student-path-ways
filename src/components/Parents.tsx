@@ -126,7 +126,9 @@ const Parents = () => {
   const [relationshipFilter, setRelationshipFilter] = useState('all');
   const { toast } = useToast();
 
-  const API_BASE_URL = 'http://localhost:3000';
+  const getBaseUrl = () => {
+    return localStorage.getItem('baseUrl') || 'http://localhost:3000';
+  };
 
   const getAuthToken = () => {
     const token = localStorage.getItem('access_token') || 
@@ -175,7 +177,8 @@ const Parents = () => {
 
       console.log('Fetching parents with params:', params.toString());
 
-      const response = await fetch(`${API_BASE_URL}/parents?${params}`, {
+      const baseUrl = getBaseUrl();
+      const response = await fetch(`${baseUrl}/parents?${params}`, {
         headers: getApiHeaders()
       });
 
@@ -204,7 +207,8 @@ const Parents = () => {
 
   const fetchChildren = async (parentId: string) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/parents/${parentId}/children`, {
+      const baseUrl = getBaseUrl();
+      const response = await fetch(`${baseUrl}/parents/${parentId}/children`, {
         headers: getApiHeaders()
       });
 
@@ -258,7 +262,8 @@ const Parents = () => {
 
   const handleDeleteParent = async (parent: Parent) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/parents/${parent.userId}`, {
+      const baseUrl = getBaseUrl();
+      const response = await fetch(`${baseUrl}/parents/${parent.userId}`, {
         method: 'DELETE',
         headers: getApiHeaders()
       });
@@ -289,7 +294,8 @@ const Parents = () => {
       setLoading(true);
       
       const headers = getApiHeaders();
-      const response = await fetch(`${API_BASE_URL}/parents`, {
+      const baseUrl = getBaseUrl();
+      const response = await fetch(`${baseUrl}/parents`, {
         method: 'POST',
         headers,
         body: JSON.stringify(parentData)
@@ -324,7 +330,8 @@ const Parents = () => {
     try {
       setLoading(true);
       
-      const response = await fetch(`${API_BASE_URL}/parents/${selectedParent.userId}`, {
+      const baseUrl = getBaseUrl();
+      const response = await fetch(`${baseUrl}/parents/${selectedParent.userId}`, {
         method: 'PATCH',
         headers: getApiHeaders(),
         body: JSON.stringify(parentData)
@@ -501,104 +508,85 @@ const Parents = () => {
         </div>
       ) : (
         <>
-          {/* Filters */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Filter className="h-5 w-5" />
-                Filters
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Search</label>
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <Input
-                      placeholder="Search parents..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-9"
-                    />
-                  </div>
-                </div>
+          <div className="flex flex-wrap gap-4 items-end mb-6">
+            <div className="flex-1 min-w-[200px]">
+              <Input
+                placeholder="Search parents..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full"
+              />
+            </div>
+            
+            <div className="min-w-[150px]">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="true">Active</SelectItem>
+                  <SelectItem value="false">Inactive</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Relationship</label>
-                  <Select value={relationshipFilter} onValueChange={setRelationshipFilter}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="All relationships" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All relationships</SelectItem>
-                      <SelectItem value="father">Father</SelectItem>
-                      <SelectItem value="mother">Mother</SelectItem>
-                      <SelectItem value="guardian">Guardian</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+            <div className="min-w-[150px]">
+              <Select value={relationshipFilter} onValueChange={setRelationshipFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Relationship" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Relations</SelectItem>
+                  <SelectItem value="father">Father</SelectItem>
+                  <SelectItem value="mother">Mother</SelectItem>
+                  <SelectItem value="guardian">Guardian</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Status</label>
-                  <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Status</SelectItem>
-                      <SelectItem value="true">Active</SelectItem>
-                      <SelectItem value="false">Inactive</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="flex items-end">
-                  <Button 
-                    onClick={handleLoadData} 
-                    disabled={loading}
-                    variant="outline"
-                    size="sm"
-                  >
-                    {loading ? (
-                      <>
-                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                        Refreshing...
-                      </>
-                    ) : (
-                      <>
-                        <RefreshCw className="h-4 w-4 mr-2" />
-                        Refresh Data
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+            <Button 
+              onClick={handleLoadData} 
+              disabled={loading}
+              variant="outline"
+            >
+              {loading ? (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  Refreshing...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Refresh
+                </>
+              )}
+            </Button>
+          </div>
 
           <DataTable
-            title="Parents List"
+            title=""
             data={parents}
             columns={columns}
-            onView={handleViewParent}
             onAdd={() => setShowCreateDialog(true)}
             onEdit={handleEditParent}
             onDelete={handleDeleteParent}
+            onView={handleViewParent}
             searchPlaceholder="Search parents..."
             customActions={[
               {
-                label: "View Children",
+                label: 'View Children',
                 action: handleViewChildren,
-                variant: "outline"
+                variant: 'outline',
+                icon: Eye
               }
             ]}
             currentPage={currentPage}
             totalItems={totalItems}
             totalPages={totalPages}
             onPageChange={setCurrentPage}
-            itemsPerPage={itemsPerPage}
             onItemsPerPageChange={setItemsPerPage}
+            itemsPerPage={itemsPerPage}
           />
         </>
       )}
@@ -633,109 +621,84 @@ const Parents = () => {
         </DialogContent>
       </Dialog>
 
-      {/* View Parent Dialog */}
+      {/* View Dialog */}
       <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Parent Details</DialogTitle>
-            <DialogDescription>
-              Complete information about the parent
-            </DialogDescription>
           </DialogHeader>
-          
           {selectedParent && (
-            
-            <div className="space-y-6">
+            <div className="space-y-4">
               <div className="flex items-center space-x-4">
-                <Avatar className="h-20 w-20">
+                <Avatar className="h-16 w-16">
                   <AvatarImage src={selectedParent.user.imageUrl || ''} alt={selectedParent.user.firstName} />
-                  <AvatarFallback className="text-2xl">
+                  <AvatarFallback>
                     {selectedParent.user.firstName.charAt(0)}{selectedParent.user.lastName.charAt(0)}
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <h3 className="text-2xl font-bold">{selectedParent.user.firstName} {selectedParent.user.lastName}</h3>
+                  <h3 className="text-xl font-semibold">
+                    {selectedParent.user.firstName} {selectedParent.user.lastName}
+                  </h3>
                   <p className="text-gray-600">{selectedParent.occupation}</p>
                   <Badge variant={selectedParent.user.isActive ? "default" : "secondary"}>
                     {selectedParent.user.isActive ? "Active" : "Inactive"}
                   </Badge>
                 </div>
               </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Personal Information</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="flex items-center space-x-2">
-                      <Mail className="h-4 w-4 text-gray-500" />
-                      <span>{selectedParent.user.email}</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Phone className="h-4 w-4 text-gray-500" />
-                      <span>{selectedParent.user.phone}</span>
-                    </div>
-                    <p><strong>Date of Birth:</strong> {selectedParent.user.dateOfBirth}</p>
-                    <p><strong>Gender:</strong> {selectedParent.user.gender}</p>
-                    <p><strong>NIC:</strong> {selectedParent.user.nic}</p>
-                    <p><strong>Birth Certificate:</strong> {selectedParent.user.birthCertificateNo}</p>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Professional Information</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <p><strong>Occupation:</strong> {selectedParent.occupation}</p>
-                    <p><strong>Workplace:</strong> {selectedParent.workplace}</p>
-                    <p><strong>Work Phone:</strong> {selectedParent.workPhone}</p>
-                    <p><strong>Education Level:</strong> {selectedParent.educationLevel}</p>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Address Information</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="flex items-start space-x-2">
-                      <MapPin className="h-4 w-4 text-gray-500 mt-1" />
-                      <div>
-                        <p>{selectedParent.user.addressLine1}</p>
-                        {selectedParent.user.addressLine2 && <p>{selectedParent.user.addressLine2}</p>}
-                        <p>{selectedParent.user.city}, {selectedParent.user.district}</p>
-                        <p>{selectedParent.user.province}, {selectedParent.user.country}</p>
-                        <p>{selectedParent.user.postalCode}</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Account Information</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <p><strong>User Type:</strong> {selectedParent.user.userType}</p>
-                    <p><strong>Created:</strong> {new Date(selectedParent.user.createdAt).toLocaleDateString()}</p>
-                    <p><strong>Last Updated:</strong> {new Date(selectedParent.user.updatedAt).toLocaleDateString()}</p>
-                  </CardContent>
-                </Card>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Email:</label>
+                  <p className="text-sm">{selectedParent.user.email}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Phone:</label>
+                  <p className="text-sm">{selectedParent.user.phone}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Work Phone:</label>
+                  <p className="text-sm">{selectedParent.workPhone}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Workplace:</label>
+                  <p className="text-sm">{selectedParent.workplace}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Education Level:</label>
+                  <p className="text-sm">{selectedParent.educationLevel}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Gender:</label>
+                  <p className="text-sm">{selectedParent.user.gender}</p>
+                </div>
+              </div>
+              
+              <div>
+                <label className="text-sm font-medium text-gray-500">Address:</label>
+                <p className="text-sm">
+                  {selectedParent.user.addressLine1}
+                  {selectedParent.user.addressLine2 && `, ${selectedParent.user.addressLine2}`}
+                  <br />
+                  {selectedParent.user.city}, {selectedParent.user.district}, {selectedParent.user.province}
+                  <br />
+                  {selectedParent.user.postalCode}, {selectedParent.user.country}
+                </p>
               </div>
             </div>
           )}
         </DialogContent>
       </Dialog>
 
-      {/* View Children Dialog */}
+      {/* Children Dialog */}
       <Dialog open={showChildrenDialog} onOpenChange={setShowChildrenDialog}>
-        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Children Information</DialogTitle>
+            <DialogTitle>
+              Children of {selectedParent?.user.firstName} {selectedParent?.user.lastName}
+            </DialogTitle>
             <DialogDescription>
-              Children associated with {selectedParent?.user.firstName} {selectedParent?.user.lastName}
+              View all children associated with this parent
             </DialogDescription>
           </DialogHeader>
           
@@ -748,9 +711,8 @@ const Parents = () => {
               {childrenData.children.asFather.length === 0 && 
                childrenData.children.asMother.length === 0 && 
                childrenData.children.asGuardian.length === 0 && (
-                <div className="text-center py-8 text-gray-500">
-                  <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>No children found for this parent.</p>
+                <div className="text-center py-8">
+                  <p className="text-gray-500">No children found for this parent.</p>
                 </div>
               )}
             </div>
