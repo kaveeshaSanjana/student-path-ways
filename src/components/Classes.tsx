@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import DataTable from '@/components/ui/data-table';
 import { useAuth } from '@/contexts/AuthContext';
@@ -128,21 +129,24 @@ const Classes = ({ apiLevel = 'institute' }: ClassesProps) => {
     }
 
     try {
-      // Build query parameters
+      // Build query parameters exactly as specified in the API
       const params = new URLSearchParams({
         page: page.toString(),
         limit: limit.toString(),
         isActive: activeFilter
       });
 
+      // Add instituteId parameter as specified
       if (selectedInstitute?.id) {
         params.append('instituteId', selectedInstitute.id);
       }
 
+      // Add grade filter as specified
       if (gradeFilter) {
         params.append('grade', gradeFilter);
       }
 
+      // Add additional filters based on the response structure
       if (specialtyFilter) {
         params.append('specialty', specialtyFilter);
       }
@@ -259,11 +263,11 @@ const Classes = ({ apiLevel = 'institute' }: ClassesProps) => {
     try {
       console.log('Creating class:', classData);
       
-      // Format the data to match API requirements
+      // Format the data to match the exact structure from your JSON example
       const formattedData = {
         instituteId: selectedInstitute?.id || "1",
-        name: classData.name,
         code: classData.code,
+        name: classData.name,
         academicYear: classData.academicYear,
         level: parseInt(classData.level),
         grade: parseInt(classData.grade),
@@ -326,8 +330,8 @@ const Classes = ({ apiLevel = 'institute' }: ClassesProps) => {
       
       // Format the data to match API requirements
       const formattedData = {
-        name: classData.name,
         code: classData.code,
+        name: classData.name,
         academicYear: classData.academicYear,
         level: parseInt(classData.level),
         grade: parseInt(classData.grade),
@@ -530,7 +534,7 @@ const Classes = ({ apiLevel = 'institute' }: ClassesProps) => {
         </div>
       ) : (
         <>
-          {/* Enhanced Filters */}
+          {/* Enhanced Filters based on API response structure */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-end">
             <div>
               <Label htmlFor="grade-filter">Grade Filter</Label>
