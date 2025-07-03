@@ -34,7 +34,8 @@ const Students = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
 
-  const BASE_URL = 'https://a174-123-231-85-77.ngrok-free.app';
+  // Use consistent API base URL
+  const API_BASE_URL = 'http://localhost:3000';
 
   const buildQueryParams = () => {
     const params = new URLSearchParams();
@@ -57,10 +58,15 @@ const Students = () => {
     console.log('Loading students data...');
     
     try {
-      const token = localStorage.getItem('authToken');
+      // Use consistent token retrieval method
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+      
       const queryParams = buildQueryParams();
       
-      const response = await fetch(`${BASE_URL}/students?${queryParams}`, {
+      const response = await fetch(`${API_BASE_URL}/students?${queryParams}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -69,7 +75,7 @@ const Students = () => {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch students');
+        throw new Error(`Failed to fetch students: ${response.status} ${response.statusText}`);
       }
 
       const data = await response.json();
@@ -105,7 +111,7 @@ const Students = () => {
       console.error('Error fetching students:', error);
       toast({
         title: "Load Failed",
-        description: "Failed to load students data.",
+        description: error instanceof Error ? error.message : "Failed to load students data.",
         variant: "destructive"
       });
     } finally {
@@ -118,9 +124,12 @@ const Students = () => {
     
     setIsLoading(true);
     try {
-      const token = localStorage.getItem('authToken');
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
       
-      const response = await fetch(`${BASE_URL}/students/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/students/${id}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -129,7 +138,7 @@ const Students = () => {
       });
 
       if (!response.ok) {
-        throw new Error('Student not found');
+        throw new Error(`Student not found: ${response.status} ${response.statusText}`);
       }
 
       const data = await response.json();
@@ -165,7 +174,7 @@ const Students = () => {
       console.error('Error fetching student:', error);
       toast({
         title: "Student Not Found",
-        description: "Could not find student with the provided ID.",
+        description: error instanceof Error ? error.message : "Could not find student with the provided ID.",
         variant: "destructive"
       });
     } finally {
@@ -183,9 +192,12 @@ const Students = () => {
 
   const handleCreateStudent = async (studentData: any) => {
     try {
-      const token = localStorage.getItem('authToken');
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
       
-      const response = await fetch(`${BASE_URL}/students`, {
+      const response = await fetch(`${API_BASE_URL}/students`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -196,7 +208,7 @@ const Students = () => {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to create student');
+        throw new Error(`Failed to create student: ${response.status} ${response.statusText}`);
       }
 
       toast({
@@ -210,7 +222,7 @@ const Students = () => {
       console.error('Error creating student:', error);
       toast({
         title: "Creation Failed",
-        description: "Failed to create student.",
+        description: error instanceof Error ? error.message : "Failed to create student.",
         variant: "destructive"
       });
     }
@@ -218,7 +230,10 @@ const Students = () => {
 
   const handleUpdateStudent = async (studentData: any) => {
     try {
-      const token = localStorage.getItem('authToken');
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
       
       // Include all required fields for student update
       const updateData = {
@@ -245,7 +260,7 @@ const Students = () => {
         bloodGroup: selectedStudent.originalData?.bloodGroup
       };
       
-      const response = await fetch(`${BASE_URL}/students/${selectedStudent.id}`, {
+      const response = await fetch(`${API_BASE_URL}/students/${selectedStudent.id}`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -256,7 +271,7 @@ const Students = () => {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to update student');
+        throw new Error(`Failed to update student: ${response.status} ${response.statusText}`);
       }
 
       toast({
@@ -271,7 +286,7 @@ const Students = () => {
       console.error('Error updating student:', error);
       toast({
         title: "Update Failed",
-        description: "Failed to update student.",
+        description: error instanceof Error ? error.message : "Failed to update student.",
         variant: "destructive"
       });
     }
@@ -279,9 +294,12 @@ const Students = () => {
 
   const handleDeleteStudent = async (student: any) => {
     try {
-      const token = localStorage.getItem('authToken');
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
       
-      const response = await fetch(`${BASE_URL}/students/${student.id}`, {
+      const response = await fetch(`${API_BASE_URL}/students/${student.id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -291,7 +309,7 @@ const Students = () => {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to delete student');
+        throw new Error(`Failed to delete student: ${response.status} ${response.statusText}`);
       }
 
       toast({
@@ -305,7 +323,7 @@ const Students = () => {
       console.error('Error deleting student:', error);
       toast({
         title: "Delete Failed",
-        description: "Failed to delete student.",
+        description: error instanceof Error ? error.message : "Failed to delete student.",
         variant: "destructive"
       });
     }
@@ -331,10 +349,13 @@ const Students = () => {
 
   const handleViewParent = async (parentId: string, parentType: string) => {
     try {
-      const token = localStorage.getItem('authToken');
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
       
       // First get user data
-      const userResponse = await fetch(`${BASE_URL}/users/${parentId}`, {
+      const userResponse = await fetch(`${API_BASE_URL}/users/${parentId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -349,7 +370,7 @@ const Students = () => {
       const userData = await userResponse.json();
 
       // Then get parent-specific data
-      const parentResponse = await fetch(`${BASE_URL}/parents/${parentId}`, {
+      const parentResponse = await fetch(`${API_BASE_URL}/parents/${parentId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -382,9 +403,12 @@ const Students = () => {
 
   const handleAssignParentSubmit = async (assignmentData: any) => {
     try {
-      const token = localStorage.getItem('authToken');
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
       
-      const response = await fetch(`${BASE_URL}/students/${selectedStudent.id}/assign-parent`, {
+      const response = await fetch(`${API_BASE_URL}/students/${selectedStudent.id}/assign-parent`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -395,7 +419,7 @@ const Students = () => {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to assign parent');
+        throw new Error(`Failed to assign parent: ${response.status} ${response.statusText}`);
       }
 
       toast({
@@ -410,7 +434,7 @@ const Students = () => {
       console.error('Error assigning parent:', error);
       toast({
         title: "Assignment Failed",
-        description: "Failed to assign parent.",
+        description: error instanceof Error ? error.message : "Failed to assign parent.",
         variant: "destructive"
       });
     }
