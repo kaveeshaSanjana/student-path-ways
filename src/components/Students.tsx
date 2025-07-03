@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import DataTable from '@/components/ui/data-table';
 import { Badge } from '@/components/ui/badge';
@@ -78,20 +77,23 @@ const Students = () => {
       // Transform the data to match the table structure
       const transformedData = data.data.map((item: any) => ({
         id: item.userId,
-        studentId: item.studentId || item.user?.id || item.userId,
+        studentId: item.studentId || 'N/A',
         name: `${item.user?.firstName || ''} ${item.user?.lastName || ''}`.trim(),
         email: item.user?.email || '',
         phone: item.user?.phone || '',
         class: 'N/A',
-        guardian: 'N/A',
-        guardianPhone: 'N/A',
+        guardian: item.mother ? `${item.mother.user.firstName} ${item.mother.user.lastName}` : 'N/A',
+        guardianPhone: item.mother ? item.mother.user.phone : 'N/A',
         enrollmentDate: item.createdAt ? new Date(item.createdAt).toLocaleDateString() : '',
         status: item.isActive ? 'Active' : 'Inactive',
         user: item.user,
         originalData: item,
         fatherId: item.fatherId,
         motherId: item.motherId,
-        guardianId: item.guardianId
+        guardianId: item.guardianId,
+        father: item.father,
+        mother: item.mother,
+        guardian: item.guardian
       }));
 
       setStudentsData(transformedData);
@@ -138,20 +140,23 @@ const Students = () => {
       // Transform single student data
       const transformedStudent = {
         id: data.userId,
-        studentId: data.studentId || data.user?.id || data.userId,
+        studentId: data.studentId || 'N/A',
         name: `${data.user?.firstName || ''} ${data.user?.lastName || ''}`.trim(),
         email: data.user?.email || '',
         phone: data.user?.phone || '',
         class: 'N/A',
-        guardian: 'N/A',
-        guardianPhone: 'N/A',
+        guardian: data.mother ? `${data.mother.user.firstName} ${data.mother.user.lastName}` : 'N/A',
+        guardianPhone: data.mother ? data.mother.user.phone : 'N/A',
         enrollmentDate: data.createdAt ? new Date(data.createdAt).toLocaleDateString() : '',
         status: data.isActive ? 'Active' : 'Inactive',
         user: data.user,
         originalData: data,
         fatherId: data.fatherId,
         motherId: data.motherId,
-        guardianId: data.guardianId
+        guardianId: data.guardianId,
+        father: data.father,
+        mother: data.mother,
+        guardian: data.guardian
       };
 
       setStudentsData([transformedStudent]);
@@ -186,6 +191,36 @@ const Students = () => {
     try {
       const token = localStorage.getItem('authToken');
       
+      // Format the request body according to the API specification
+      const requestBody = {
+        user: {
+          firstName: studentData.firstName,
+          lastName: studentData.lastName,
+          email: studentData.email,
+          password: studentData.password,
+          phone: studentData.phone,
+          userType: "STUDENT",
+          nic: studentData.nic,
+          birthCertificateNo: studentData.birthCertificateNo,
+          addressLine1: studentData.addressLine1 || null,
+          city: studentData.city,
+          district: studentData.district,
+          province: studentData.province,
+          postalCode: studentData.postalCode,
+          country: studentData.country,
+          gender: studentData.gender,
+          dateOfBirth: studentData.dateOfBirth, // Keep YYYY-MM-DD format
+          imageUrl: studentData.imageUrl || null,
+          isActive: studentData.isActive
+        },
+        studentId: studentData.studentId || null,
+        emergencyContact: studentData.emergencyContact || null,
+        medicalConditions: studentData.medicalConditions || null,
+        allergies: studentData.allergies || null,
+        bloodGroup: studentData.bloodGroup || null,
+        isActive: studentData.isActive
+      };
+      
       const response = await fetch(`${BASE_URL}/students`, {
         method: 'POST',
         headers: {
@@ -193,7 +228,7 @@ const Students = () => {
           'Content-Type': 'application/json',
           'ngrok-skip-browser-warning': 'true'
         },
-        body: JSON.stringify({ user: studentData })
+        body: JSON.stringify(requestBody)
       });
 
       if (!response.ok) {
@@ -221,7 +256,7 @@ const Students = () => {
     try {
       const token = localStorage.getItem('authToken');
       
-      // Include all required fields for student update
+      // Format the request body according to the API specification
       const updateData = {
         firstName: studentData.firstName,
         lastName: studentData.lastName,
@@ -236,14 +271,14 @@ const Students = () => {
         postalCode: studentData.postalCode,
         country: studentData.country,
         gender: studentData.gender,
-        dateOfBirth: studentData.dateOfBirth,
+        dateOfBirth: studentData.dateOfBirth, // Keep YYYY-MM-DD format
         isActive: studentData.isActive,
         imageUrl: studentData.imageUrl,
-        studentId: selectedStudent.originalData?.studentId,
-        emergencyContact: selectedStudent.originalData?.emergencyContact,
-        medicalConditions: selectedStudent.originalData?.medicalConditions,
-        allergies: selectedStudent.originalData?.allergies,
-        bloodGroup: selectedStudent.originalData?.bloodGroup
+        studentId: studentData.studentId,
+        emergencyContact: studentData.emergencyContact,
+        medicalConditions: studentData.medicalConditions,
+        allergies: studentData.allergies,
+        bloodGroup: studentData.bloodGroup
       };
       
       const response = await fetch(`${BASE_URL}/students/${selectedStudent.id}`, {
