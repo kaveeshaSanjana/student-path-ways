@@ -34,13 +34,38 @@ interface UserFormData {
 }
 
 const CreateUserForm = ({ onSubmit, onCancel, initialData }: CreateUserFormProps) => {
+  // Format initial date to YYYY-MM-DD if provided
+  const formatDateForInput = (dateString: string | null | undefined): string => {
+    if (!dateString) return '';
+    
+    // If it's already in YYYY-MM-DD format, return as is
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+      return dateString;
+    }
+    
+    // Try to parse and format the date
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return '';
+      
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      
+      return `${year}-${month}-${day}`;
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return '';
+    }
+  };
+
   const [formData, setFormData] = useState<UserFormData>({
     firstName: initialData?.firstName || '',
     lastName: initialData?.lastName || '',
     email: initialData?.email || '',
     phone: initialData?.phone || '',
     userType: initialData?.userType || 'Student',
-    dateOfBirth: initialData?.dateOfBirth || '',
+    dateOfBirth: formatDateForInput(initialData?.dateOfBirth),
     gender: initialData?.gender || '',
     nic: initialData?.nic || '',
     birthCertificateNo: initialData?.birthCertificateNo || '',
@@ -64,14 +89,39 @@ const CreateUserForm = ({ onSubmit, onCancel, initialData }: CreateUserFormProps
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Format date to YYYY-MM-DD before submitting
-    const formattedData = {
-      ...formData,
-      dateOfBirth: formData.dateOfBirth ? 
-        new Date(formData.dateOfBirth).toISOString().split('T')[0] : 
-        new Date().toISOString().split('T')[0]
+    // Ensure date is in YYYY-MM-DD format before submitting
+    const formatDateForSubmission = (dateString: string): string => {
+      if (!dateString) return new Date().toISOString().split('T')[0];
+      
+      // If it's already in YYYY-MM-DD format, return as is
+      if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+        return dateString;
+      }
+      
+      // Try to parse and format the date
+      try {
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) {
+          return new Date().toISOString().split('T')[0];
+        }
+        
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        
+        return `${year}-${month}-${day}`;
+      } catch (error) {
+        console.error('Error formatting date for submission:', error);
+        return new Date().toISOString().split('T')[0];
+      }
     };
     
+    const formattedData = {
+      ...formData,
+      dateOfBirth: formatDateForSubmission(formData.dateOfBirth)
+    };
+    
+    console.log('Submitting user data with formatted date:', formattedData);
     onSubmit(formattedData);
   };
 
@@ -143,14 +193,16 @@ const CreateUserForm = ({ onSubmit, onCancel, initialData }: CreateUserFormProps
             </div>
 
             <div>
-              <Label htmlFor="dateOfBirth">Date of Birth (YYYY-MM-DD) *</Label>
+              <Label htmlFor="dateOfBirth">Date of Birth *</Label>
               <Input
                 id="dateOfBirth"
                 type="date"
                 value={formData.dateOfBirth}
                 onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
                 required
+                placeholder="YYYY-MM-DD"
               />
+              <p className="text-xs text-gray-500 mt-1">Format: YYYY-MM-DD</p>
             </div>
 
             <div>
@@ -277,7 +329,6 @@ const CreateUserForm = ({ onSubmit, onCancel, initialData }: CreateUserFormProps
           </CardContent>
         </Card>
 
-        {/* Account Settings */}
         <Card className="md:col-span-2">
           <CardHeader>
             <CardTitle>Account Settings</CardTitle>
