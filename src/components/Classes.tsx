@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import DataTable from '@/components/ui/data-table';
 import { useAuth } from '@/contexts/AuthContext';
@@ -53,8 +54,6 @@ interface ApiResponse {
     nextPage: number | null;
   };
 }
-
-const BASE_URL = 'http://localhost:3000';
 
 const getBaseUrl = () => {
   return localStorage.getItem('baseUrl') || 'http://localhost:3000';
@@ -241,16 +240,23 @@ const Classes = ({ apiLevel = 'institute' }: ClassesProps) => {
     try {
       console.log('Creating class:', classData);
       
-      // Format dates to YYYY-MM-DD
+      // Format the data to match API requirements
       const formattedData = {
-        ...classData,
         instituteId: selectedInstitute?.id || "1",
-        startDate: classData.startDate ? new Date(classData.startDate).toISOString().split('T')[0] : "2025-09-01",
-        endDate: classData.endDate ? new Date(classData.endDate).toISOString().split('T')[0] : "2026-06-30",
-        capacity: parseInt(classData.capacity),
+        name: classData.name,
+        code: classData.code,
+        academicYear: classData.academicYear,
+        level: parseInt(classData.level),
         grade: parseInt(classData.grade),
-        level: parseInt(classData.level || "1"),
+        specialty: classData.specialty,
+        classType: classData.classType,
+        capacity: parseInt(classData.capacity),
+        classTeacherId: classData.classTeacherId,
+        description: classData.description,
         isActive: true,
+        startDate: classData.startDate,
+        endDate: classData.endDate,
+        enrollmentCode: classData.enrollmentCode,
         enrollmentEnabled: false,
         requireTeacherVerification: true
       };
@@ -265,6 +271,9 @@ const Classes = ({ apiLevel = 'institute' }: ClassesProps) => {
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
+
+      const result = await response.json();
+      console.log('Class created successfully:', result);
 
       toast({
         title: "Class Created",
@@ -296,15 +305,21 @@ const Classes = ({ apiLevel = 'institute' }: ClassesProps) => {
     try {
       console.log('Updating class:', classData);
       
-      // Format dates to YYYY-MM-DD
+      // Format the data to match API requirements
       const formattedData = {
-        ...classData,
-        instituteId: selectedClassData.instituteId,
-        startDate: classData.startDate ? new Date(classData.startDate).toISOString().split('T')[0] : selectedClassData.startDate,
-        endDate: classData.endDate ? new Date(classData.endDate).toISOString().split('T')[0] : selectedClassData.endDate,
-        capacity: parseInt(classData.capacity),
+        name: classData.name,
+        code: classData.code,
+        academicYear: classData.academicYear,
+        level: parseInt(classData.level),
         grade: parseInt(classData.grade),
-        level: parseInt(classData.level || selectedClassData.level.toString())
+        specialty: classData.specialty,
+        classType: classData.classType,
+        capacity: parseInt(classData.capacity),
+        classTeacherId: classData.classTeacherId,
+        description: classData.description,
+        startDate: classData.startDate,
+        endDate: classData.endDate,
+        enrollmentCode: classData.enrollmentCode
       };
 
       const baseUrl = getBaseUrl();
@@ -317,6 +332,9 @@ const Classes = ({ apiLevel = 'institute' }: ClassesProps) => {
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
+
+      const result = await response.json();
+      console.log('Class updated successfully:', result);
 
       toast({
         title: "Class Updated",
@@ -336,13 +354,37 @@ const Classes = ({ apiLevel = 'institute' }: ClassesProps) => {
     }
   };
 
-  const handleDeleteClass = (classData: ClassData) => {
-    console.log('Deleting class:', classData);
-    toast({
-      title: "Class Deleted",
-      description: `Class ${classData.name} has been deleted.`,
-      variant: "destructive"
-    });
+  const handleDeleteClass = async (classData: ClassData) => {
+    const headers = getApiHeaders();
+    if (!headers) return;
+
+    try {
+      console.log('Deleting class:', classData);
+
+      const baseUrl = getBaseUrl();
+      const response = await fetch(`${baseUrl}/institute-classes/${classData.id}`, {
+        method: 'DELETE',
+        headers
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      toast({
+        title: "Class Deleted",
+        description: `Class ${classData.name} has been deleted successfully.`
+      });
+      
+      handleLoadData(currentPage, itemsPerPage);
+    } catch (error) {
+      console.error('Failed to delete class:', error);
+      toast({
+        title: "Delete Failed",
+        description: "Failed to delete class.",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleViewClass = (classData: ClassData) => {
@@ -357,7 +399,7 @@ const Classes = ({ apiLevel = 'institute' }: ClassesProps) => {
     setSelectedClassData(classData);
     if (!classData.enrollmentEnabled) {
       // Show enrollment dialog for enabling
-      setEnrollmentCode(classData.code || '');
+      setEnrollmentCode(classData.enrollmentCode || classData.code || '');
       setRequireTeacherVerification(classData.requireTeacherVerification);
       setIsEnrollmentDialogOpen(true);
     } else {
