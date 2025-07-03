@@ -4,17 +4,18 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-interface CreateStudentFormProps {
+interface CreateParentFormProps {
   onSubmit: (data: any) => void;
   onCancel: () => void;
   initialData?: any;
 }
 
-const CreateStudentForm = ({ onSubmit, onCancel, initialData }: CreateStudentFormProps) => {
+const CreateParentForm = ({ onSubmit, onCancel, initialData }: CreateParentFormProps) => {
   const [formData, setFormData] = useState({
+    // User Information
     firstName: initialData?.user?.firstName || '',
     lastName: initialData?.user?.lastName || '',
     email: initialData?.user?.email || '',
@@ -30,12 +31,13 @@ const CreateStudentForm = ({ onSubmit, onCancel, initialData }: CreateStudentFor
     province: initialData?.user?.province || '',
     postalCode: initialData?.user?.postalCode || '',
     country: initialData?.user?.country || 'Sri Lanka',
-    studentId: initialData?.studentId || '',
-    emergencyContact: initialData?.emergencyContact || '',
-    medicalConditions: initialData?.medicalConditions || '',
-    allergies: initialData?.allergies || '',
-    bloodGroup: initialData?.bloodGroup || '',
-    isActive: initialData?.user?.isActive ?? true
+    isActive: initialData?.user?.isActive ?? true,
+    
+    // Parent Specific Information
+    occupation: initialData?.occupation || '',
+    workplace: initialData?.workplace || '',
+    workPhone: initialData?.workPhone || '',
+    educationLevel: initialData?.educationLevel || ''
   });
 
   const handleInputChange = (field: string, value: any) => {
@@ -155,31 +157,85 @@ const CreateStudentForm = ({ onSubmit, onCancel, initialData }: CreateStudentFor
           </CardContent>
         </Card>
 
-        {/* Address Information */}
+        {/* Professional Information */}
         <Card>
           <CardHeader>
-            <CardTitle>Address Information</CardTitle>
+            <CardTitle>Professional Information</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label htmlFor="addressLine1">Address Line 1</Label>
+              <Label htmlFor="occupation">Occupation *</Label>
               <Input
-                id="addressLine1"
-                value={formData.addressLine1}
-                onChange={(e) => handleInputChange('addressLine1', e.target.value)}
+                id="occupation"
+                value={formData.occupation}
+                onChange={(e) => handleInputChange('occupation', e.target.value)}
+                required
               />
             </div>
 
             <div>
-              <Label htmlFor="addressLine2">Address Line 2</Label>
+              <Label htmlFor="workplace">Workplace</Label>
               <Input
-                id="addressLine2"
-                value={formData.addressLine2}
-                onChange={(e) => handleInputChange('addressLine2', e.target.value)}
+                id="workplace"
+                value={formData.workplace}
+                onChange={(e) => handleInputChange('workplace', e.target.value)}
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="workPhone">Work Phone</Label>
+              <Input
+                id="workPhone"
+                value={formData.workPhone}
+                onChange={(e) => handleInputChange('workPhone', e.target.value)}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="educationLevel">Education Level</Label>
+              <Select value={formData.educationLevel} onValueChange={(value) => handleInputChange('educationLevel', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select education level" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Primary">Primary Education</SelectItem>
+                  <SelectItem value="Secondary">Secondary Education</SelectItem>
+                  <SelectItem value="Diploma">Diploma</SelectItem>
+                  <SelectItem value="Bachelor">Bachelor's Degree</SelectItem>
+                  <SelectItem value="Master">Master's Degree</SelectItem>
+                  <SelectItem value="PhD">PhD</SelectItem>
+                  <SelectItem value="Other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Address Information */}
+        <Card className="md:col-span-2">
+          <CardHeader>
+            <CardTitle>Address Information</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="addressLine1">Address Line 1</Label>
+                <Input
+                  id="addressLine1"
+                  value={formData.addressLine1}
+                  onChange={(e) => handleInputChange('addressLine1', e.target.value)}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="addressLine2">Address Line 2</Label>
+                <Input
+                  id="addressLine2"
+                  value={formData.addressLine2}
+                  onChange={(e) => handleInputChange('addressLine2', e.target.value)}
+                />
+              </div>
+
               <div>
                 <Label htmlFor="city">City</Label>
                 <Input
@@ -188,6 +244,7 @@ const CreateStudentForm = ({ onSubmit, onCancel, initialData }: CreateStudentFor
                   onChange={(e) => handleInputChange('city', e.target.value)}
                 />
               </div>
+
               <div>
                 <Label htmlFor="district">District</Label>
                 <Input
@@ -196,9 +253,7 @@ const CreateStudentForm = ({ onSubmit, onCancel, initialData }: CreateStudentFor
                   onChange={(e) => handleInputChange('district', e.target.value)}
                 />
               </div>
-            </div>
 
-            <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="province">Province</Label>
                 <Input
@@ -207,6 +262,7 @@ const CreateStudentForm = ({ onSubmit, onCancel, initialData }: CreateStudentFor
                   onChange={(e) => handleInputChange('province', e.target.value)}
                 />
               </div>
+
               <div>
                 <Label htmlFor="postalCode">Postal Code</Label>
                 <Input
@@ -215,88 +271,32 @@ const CreateStudentForm = ({ onSubmit, onCancel, initialData }: CreateStudentFor
                   onChange={(e) => handleInputChange('postalCode', e.target.value)}
                 />
               </div>
-            </div>
 
-            <div>
-              <Label htmlFor="country">Country</Label>
-              <Input
-                id="country"
-                value={formData.country}
-                onChange={(e) => handleInputChange('country', e.target.value)}
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Student Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Student Information</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label htmlFor="studentId">Student ID</Label>
-              <Input
-                id="studentId"
-                value={formData.studentId}
-                onChange={(e) => handleInputChange('studentId', e.target.value)}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="emergencyContact">Emergency Contact</Label>
-              <Input
-                id="emergencyContact"
-                value={formData.emergencyContact}
-                onChange={(e) => handleInputChange('emergencyContact', e.target.value)}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="bloodGroup">Blood Group</Label>
-              <Select value={formData.bloodGroup} onValueChange={(value) => handleInputChange('bloodGroup', value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select blood group" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="A+">A+</SelectItem>
-                  <SelectItem value="A-">A-</SelectItem>
-                  <SelectItem value="B+">B+</SelectItem>
-                  <SelectItem value="B-">B-</SelectItem>
-                  <SelectItem value="AB+">AB+</SelectItem>
-                  <SelectItem value="AB-">AB-</SelectItem>
-                  <SelectItem value="O+">O+</SelectItem>
-                  <SelectItem value="O-">O-</SelectItem>
-                </SelectContent>
-              </Select>
+              <div>
+                <Label htmlFor="country">Country</Label>
+                <Input
+                  id="country"
+                  value={formData.country}
+                  onChange={(e) => handleInputChange('country', e.target.value)}
+                />
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Medical Information */}
-        <Card>
+        {/* Account Settings */}
+        <Card className="md:col-span-2">
           <CardHeader>
-            <CardTitle>Medical Information</CardTitle>
+            <CardTitle>Account Settings</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label htmlFor="allergies">Allergies</Label>
-              <Textarea
-                id="allergies"
-                value={formData.allergies}
-                onChange={(e) => handleInputChange('allergies', e.target.value)}
-                placeholder="List any allergies..."
+          <CardContent>
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="isActive"
+                checked={formData.isActive}
+                onCheckedChange={(checked) => handleInputChange('isActive', checked)}
               />
-            </div>
-
-            <div>
-              <Label htmlFor="medicalConditions">Medical Conditions</Label>
-              <Textarea
-                id="medicalConditions"
-                value={formData.medicalConditions}
-                onChange={(e) => handleInputChange('medicalConditions', e.target.value)}
-                placeholder="List any medical conditions..."
-              />
+              <Label htmlFor="isActive">Active Account</Label>
             </div>
           </CardContent>
         </Card>
@@ -307,11 +307,11 @@ const CreateStudentForm = ({ onSubmit, onCancel, initialData }: CreateStudentFor
           Cancel
         </Button>
         <Button type="submit">
-          {initialData ? 'Update Student' : 'Create Student'}
+          {initialData ? 'Update Parent' : 'Create Parent'}
         </Button>
       </div>
     </form>
   );
 };
 
-export default CreateStudentForm;
+export default CreateParentForm;

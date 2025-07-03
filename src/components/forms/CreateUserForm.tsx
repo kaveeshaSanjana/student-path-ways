@@ -1,431 +1,309 @@
 
-import React from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
-
-const userSchema = z.object({
-  firstName: z.string().min(2, 'First name must be at least 2 characters'),
-  lastName: z.string().min(2, 'Last name must be at least 2 characters'),
-  email: z.string().email('Please enter a valid email'),
-  password: z.string().min(6, 'Password must be at least 6 characters').optional(),
-  phone: z.string().min(10, 'Phone number must be at least 10 digits'),
-  userType: z.string().min(1, 'User type is required'),
-  nic: z.string().min(10, 'NIC must be at least 10 characters'),
-  birthCertificateNo: z.string().min(5, 'Birth certificate number is required'),
-  addressLine1: z.string().min(5, 'Address line 1 is required'),
-  addressLine2: z.string().optional(),
-  city: z.string().min(2, 'City is required'),
-  district: z.string().min(2, 'District is required'),
-  province: z.string().min(2, 'Province is required'),
-  postalCode: z.string().min(4, 'Postal code is required'),
-  country: z.string().min(2, 'Country is required'),
-  gender: z.string().min(1, 'Gender is required'),
-  dateOfBirth: z.string().min(1, 'Date of birth is required'),
-  isActive: z.boolean().default(true),
-  imageUrl: z.string().optional()
-});
-
-type UserFormData = z.infer<typeof userSchema>;
+import { Switch } from '@/components/ui/switch';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface CreateUserFormProps {
-  onSubmit: (data: UserFormData) => void;
+  onSubmit: (data: any) => void;
   onCancel: () => void;
   initialData?: any;
-  isEditing?: boolean;
 }
 
-const CreateUserForm = ({ onSubmit, onCancel, initialData, isEditing = false }: CreateUserFormProps) => {
-  const form = useForm<UserFormData>({
-    resolver: zodResolver(userSchema),
-    defaultValues: {
-      firstName: initialData?.firstName || '',
-      lastName: initialData?.lastName || '',
-      email: initialData?.email || '',
-      phone: initialData?.phone || '',
-      userType: initialData?.userType || '',
-      nic: initialData?.nic || '',
-      birthCertificateNo: initialData?.birthCertificateNo || '',
-      addressLine1: initialData?.addressLine1 || '',
-      addressLine2: initialData?.addressLine2 || '',
-      city: initialData?.city || '',
-      district: initialData?.district || '',
-      province: initialData?.province || '',
-      postalCode: initialData?.postalCode || '',
-      country: initialData?.country || 'Sri Lanka',
-      gender: initialData?.gender || '',
-      dateOfBirth: initialData?.dateOfBirth ? initialData.dateOfBirth.split('T')[0] : '',
-      isActive: initialData?.isActive ?? true,
-      imageUrl: initialData?.imageUrl || ''
-    }
+interface UserFormData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  userType: string;
+  dateOfBirth: string;
+  gender: string;
+  nic: string;
+  birthCertificateNo: string;
+  addressLine1: string;
+  addressLine2: string;
+  city: string;
+  district: string;
+  province: string;
+  postalCode: string;
+  country: string;
+  isActive: boolean;
+}
+
+const CreateUserForm = ({ onSubmit, onCancel, initialData }: CreateUserFormProps) => {
+  const [formData, setFormData] = useState<UserFormData>({
+    firstName: initialData?.firstName || '',
+    lastName: initialData?.lastName || '',
+    email: initialData?.email || '',
+    phone: initialData?.phone || '',
+    userType: initialData?.userType || 'Student',
+    dateOfBirth: initialData?.dateOfBirth || '',
+    gender: initialData?.gender || '',
+    nic: initialData?.nic || '',
+    birthCertificateNo: initialData?.birthCertificateNo || '',
+    addressLine1: initialData?.addressLine1 || '',
+    addressLine2: initialData?.addressLine2 || '',
+    city: initialData?.city || '',
+    district: initialData?.district || '',
+    province: initialData?.province || '',
+    postalCode: initialData?.postalCode || '',
+    country: initialData?.country || 'Sri Lanka',
+    isActive: initialData?.isActive ?? true
   });
 
-  const handleSubmit = (data: UserFormData) => {
-    // Ensure date is in YYYY-MM-DD format
+  const handleInputChange = (field: keyof UserFormData, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Format date to YYYY-MM-DD before submitting
     const formattedData = {
-      ...data,
-      dateOfBirth: data.dateOfBirth // Keep in YYYY-MM-DD format as required by API
+      ...formData,
+      dateOfBirth: formData.dateOfBirth ? 
+        new Date(formData.dateOfBirth).toISOString().split('T')[0] : 
+        new Date().toISOString().split('T')[0]
     };
+    
     onSubmit(formattedData);
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg sm:text-xl">{isEditing ? 'Edit User' : 'Create New User'}</CardTitle>
-          <CardDescription className="text-sm">
-            {isEditing ? 'Update user information' : 'Enter user information to create a new account'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 sm:space-y-6">
-              {/* Profile Image */}
-              <div className="space-y-3 sm:space-y-4">
-                <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">Profile Image</h3>
-                <FormField
-                  control={form.control}
-                  name="imageUrl"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-sm">Profile Image URL</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="https://example.com/image.jpg" 
-                          {...field} 
-                          className="text-sm" 
-                        />
-                      </FormControl>
-                      <FormDescription className="text-xs">
-                        Optional: Enter a URL for the user's profile image
-                      </FormDescription>
-                      <FormMessage className="text-xs" />
-                    </FormItem>
-                  )}
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Personal Information */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Personal Information</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="firstName">First Name *</Label>
+                <Input
+                  id="firstName"
+                  value={formData.firstName}
+                  onChange={(e) => handleInputChange('firstName', e.target.value)}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="lastName">Last Name *</Label>
+                <Input
+                  id="lastName"
+                  value={formData.lastName}
+                  onChange={(e) => handleInputChange('lastName', e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="email">Email *</Label>
+              <Input
+                id="email"
+                type="email"
+                value={formData.email}
+                onChange={(e) => handleInputChange('email', e.target.value)}
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="phone">Phone *</Label>
+              <Input
+                id="phone"
+                value={formData.phone}
+                onChange={(e) => handleInputChange('phone', e.target.value)}
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="userType">User Type *</Label>
+              <Select value={formData.userType} onValueChange={(value) => handleInputChange('userType', value)}>
+                <SelectTrigger id="userType">
+                  <SelectValue placeholder="Select user type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Student">Student</SelectItem>
+                  <SelectItem value="Teacher">Teacher</SelectItem>
+                  <SelectItem value="Parent">Parent</SelectItem>
+                  <SelectItem value="InstituteAdmin">Institute Admin</SelectItem>
+                  <SelectItem value="SystemAdmin">System Admin</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="dateOfBirth">Date of Birth (YYYY-MM-DD) *</Label>
+              <Input
+                id="dateOfBirth"
+                type="date"
+                value={formData.dateOfBirth}
+                onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="gender">Gender *</Label>
+              <Select value={formData.gender} onValueChange={(value) => handleInputChange('gender', value)}>
+                <SelectTrigger id="gender">
+                  <SelectValue placeholder="Select gender" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Male">Male</SelectItem>
+                  <SelectItem value="Female">Female</SelectItem>
+                  <SelectItem value="Other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Identification */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Identification</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label htmlFor="nic">National ID (NIC)</Label>
+              <Input
+                id="nic"
+                value={formData.nic}
+                onChange={(e) => handleInputChange('nic', e.target.value)}
+                placeholder="Enter NIC number"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="birthCertificateNo">Birth Certificate Number</Label>
+              <Input
+                id="birthCertificateNo"
+                value={formData.birthCertificateNo}
+                onChange={(e) => handleInputChange('birthCertificateNo', e.target.value)}
+                placeholder="Enter birth certificate number"
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Address Information */}
+        <Card className="md:col-span-2">
+          <CardHeader>
+            <CardTitle>Address Information</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="addressLine1">Address Line 1</Label>
+                <Input
+                  id="addressLine1"
+                  value={formData.addressLine1}
+                  onChange={(e) => handleInputChange('addressLine1', e.target.value)}
+                  placeholder="Street address"
                 />
               </div>
 
-              {/* Personal Information */}
-              <div className="space-y-3 sm:space-y-4">
-                <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">Personal Information</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                  <FormField
-                    control={form.control}
-                    name="firstName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-sm">First Name *</FormLabel>
-                        <FormControl>
-                          <Input placeholder="John" {...field} className="text-sm" />
-                        </FormControl>
-                        <FormMessage className="text-xs" />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="lastName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-sm">Last Name *</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Doe" {...field} className="text-sm" />
-                        </FormControl>
-                        <FormMessage className="text-xs" />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-sm">Email *</FormLabel>
-                        <FormControl>
-                          <Input type="email" placeholder="john.doe@example.com" {...field} className="text-sm" />
-                        </FormControl>
-                        <FormMessage className="text-xs" />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="phone"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-sm">Phone *</FormLabel>
-                        <FormControl>
-                          <Input placeholder="+1234567890" {...field} className="text-sm" />
-                        </FormControl>
-                        <FormMessage className="text-xs" />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="gender"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-sm">Gender *</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger className="text-sm">
-                              <SelectValue placeholder="Select gender" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="MALE">Male</SelectItem>
-                            <SelectItem value="FEMALE">Female</SelectItem>
-                            <SelectItem value="OTHER">Other</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage className="text-xs" />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="dateOfBirth"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-sm">Date of Birth *</FormLabel>
-                        <FormControl>
-                          <Input type="date" {...field} className="text-sm" />
-                        </FormControl>
-                        <FormMessage className="text-xs" />
-                        <FormDescription className="text-xs text-gray-500">
-                          Will be sent in YYYY-MM-DD format
-                        </FormDescription>
-                      </FormItem>
-                    )}
-                  />
-                </div>
+              <div>
+                <Label htmlFor="addressLine2">Address Line 2</Label>
+                <Input
+                  id="addressLine2"
+                  value={formData.addressLine2}
+                  onChange={(e) => handleInputChange('addressLine2', e.target.value)}
+                  placeholder="Apartment, suite, etc. (optional)"
+                />
               </div>
 
-              {/* Identification */}
-              <div className="space-y-3 sm:space-y-4">
-                <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">Identification</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                  <FormField
-                    control={form.control}
-                    name="nic"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-sm">NIC *</FormLabel>
-                        <FormControl>
-                          <Input placeholder="123456789V" {...field} className="text-sm" />
-                        </FormControl>
-                        <FormMessage className="text-xs" />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="birthCertificateNo"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-sm">Birth Certificate No *</FormLabel>
-                        <FormControl>
-                          <Input placeholder="BC123456789" {...field} className="text-sm" />
-                        </FormControl>
-                        <FormMessage className="text-xs" />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+              <div>
+                <Label htmlFor="city">City</Label>
+                <Input
+                  id="city"
+                  value={formData.city}
+                  onChange={(e) => handleInputChange('city', e.target.value)}
+                  placeholder="City"
+                />
               </div>
 
-              {/* Address Information */}
-              <div className="space-y-3 sm:space-y-4">
-                <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">Address Information</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                  <FormField
-                    control={form.control}
-                    name="addressLine1"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-sm">Address Line 1 *</FormLabel>
-                        <FormControl>
-                          <Input placeholder="123 Main Street" {...field} className="text-sm" />
-                        </FormControl>
-                        <FormMessage className="text-xs" />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="addressLine2"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-sm">Address Line 2</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Apartment 4B" {...field} className="text-sm" />
-                        </FormControl>
-                        <FormMessage className="text-xs" />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="city"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-sm">City *</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Colombo" {...field} className="text-sm" />
-                        </FormControl>
-                        <FormMessage className="text-xs" />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="district"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-sm">District *</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Colombo" {...field} className="text-sm" />
-                        </FormControl>
-                        <FormMessage className="text-xs" />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="province"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-sm">Province *</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Western" {...field} className="text-sm" />
-                        </FormControl>
-                        <FormMessage className="text-xs" />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="postalCode"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-sm">Postal Code *</FormLabel>
-                        <FormControl>
-                          <Input placeholder="10100" {...field} className="text-sm" />
-                        </FormControl>
-                        <FormMessage className="text-xs" />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="country"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-sm">Country *</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Sri Lanka" {...field} className="text-sm" />
-                        </FormControl>
-                        <FormMessage className="text-xs" />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+              <div>
+                <Label htmlFor="district">District</Label>
+                <Input
+                  id="district"
+                  value={formData.district}
+                  onChange={(e) => handleInputChange('district', e.target.value)}
+                  placeholder="District"
+                />
               </div>
 
-              {/* Account Information */}
-              <div className="space-y-3 sm:space-y-4">
-                <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">Account Information</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                  <FormField
-                    control={form.control}
-                    name="userType"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-sm">User Type *</FormLabel>
-                        {isEditing ? (
-                          <FormControl>
-                            <Input 
-                              value={field.value} 
-                              readOnly 
-                              className="text-sm bg-gray-100 cursor-not-allowed" 
-                            />
-                          </FormControl>
-                        ) : (
-                          <Select 
-                            onValueChange={field.onChange} 
-                            defaultValue={field.value}
-                          >
-                            <FormControl>
-                              <SelectTrigger className="text-sm">
-                                <SelectValue placeholder="Select user type" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="SUPER_ADMIN">Super Admin</SelectItem>
-                              <SelectItem value="INSTITUTE_ADMIN">Institute Admin</SelectItem>
-                              <SelectItem value="TEACHER">Teacher</SelectItem>
-                              <SelectItem value="ATTEDANCE_MARKER">Attendance Marker</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        )}
-                        <FormMessage className="text-xs" />
-                        <FormDescription className="text-xs text-amber-600">
-                          {isEditing ? 'User type cannot be changed after creation' : 'Student and Parent types cannot be created through this form'}
-                        </FormDescription>
-                      </FormItem>
-                    )}
-                  />
-                  
-                  {!isEditing && (
-                    <FormField
-                      control={form.control}
-                      name="password"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-sm">Password *</FormLabel>
-                          <FormControl>
-                            <Input type="password" placeholder="••••••••" {...field} className="text-sm" />
-                          </FormControl>
-                          <FormMessage className="text-xs" />
-                        </FormItem>
-                      )}
-                    />
-                  )}
-                </div>
+              <div>
+                <Label htmlFor="province">Province</Label>
+                <Input
+                  id="province"
+                  value={formData.province}
+                  onChange={(e) => handleInputChange('province', e.target.value)}
+                  placeholder="Province"
+                />
               </div>
-              
-              <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2 pt-4">
-                <Button type="button" variant="outline" onClick={onCancel} className="text-sm">
-                  Cancel
-                </Button>
-                <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-sm">
-                  {isEditing ? 'Update User' : 'Create User'}
-                </Button>
+
+              <div>
+                <Label htmlFor="postalCode">Postal Code</Label>
+                <Input
+                  id="postalCode"
+                  value={formData.postalCode}
+                  onChange={(e) => handleInputChange('postalCode', e.target.value)}
+                  placeholder="Postal code"
+                />
               </div>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
-    </div>
+
+              <div>
+                <Label htmlFor="country">Country</Label>
+                <Input
+                  id="country"
+                  value={formData.country}
+                  onChange={(e) => handleInputChange('country', e.target.value)}
+                  placeholder="Country"
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Account Settings */}
+        <Card className="md:col-span-2">
+          <CardHeader>
+            <CardTitle>Account Settings</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="isActive"
+                checked={formData.isActive}
+                onCheckedChange={(checked) => handleInputChange('isActive', checked)}
+              />
+              <Label htmlFor="isActive">Active Account</Label>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="flex justify-end space-x-4">
+        <Button type="button" variant="outline" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button type="submit">
+          {initialData ? 'Update User' : 'Create User'}
+        </Button>
+      </div>
+    </form>
   );
 };
 
