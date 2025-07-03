@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import DataTable from '@/components/ui/data-table';
 import { Badge } from '@/components/ui/badge';
@@ -100,7 +99,27 @@ const Students = () => {
       if (!response.ok) {
         const errorText = await response.text();
         console.error('API Error Response:', errorText);
-        throw new Error(`HTTP ${response.status}: ${errorText}`);
+        
+        if (response.status === 401) {
+          toast({
+            title: "Authentication Failed",
+            description: "Your session has expired. Please log in again.",
+            variant: "destructive"
+          });
+          localStorage.removeItem('authToken');
+          return;
+        }
+        
+        if (response.status === 403) {
+          toast({
+            title: "Access Denied",
+            description: "You don't have permission to access student data.",
+            variant: "destructive"
+          });
+          return;
+        }
+        
+        throw new Error(`HTTP ${response.status}: ${response.statusText || 'Unknown error'}`);
       }
 
       const data = await response.json();
@@ -130,7 +149,7 @@ const Students = () => {
 
       console.log('Transformed data:', transformedData);
       setStudentsData(transformedData);
-      setTotalCount(data.meta?.total || 0);
+      setTotalCount(data.meta?.total || data.data.length);
       setDataLoaded(true);
       
       toast({
@@ -143,6 +162,11 @@ const Students = () => {
       let errorMessage = "Failed to load students data.";
       if (error instanceof Error) {
         errorMessage = error.message;
+      }
+
+      // Handle network errors specifically
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        errorMessage = "Network error: Unable to connect to the server. Please check your internet connection and try again.";
       }
 
       toast({
@@ -187,6 +211,16 @@ const Students = () => {
       if (!response.ok) {
         const errorText = await response.text();
         console.error('Student fetch error:', errorText);
+        
+        if (response.status === 404) {
+          toast({
+            title: "Student Not Found",
+            description: `No student found with ID: ${id}`,
+            variant: "destructive"
+          });
+          return;
+        }
+        
         throw new Error(`Student not found: HTTP ${response.status}`);
       }
 
@@ -585,6 +619,7 @@ const Students = () => {
                 <div>User: {user ? `${user.firstName} ${user.lastName} (${user.role})` : 'Not logged in'}</div>
                 <div>Auth Token: {localStorage.getItem('authToken') ? 'Present' : 'Missing'}</div>
                 <div>API Base URL: {BASE_URL}</div>
+                <div>Loading State: {isLoading ? 'Loading...' : 'Ready'}</div>
               </div>
             </CardContent>
           </Card>
