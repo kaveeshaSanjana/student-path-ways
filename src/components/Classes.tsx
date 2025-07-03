@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import DataTable from '@/components/ui/data-table';
 import { useAuth } from '@/contexts/AuthContext';
@@ -80,13 +79,13 @@ const Classes = ({ apiLevel = 'institute' }: ClassesProps) => {
   const [totalItems, setTotalItems] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   
-  // Filter states
-  const [gradeFilter, setGradeFilter] = useState<string>('');
+  // Filter states - using "all" instead of empty strings
+  const [gradeFilter, setGradeFilter] = useState<string>('all');
   const [activeFilter, setActiveFilter] = useState<string>('true');
-  const [specialtyFilter, setSpecialtyFilter] = useState<string>('');
-  const [classTypeFilter, setClassTypeFilter] = useState<string>('');
-  const [academicYearFilter, setAcademicYearFilter] = useState<string>('');
-  const [levelFilter, setLevelFilter] = useState<string>('');
+  const [specialtyFilter, setSpecialtyFilter] = useState<string>('all');
+  const [classTypeFilter, setClassTypeFilter] = useState<string>('all');
+  const [academicYearFilter, setAcademicYearFilter] = useState<string>('all');
+  const [levelFilter, setLevelFilter] = useState<string>('all');
   
   // Enrollment form states
   const [enrollmentCode, setEnrollmentCode] = useState('');
@@ -141,25 +140,25 @@ const Classes = ({ apiLevel = 'institute' }: ClassesProps) => {
         params.append('instituteId', selectedInstitute.id);
       }
 
-      // Add grade filter as specified
-      if (gradeFilter) {
+      // Add grade filter as specified - only if not "all"
+      if (gradeFilter && gradeFilter !== 'all') {
         params.append('grade', gradeFilter);
       }
 
-      // Add additional filters based on the response structure
-      if (specialtyFilter) {
+      // Add additional filters based on the response structure - only if not "all"
+      if (specialtyFilter && specialtyFilter !== 'all') {
         params.append('specialty', specialtyFilter);
       }
 
-      if (classTypeFilter) {
+      if (classTypeFilter && classTypeFilter !== 'all') {
         params.append('classType', classTypeFilter);
       }
 
-      if (academicYearFilter) {
+      if (academicYearFilter && academicYearFilter !== 'all') {
         params.append('academicYear', academicYearFilter);
       }
 
-      if (levelFilter) {
+      if (levelFilter && levelFilter !== 'all') {
         params.append('level', levelFilter);
       }
 
@@ -543,7 +542,7 @@ const Classes = ({ apiLevel = 'institute' }: ClassesProps) => {
                   <SelectValue placeholder="All Grades" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Grades</SelectItem>
+                  <SelectItem value="all">All Grades</SelectItem>
                   {Array.from({ length: 12 }, (_, i) => i + 1).map(grade => (
                     <SelectItem key={grade} value={grade.toString()}>
                       Grade {grade}
@@ -560,7 +559,7 @@ const Classes = ({ apiLevel = 'institute' }: ClassesProps) => {
                   <SelectValue placeholder="All Specialties" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Specialties</SelectItem>
+                  <SelectItem value="all">All Specialties</SelectItem>
                   <SelectItem value="science">Science</SelectItem>
                   <SelectItem value="commerce">Commerce</SelectItem>
                   <SelectItem value="arts">Arts</SelectItem>
@@ -578,7 +577,7 @@ const Classes = ({ apiLevel = 'institute' }: ClassesProps) => {
                   <SelectValue placeholder="All Types" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Types</SelectItem>
+                  <SelectItem value="all">All Types</SelectItem>
                   <SelectItem value="regular">Regular</SelectItem>
                   <SelectItem value="special">Special</SelectItem>
                   <SelectItem value="advanced">Advanced</SelectItem>
@@ -594,7 +593,7 @@ const Classes = ({ apiLevel = 'institute' }: ClassesProps) => {
                   <SelectValue placeholder="All Levels" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Levels</SelectItem>
+                  <SelectItem value="all">All Levels</SelectItem>
                   <SelectItem value="1">Level 1</SelectItem>
                   <SelectItem value="2">Level 2</SelectItem>
                   <SelectItem value="3">Level 3</SelectItem>
@@ -610,7 +609,7 @@ const Classes = ({ apiLevel = 'institute' }: ClassesProps) => {
                   <SelectValue placeholder="All Years" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Years</SelectItem>
+                  <SelectItem value="all">All Years</SelectItem>
                   <SelectItem value="2024-2025">2024-2025</SelectItem>
                   <SelectItem value="2025-2026">2025-2026</SelectItem>
                   <SelectItem value="2026-2027">2026-2027</SelectItem>
@@ -656,11 +655,11 @@ const Classes = ({ apiLevel = 'institute' }: ClassesProps) => {
             <div className="flex items-end">
               <Button 
                 onClick={() => {
-                  setGradeFilter('');
-                  setSpecialtyFilter('');
-                  setClassTypeFilter('');
-                  setAcademicYearFilter('');
-                  setLevelFilter('');
+                  setGradeFilter('all');
+                  setSpecialtyFilter('all');
+                  setClassTypeFilter('all');
+                  setAcademicYearFilter('all');
+                  setLevelFilter('all');
                   setActiveFilter('true');
                 }}
                 variant="ghost"
