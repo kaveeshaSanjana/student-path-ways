@@ -1,14 +1,15 @@
+
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
-import { Eye, Users, Search, Filter, Phone, Mail, MapPin, Briefcase } from 'lucide-react';
+import DataTable from '@/components/ui/data-table';
+import { Eye, Users, Phone, Mail, MapPin, Briefcase, Search, Filter } from 'lucide-react';
 
 interface Parent {
   userId: string;
@@ -92,6 +93,20 @@ interface ChildrenResponse {
   };
 }
 
+interface ParentsResponse {
+  data: Parent[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasPreviousPage: boolean;
+    hasNextPage: boolean;
+    previousPage: number | null;
+    nextPage: number | null;
+  };
+}
+
 const Parents = () => {
   const [parents, setParents] = useState<Parent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -101,6 +116,8 @@ const Parents = () => {
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [searchTerm, setSearchTerm] = useState('');
   const [relationshipFilter, setRelationshipFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('true');
@@ -115,7 +132,7 @@ const Parents = () => {
       
       const params = new URLSearchParams({
         page: currentPage.toString(),
-        limit: '10',
+        limit: itemsPerPage.toString(),
         isActive: statusFilter
       });
 
@@ -139,9 +156,10 @@ const Parents = () => {
         throw new Error('Failed to fetch parents');
       }
 
-      const data = await response.json();
+      const data: ParentsResponse = await response.json();
       setParents(data.data);
       setTotalPages(data.meta.totalPages);
+      setTotalItems(data.meta.total);
     } catch (error) {
       console.error('Error fetching parents:', error);
       toast({
@@ -169,7 +187,7 @@ const Parents = () => {
         throw new Error('Failed to fetch children');
       }
 
-      const data = await response.json();
+      const data: ChildrenResponse = await response.json();
       setChildrenData(data);
     } catch (error) {
       console.error('Error fetching children:', error);
@@ -183,7 +201,7 @@ const Parents = () => {
 
   useEffect(() => {
     fetchParents();
-  }, [currentPage, searchTerm, relationshipFilter, statusFilter]);
+  }, [currentPage, itemsPerPage, searchTerm, relationshipFilter, statusFilter]);
 
   const handleViewParent = (parent: Parent) => {
     setSelectedParent(parent);
@@ -196,16 +214,61 @@ const Parents = () => {
     setShowChildrenDialog(true);
   };
 
-  const handleSearch = () => {
-    setCurrentPage(1);
-    fetchParents();
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleSearch();
+  const columns = [
+    {
+      key: 'user.firstName',
+      header: 'Parent',
+      render: (value: any, row: Parent) => (
+        <div className="flex items-center space-x-3">
+          <Avatar className="h-10 w-10">
+            <AvatarImage src={row.user.imageUrl || ''} alt={row.user.firstName} />
+            <AvatarFallback>
+              {row.user.firstName.charAt(0)}{row.user.lastName.charAt(0)}
+            </AvatarFallback>
+          </Avatar>
+          <div>
+            <p className="font-medium">{row.user.firstName} {row.user.lastName}</p>
+            <p className="text-sm text-gray-500">{row.user.email}</p>
+          </div>
+        </div>
+      )
+    },
+    {
+      key: 'user.phone',
+      header: 'Contact',
+      render: (value: any, row: Parent) => (
+        <div className="space-y-1">
+          <div className="flex items-center text-sm">
+            <Phone className="h-3 w-3 mr-1" />
+            {row.user.phone}
+          </div>
+          <div className="flex items-center text-sm">
+            <Briefcase className="h-3 w-3 mr-1" />
+            {row.workPhone}
+          </div>
+        </div>
+      )
+    },
+    {
+      key: 'occupation',
+      header: 'Occupation',
+      render: (value: any, row: Parent) => (
+        <div className="space-y-1">
+          <p className="font-medium">{row.occupation}</p>
+          <p className="text-sm text-gray-500">{row.workplace}</p>
+        </div>
+      )
+    },
+    {
+      key: 'user.isActive',
+      header: 'Status',
+      render: (value: boolean) => (
+        <Badge variant={value ? "default" : "secondary"}>
+          {value ? "Active" : "Inactive"}
+        </Badge>
+      )
     }
-  };
+  ];
 
   const renderChildrenSection = (children: ChildData[], title: string) => {
     if (children.length === 0) return null;
@@ -276,7 +339,7 @@ const Parents = () => {
         <div className="flex items-center space-x-2">
           <Users className="h-8 w-8 text-blue-600" />
           <Badge variant="outline" className="text-sm">
-            {parents.length} Total Parents
+            {totalItems} Total Parents
           </Badge>
         </div>
       </div>
@@ -299,7 +362,6 @@ const Parents = () => {
                   placeholder="Search parents..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  onKeyPress={handleKeyPress}
                   className="pl-9"
                 />
               </div>
@@ -332,127 +394,34 @@ const Parents = () => {
                 </SelectContent>
               </Select>
             </div>
-
-            <div className="flex items-end">
-              <Button onClick={handleSearch} className="w-full">
-                <Search className="h-4 w-4 mr-2" />
-                Search
-              </Button>
-            </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Parents Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Parents List</CardTitle>
-          <CardDescription>
-            Manage parent accounts and view their information
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Parent</TableHead>
-                  <TableHead>Contact</TableHead>
-                  <TableHead>Occupation</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {parents.map((parent) => (
-                  <TableRow key={parent.userId}>
-                    <TableCell>
-                      <div className="flex items-center space-x-3">
-                        <Avatar className="h-10 w-10">
-                          <AvatarImage src={parent.user.imageUrl || ''} alt={parent.user.firstName} />
-                          <AvatarFallback>
-                            {parent.user.firstName.charAt(0)}{parent.user.lastName.charAt(0)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-medium">{parent.user.firstName} {parent.user.lastName}</p>
-                          <p className="text-sm text-gray-500">{parent.user.email}</p>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="space-y-1">
-                        <div className="flex items-center text-sm">
-                          <Phone className="h-3 w-3 mr-1" />
-                          {parent.user.phone}
-                        </div>
-                        <div className="flex items-center text-sm">
-                          <Briefcase className="h-3 w-3 mr-1" />
-                          {parent.workPhone}
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="space-y-1">
-                        <p className="font-medium">{parent.occupation}</p>
-                        <p className="text-sm text-gray-500">{parent.workplace}</p>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={parent.user.isActive ? "default" : "secondary"}>
-                        {parent.user.isActive ? "Active" : "Inactive"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleViewParent(parent)}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleViewChildren(parent)}
-                        >
-                          <Users className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-
-          {/* Pagination */}
-          <div className="flex items-center justify-between mt-4">
-            <div className="text-sm text-gray-600">
-              Showing page {currentPage} of {totalPages}
-            </div>
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                disabled={currentPage === 1}
-              >
-                Previous
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                disabled={currentPage === totalPages}
-              >
-                Next
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <DataTable
+        title="Parents List"
+        data={parents}
+        columns={columns}
+        onView={handleViewParent}
+        searchPlaceholder="Search parents..."
+        allowAdd={false}
+        allowEdit={false}
+        allowDelete={false}
+        customActions={[
+          {
+            label: "View Children",
+            action: handleViewChildren,
+            icon: <Users className="h-3 w-3" />,
+            variant: "outline"
+          }
+        ]}
+        currentPage={currentPage}
+        totalItems={totalItems}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
+        itemsPerPage={itemsPerPage}
+        onItemsPerPageChange={setItemsPerPage}
+      />
 
       {/* View Parent Dialog */}
       <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
