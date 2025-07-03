@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import DataTable from '@/components/ui/data-table';
 import { Badge } from '@/components/ui/badge';
@@ -201,180 +200,29 @@ const Subjects = ({ apiLevel = 'institute' }: SubjectsProps) => {
     }
   };
 
-  const fetchSubjectById = async (subjectId: string) => {
-    try {
-      console.log(`Fetching subject by ID: ${subjectId}`);
-      
-      // Try to call the API first
-      try {
-        const response = await fetch(`/api/subjects/${subjectId}`);
-        
-        if (response.ok) {
-          const result = await response.json();
-          console.log('Subject fetched successfully via API:', result);
-          return {
-            name: result.name,
-            code: result.code,
-            category: result.category,
-            creditHours: result.creditHours,
-            description: result.description,
-            isActive: result.isActive
-          };
-        }
-      } catch (apiError) {
-        console.log('API call failed, using mock data:', apiError);
-      }
-      
-      // Fallback to mock data
-      const mockSubject = subjectsData.find(subject => subject.id === subjectId);
-      if (mockSubject) {
-        return {
-          name: mockSubject.name,
-          code: mockSubject.code,
-          category: 'CORES', // Default category for mock data
-          creditHours: mockSubject.credits,
-          description: mockSubject.description,
-          isActive: mockSubject.status === 'Active'
-        };
-      }
-      
-      throw new Error('Subject not found');
-    } catch (error) {
-      console.error('Error fetching subject:', error);
-      toast({
-        title: "Fetch Failed",
-        description: "Failed to fetch subject details.",
-        variant: "destructive"
-      });
-      return null;
-    }
-  };
-
-  const handleEditSubject = async (subjectData: any) => {
+  const handleEditSubject = (subjectData: any) => {
     console.log('Editing subject:', subjectData);
-    
-    const subjectDetails = await fetchSubjectById(subjectData.id);
-    if (subjectDetails) {
-      setSelectedSubject(subjectDetails);
-      setIsEditDialogOpen(true);
-    }
+    setSelectedSubject(subjectData);
+    setIsEditDialogOpen(true);
   };
 
-  const handleUpdateSubject = async (subjectData: any) => {
+  const handleUpdateSubject = (subjectData: any) => {
     console.log('Updating subject:', subjectData);
-    
-    try {
-      setIsLoading(true);
-      
-      // Try to call the API first
-      try {
-        const response = await fetch(`/api/subjects/${selectedSubject.id}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(subjectData)
-        });
-
-        if (response.ok) {
-          const result = await response.json();
-          console.log('Subject updated successfully via API:', result);
-          
-          toast({
-            title: "Subject Updated",
-            description: `Subject ${subjectData.name} has been updated successfully.`
-          });
-          
-          setIsEditDialogOpen(false);
-          setSelectedSubject(null);
-          await handleLoadData();
-          return;
-        }
-      } catch (apiError) {
-        console.log('API call failed, using mock update:', apiError);
-      }
-      
-      // Fallback to mock update
-      setSubjectsData(prev => prev.map(subject => 
-        subject.id === selectedSubject.id 
-          ? {
-              ...subject,
-              name: subjectData.name,
-              code: subjectData.code,
-              credits: subjectData.creditHours,
-              description: subjectData.description,
-              status: subjectData.isActive ? 'Active' : 'Inactive'
-            }
-          : subject
-      ));
-      
-      toast({
-        title: "Subject Updated",
-        description: `Subject ${subjectData.name} has been updated successfully.`
-      });
-      
-      setIsEditDialogOpen(false);
-      setSelectedSubject(null);
-      
-    } catch (error) {
-      console.error('Error updating subject:', error);
-      toast({
-        title: "Update Failed",
-        description: "Failed to update subject. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    toast({
+      title: "Subject Updated",
+      description: `Subject ${subjectData.name} has been updated successfully.`
+    });
+    setIsEditDialogOpen(false);
+    setSelectedSubject(null);
   };
 
-  const handleDeleteSubject = async (subjectData: any) => {
+  const handleDeleteSubject = (subjectData: any) => {
     console.log('Deleting subject:', subjectData);
-    
-    try {
-      setIsLoading(true);
-      
-      // Try to call the API first
-      try {
-        const response = await fetch(`/api/subjects/${subjectData.id}`, {
-          method: 'DELETE'
-        });
-
-        if (response.ok) {
-          console.log('Subject deleted successfully via API');
-          
-          toast({
-            title: "Subject Deleted",
-            description: `Subject ${subjectData.name} has been deleted.`,
-            variant: "destructive"
-          });
-          
-          await handleLoadData();
-          return;
-        }
-      } catch (apiError) {
-        console.log('API call failed, using mock deletion:', apiError);
-      }
-      
-      // Fallback to mock deletion
-      setSubjectsData(prev => prev.filter(subject => subject.id !== subjectData.id));
-      
-      toast({
-        title: "Subject Deleted",
-        description: `Subject ${subjectData.name} has been deleted.`,
-        variant: "destructive"
-      });
-      
-    } catch (error) {
-      console.error('Error deleting subject:', error);
-      toast({
-        title: "Delete Failed",
-        description: "Failed to delete subject. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    toast({
+      title: "Subject Deleted",
+      description: `Subject ${subjectData.name} has been deleted.`,
+      variant: "destructive"
+    });
   };
 
   const handleViewSubject = (subjectData: any) => {
