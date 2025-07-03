@@ -578,7 +578,7 @@ const Parents = () => {
                 label: 'View Children',
                 action: handleViewChildren,
                 variant: 'outline',
-                icon: Eye
+                icon: <Eye className="h-4 w-4" />
               }
             ]}
             currentPage={currentPage}
