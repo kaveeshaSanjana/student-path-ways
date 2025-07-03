@@ -8,7 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import DataTable from '@/components/ui/data-table';
-import { Eye, Users, Phone, Mail, MapPin, Briefcase, Search, Filter } from 'lucide-react';
+import { Eye, Users, Phone, Mail, MapPin, Briefcase, Search, Filter, RefreshCw } from 'lucide-react';
+import CreateParentForm from '@/components/forms/CreateParentForm';
 
 interface Parent {
   userId: string;
@@ -108,11 +109,14 @@ interface ParentsResponse {
 
 const Parents = () => {
   const [parents, setParents] = useState<Parent[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [dataLoaded, setDataLoaded] = useState(false);
   const [selectedParent, setSelectedParent] = useState<Parent | null>(null);
   const [childrenData, setChildrenData] = useState<ChildrenResponse | null>(null);
   const [showChildrenDialog, setShowChildrenDialog] = useState(false);
   const [showViewDialog, setShowViewDialog] = useState(false);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
@@ -125,11 +129,9 @@ const Parents = () => {
   const API_BASE_URL = 'http://localhost:3000';
 
   const getAuthToken = () => {
-    // Try multiple possible token keys
     const token = localStorage.getItem('access_token') || 
                   localStorage.getItem('token') || 
                   localStorage.getItem('authToken');
-    console.log('Auth token check:', token ? 'Token found' : 'No token found');
     return token;
   };
 
@@ -158,7 +160,6 @@ const Parents = () => {
         isActive: statusFilter
       });
 
-      // Only add search parameter if it has a value
       if (searchTerm.trim()) {
         params.append('search', searchTerm.trim());
       }
@@ -183,6 +184,7 @@ const Parents = () => {
       setParents(data.data);
       setTotalPages(data.meta.totalPages);
       setTotalItems(data.meta.total);
+      setDataLoaded(true);
     } catch (error) {
       console.error('Error fetching parents:', error);
       toast({
@@ -217,8 +219,20 @@ const Parents = () => {
     }
   };
 
-  useEffect(() => {
+  const handleLoadData = () => {
     fetchParents();
+  };
+
+  useEffect(() => {
+    if (!dataLoaded) {
+      handleLoadData();
+    }
+  }, []);
+
+  useEffect(() => {
+    if (dataLoaded) {
+      fetchParents();
+    }
   }, [currentPage, itemsPerPage, searchTerm, statusFilter, relationshipFilter]);
 
   const handleViewParent = (parent: Parent) => {
@@ -230,6 +244,66 @@ const Parents = () => {
     setSelectedParent(parent);
     await fetchChildren(parent.userId);
     setShowChildrenDialog(true);
+  };
+
+  const handleEditParent = (parent: Parent) => {
+    setSelectedParent(parent);
+    setShowEditDialog(true);
+  };
+
+  const handleDeleteParent = (parent: Parent) => {
+    console.log('Delete parent:', parent);
+    toast({
+      title: "Parent Deleted",
+      description: `Parent ${parent.user.firstName} ${parent.user.lastName} has been deleted.`,
+      variant: "destructive"
+    });
+  };
+
+  const handleCreateParent = async (parentData: any) => {
+    try {
+      setLoading(true);
+      
+      const headers = getApiHeaders();
+      const response = await fetch(`${API_BASE_URL}/parents`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(parentData)
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create parent');
+      }
+
+      toast({
+        title: "Parent Created",
+        description: `Parent ${parentData.firstName} ${parentData.lastName} has been created successfully.`
+      });
+      
+      setShowCreateDialog(false);
+      await fetchParents();
+    } catch (error) {
+      console.error('Error creating parent:', error);
+      toast({
+        title: "Creation Failed",
+        description: "Failed to create parent. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdateParent = async (parentData: any) => {
+    if (!selectedParent) return;
+    
+    console.log('Update parent:', parentData);
+    toast({
+      title: "Parent Updated",
+      description: `Parent ${parentData.firstName} ${parentData.lastName} has been updated successfully.`
+    });
+    setShowEditDialog(false);
+    setSelectedParent(null);
   };
 
   const columns = [
@@ -336,17 +410,6 @@ const Parents = () => {
     );
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading parents...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -362,84 +425,164 @@ const Parents = () => {
         </div>
       </div>
 
-      {/* Filters */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Filter className="h-5 w-5" />
-            Filters
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Search</label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Search parents..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9"
-                />
+      {!dataLoaded ? (
+        <div className="text-center py-12">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+            Parents Data
+          </h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
+            Click the button below to load parents data
+          </p>
+          <Button 
+            onClick={handleLoadData} 
+            disabled={loading}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            {loading ? (
+              <>
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                Loading Data...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Load Data
+              </>
+            )}
+          </Button>
+        </div>
+      ) : (
+        <>
+          {/* Filters */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Filter className="h-5 w-5" />
+                Filters
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Search</label>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Input
+                      placeholder="Search parents..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-9"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Relationship</label>
+                  <Select value={relationshipFilter} onValueChange={setRelationshipFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="All relationships" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">All relationships</SelectItem>
+                      <SelectItem value="father">Father</SelectItem>
+                      <SelectItem value="mother">Mother</SelectItem>
+                      <SelectItem value="guardian">Guardian</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Status</label>
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="true">Active</SelectItem>
+                      <SelectItem value="false">Inactive</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex items-end">
+                  <Button 
+                    onClick={handleLoadData} 
+                    disabled={loading}
+                    variant="outline"
+                    size="sm"
+                  >
+                    {loading ? (
+                      <>
+                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                        Refreshing...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                        Refresh Data
+                      </>
+                    )}
+                  </Button>
+                </div>
               </div>
-            </div>
+            </CardContent>
+          </Card>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Relationship</label>
-              <Select value={relationshipFilter} onValueChange={setRelationshipFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="All relationships" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">All relationships</SelectItem>
-                  <SelectItem value="father">Father</SelectItem>
-                  <SelectItem value="mother">Mother</SelectItem>
-                  <SelectItem value="guardian">Guardian</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+          <DataTable
+            title="Parents List"
+            data={parents}
+            columns={columns}
+            onView={handleViewParent}
+            onAdd={() => setShowCreateDialog(true)}
+            onEdit={handleEditParent}
+            onDelete={handleDeleteParent}
+            searchPlaceholder="Search parents..."
+            customActions={[
+              {
+                label: "View Children",
+                action: handleViewChildren,
+                variant: "outline"
+              }
+            ]}
+            currentPage={currentPage}
+            totalItems={totalItems}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            itemsPerPage={itemsPerPage}
+            onItemsPerPageChange={setItemsPerPage}
+          />
+        </>
+      )}
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Status</label>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="true">Active</SelectItem>
-                  <SelectItem value="false">Inactive</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Create Dialog */}
+      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Create New Parent</DialogTitle>
+          </DialogHeader>
+          <CreateParentForm
+            onSubmit={handleCreateParent}
+            onCancel={() => setShowCreateDialog(false)}
+          />
+        </DialogContent>
+      </Dialog>
 
-      <DataTable
-        title="Parents List"
-        data={parents}
-        columns={columns}
-        onView={handleViewParent}
-        searchPlaceholder="Search parents..."
-        allowAdd={false}
-        allowEdit={false}
-        allowDelete={false}
-        customActions={[
-          {
-            label: "View Children",
-            action: handleViewChildren,
-            icon: <Users className="h-3 w-3" />,
-            variant: "outline"
-          }
-        ]}
-        currentPage={currentPage}
-        totalItems={totalItems}
-        totalPages={totalPages}
-        onPageChange={setCurrentPage}
-        itemsPerPage={itemsPerPage}
-        onItemsPerPageChange={setItemsPerPage}
-      />
+      {/* Edit Dialog */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Parent</DialogTitle>
+          </DialogHeader>
+          <CreateParentForm
+            initialData={selectedParent}
+            onSubmit={handleUpdateParent}
+            onCancel={() => {
+              setShowEditDialog(false);
+              setSelectedParent(null);
+            }}
+          />
+        </DialogContent>
+      </Dialog>
 
       {/* View Parent Dialog */}
       <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
@@ -452,6 +595,7 @@ const Parents = () => {
           </DialogHeader>
           
           {selectedParent && (
+            
             <div className="space-y-6">
               <div className="flex items-center space-x-4">
                 <Avatar className="h-20 w-20">

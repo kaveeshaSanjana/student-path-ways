@@ -14,52 +14,7 @@ interface SubjectsProps {
   apiLevel?: 'institute' | 'class' | 'subject';
 }
 
-const mockSubjects = [
-  {
-    id: '1',
-    code: 'MATH101',
-    name: 'Mathematics',
-    class: 'Grade 10 - A',
-    teacher: 'Mr. Smith',
-    credits: 3,
-    description: 'Basic mathematics course for grade 10 students.',
-    status: 'Active',
-    institute: 'Main Campus'
-  },
-  {
-    id: '2',
-    code: 'SCI101',
-    name: 'Science',
-    class: 'Grade 10 - A',
-    teacher: 'Mrs. Johnson',
-    credits: 4,
-    description: 'Introduction to science for grade 10 students.',
-    status: 'Active',
-    institute: 'Main Campus'
-  },
-  {
-    id: '3',
-    code: 'ENG101',
-    name: 'English',
-    class: 'Grade 10 - B',
-    teacher: 'Mr. Williams',
-    credits: 3,
-    description: 'English language and literature course for grade 10 students.',
-    status: 'Active',
-    institute: 'Main Campus'
-  },
-  {
-    id: '4',
-    code: 'HIST101',
-    name: 'History',
-    class: 'Grade 11 - Science',
-    teacher: 'Ms. Brown',
-    credits: 3,
-    description: 'World history course for grade 11 students.',
-    status: 'Inactive',
-    institute: 'Science Branch'
-  }
-];
+const BASE_URL = 'http://localhost:3000';
 
 const Subjects = ({ apiLevel = 'institute' }: SubjectsProps) => {
   const { user, selectedInstitute, selectedClass } = useAuth();
@@ -71,32 +26,71 @@ const Subjects = ({ apiLevel = 'institute' }: SubjectsProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [dataLoaded, setDataLoaded] = useState(false);
 
+  const getAuthToken = () => {
+    const token = localStorage.getItem('access_token') || 
+                  localStorage.getItem('token') || 
+                  localStorage.getItem('authToken');
+    return token;
+  };
+
+  const getApiHeaders = () => {
+    const token = getAuthToken();
+    
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'ngrok-skip-browser-warning': 'true'
+    };
+
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    return headers;
+  };
+
   const handleLoadData = async () => {
     setIsLoading(true);
     console.log(`Loading subjects data for API level: ${apiLevel}`);
     console.log(`Current context - Institute: ${selectedInstitute?.name}, Class: ${selectedClass?.name}`);
     
     try {
-      // Simulate API call delay
+      // Simulate API call delay for now
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Simulate filtering based on API level
-      let filteredData = mockSubjects;
-      if (apiLevel === 'class' && selectedClass) {
-        // Class level: show subjects for selected class
-        filteredData = mockSubjects.filter(subject => subject.class === selectedClass.name);
-      } else if (apiLevel === 'institute' && selectedInstitute) {
-        // Institute level: show subjects for selected institute
-        filteredData = mockSubjects.filter(subject => subject.institute === selectedInstitute.name);
-      }
+      // Mock data for subjects
+      const mockSubjects = [
+        {
+          id: '1',
+          code: 'MATH101',
+          name: 'Mathematics',
+          class: 'Grade 10 - A',
+          teacher: 'Mr. Smith',
+          credits: 3,
+          description: 'Basic mathematics course for grade 10 students.',
+          status: 'Active',
+          institute: 'Main Campus'
+        },
+        {
+          id: '2',
+          code: 'SCI101',
+          name: 'Science',
+          class: 'Grade 10 - A',
+          teacher: 'Mrs. Johnson',
+          credits: 4,
+          description: 'Introduction to science for grade 10 students.',
+          status: 'Active',
+          institute: 'Main Campus'
+        }
+      ];
       
-      setSubjectsData(filteredData);
+      setSubjectsData(mockSubjects);
       setDataLoaded(true);
       toast({
         title: "Data Loaded",
-        description: `Successfully loaded ${filteredData.length} subjects.`
+        description: `Successfully loaded ${mockSubjects.length} subjects.`
       });
     } catch (error) {
+      console.error('Failed to load subjects:', error);
       toast({
         title: "Load Failed",
         description: "Failed to load subjects data.",
@@ -136,12 +130,10 @@ const Subjects = ({ apiLevel = 'institute' }: SubjectsProps) => {
     try {
       setIsLoading(true);
       
-      // Call the POST /subjects API
-      const response = await fetch('/api/subjects', {
+      const headers = getApiHeaders();
+      const response = await fetch(`${BASE_URL}/subjects`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify(subjectData)
       });
 
@@ -158,8 +150,6 @@ const Subjects = ({ apiLevel = 'institute' }: SubjectsProps) => {
       });
       
       setIsCreateDialogOpen(false);
-      
-      // Refresh the data to show the new subject
       await handleLoadData();
       
     } catch (error) {
@@ -223,7 +213,7 @@ const Subjects = ({ apiLevel = 'institute' }: SubjectsProps) => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="container mx-auto p-6 space-y-6">
       {!dataLoaded ? (
         <div className="text-center py-12">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
@@ -253,7 +243,9 @@ const Subjects = ({ apiLevel = 'institute' }: SubjectsProps) => {
       ) : (
         <>
           <div className="flex justify-between items-center">
-            <div></div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+              {getTitle()}
+            </h1>
             <Button 
               onClick={handleLoadData} 
               disabled={isLoading}
@@ -275,7 +267,7 @@ const Subjects = ({ apiLevel = 'institute' }: SubjectsProps) => {
           </div>
           
           <DataTable
-            title={getTitle()}
+            title=""
             data={subjectsData}
             columns={subjectsColumns}
             onAdd={canAdd ? () => setIsCreateDialogOpen(true) : undefined}
