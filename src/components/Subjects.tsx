@@ -14,8 +14,6 @@ interface SubjectsProps {
   apiLevel?: 'institute' | 'class' | 'subject';
 }
 
-const BASE_URL = 'http://localhost:3000';
-
 const Subjects = ({ apiLevel = 'institute' }: SubjectsProps) => {
   const { user, selectedInstitute, selectedClass } = useAuth();
   const { toast } = useToast();
@@ -25,6 +23,10 @@ const Subjects = ({ apiLevel = 'institute' }: SubjectsProps) => {
   const [subjectsData, setSubjectsData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [dataLoaded, setDataLoaded] = useState(false);
+
+  const getBaseUrl = () => {
+    return localStorage.getItem('baseUrl') || 'http://localhost:3000';
+  };
 
   const getAuthToken = () => {
     const token = localStorage.getItem('access_token') || 
@@ -54,40 +56,29 @@ const Subjects = ({ apiLevel = 'institute' }: SubjectsProps) => {
     console.log(`Current context - Institute: ${selectedInstitute?.name}, Class: ${selectedClass?.name}`);
     
     try {
-      // Simulate API call delay for now
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const baseUrl = getBaseUrl();
+      const headers = getApiHeaders();
       
-      // Mock data for subjects
-      const mockSubjects = [
-        {
-          id: '1',
-          code: 'MATH101',
-          name: 'Mathematics',
-          class: 'Grade 10 - A',
-          teacher: 'Mr. Smith',
-          credits: 3,
-          description: 'Basic mathematics course for grade 10 students.',
-          status: 'Active',
-          institute: 'Main Campus'
-        },
-        {
-          id: '2',
-          code: 'SCI101',
-          name: 'Science',
-          class: 'Grade 10 - A',
-          teacher: 'Mrs. Johnson',
-          credits: 4,
-          description: 'Introduction to science for grade 10 students.',
-          status: 'Active',
-          institute: 'Main Campus'
-        }
-      ];
+      const response = await fetch(`${baseUrl}/subjects`, {
+        method: 'GET',
+        headers
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch subjects data');
+      }
+
+      const result = await response.json();
+      console.log('Subjects loaded successfully:', result);
       
-      setSubjectsData(mockSubjects);
+      // Handle both array response and paginated response
+      const subjects = Array.isArray(result) ? result : result.data || [];
+      setSubjectsData(subjects);
       setDataLoaded(true);
+      
       toast({
         title: "Data Loaded",
-        description: `Successfully loaded ${mockSubjects.length} subjects.`
+        description: `Successfully loaded ${subjects.length} subjects.`
       });
     } catch (error) {
       console.error('Failed to load subjects:', error);
@@ -108,17 +99,15 @@ const Subjects = ({ apiLevel = 'institute' }: SubjectsProps) => {
   const subjectsColumns = [
     { key: 'code', header: 'Subject Code' },
     { key: 'name', header: 'Subject Name' },
-    { key: 'class', header: 'Class' },
-    { key: 'teacher', header: 'Teacher' },
-    { key: 'credits', header: 'Credits' },
-    { key: 'institute', header: 'Institute' },
+    { key: 'category', header: 'Category' },
+    { key: 'creditHours', header: 'Credit Hours' },
     { key: 'description', header: 'Description' },
     { 
-      key: 'status', 
+      key: 'isActive', 
       header: 'Status',
-      render: (value: string) => (
-        <Badge variant={value === 'Active' ? 'default' : 'secondary'}>
-          {value}
+      render: (value: boolean) => (
+        <Badge variant={value ? 'default' : 'secondary'}>
+          {value ? 'Active' : 'Inactive'}
         </Badge>
       )
     }
@@ -129,12 +118,20 @@ const Subjects = ({ apiLevel = 'institute' }: SubjectsProps) => {
     
     try {
       setIsLoading(true);
-      
+      const baseUrl = getBaseUrl();
       const headers = getApiHeaders();
-      const response = await fetch(`${BASE_URL}/subjects`, {
+      
+      const response = await fetch(`${baseUrl}/subjects`, {
         method: 'POST',
         headers,
-        body: JSON.stringify(subjectData)
+        body: JSON.stringify({
+          name: subjectData.name,
+          code: subjectData.code,
+          category: subjectData.category,
+          creditHours: subjectData.creditHours,
+          description: subjectData.description,
+          isActive: subjectData.isActive
+        })
       });
 
       if (!response.ok) {
@@ -164,29 +161,125 @@ const Subjects = ({ apiLevel = 'institute' }: SubjectsProps) => {
     }
   };
 
-  const handleEditSubject = (subjectData: any) => {
-    console.log('Editing subject:', subjectData);
-    setSelectedSubject(subjectData);
-    setIsEditDialogOpen(true);
+  const handleEditSubject = async (subjectData: any) => {
+    console.log('Loading subject for editing:', subjectData);
+    
+    try {
+      setIsLoading(true);
+      const baseUrl = getBaseUrl();
+      const headers = getApiHeaders();
+      
+      const response = await fetch(`${baseUrl}/subjects/${subjectData.id}`, {
+        method: 'GET',
+        headers
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch subject details');
+      }
+
+      const result = await response.json();
+      console.log('Subject details loaded:', result);
+      
+      setSelectedSubject(result);
+      setIsEditDialogOpen(true);
+      
+    } catch (error) {
+      console.error('Error loading subject details:', error);
+      toast({
+        title: "Load Failed",
+        description: "Failed to load subject details.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleUpdateSubject = (subjectData: any) => {
+  const handleUpdateSubject = async (subjectData: any) => {
     console.log('Updating subject:', subjectData);
-    toast({
-      title: "Subject Updated",
-      description: `Subject ${subjectData.name} has been updated successfully.`
-    });
-    setIsEditDialogOpen(false);
-    setSelectedSubject(null);
+    
+    try {
+      setIsLoading(true);
+      const baseUrl = getBaseUrl();
+      const headers = getApiHeaders();
+      
+      const response = await fetch(`${baseUrl}/subjects/${selectedSubject.id}`, {
+        method: 'PATCH',
+        headers,
+        body: JSON.stringify({
+          name: subjectData.name,
+          description: subjectData.description,
+          creditHours: subjectData.creditHours,
+          category: subjectData.category
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update subject');
+      }
+
+      const result = await response.json();
+      console.log('Subject updated successfully:', result);
+      
+      toast({
+        title: "Subject Updated",
+        description: `Subject ${subjectData.name} has been updated successfully.`
+      });
+      
+      setIsEditDialogOpen(false);
+      setSelectedSubject(null);
+      await handleLoadData();
+      
+    } catch (error) {
+      console.error('Error updating subject:', error);
+      toast({
+        title: "Update Failed",
+        description: "Failed to update subject. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleDeleteSubject = (subjectData: any) => {
+  const handleDeleteSubject = async (subjectData: any) => {
     console.log('Deleting subject:', subjectData);
-    toast({
-      title: "Subject Deleted",
-      description: `Subject ${subjectData.name} has been deleted.`,
-      variant: "destructive"
-    });
+    
+    try {
+      setIsLoading(true);
+      const baseUrl = getBaseUrl();
+      const headers = getApiHeaders();
+      
+      const response = await fetch(`${baseUrl}/subjects/${subjectData.id}`, {
+        method: 'DELETE',
+        headers
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete subject');
+      }
+
+      console.log('Subject deleted successfully');
+      
+      toast({
+        title: "Subject Deleted",
+        description: `Subject ${subjectData.name} has been deleted successfully.`,
+        variant: "destructive"
+      });
+      
+      await handleLoadData();
+      
+    } catch (error) {
+      console.error('Error deleting subject:', error);
+      toast({
+        title: "Delete Failed",
+        description: "Failed to delete subject. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleViewSubject = (subjectData: any) => {
