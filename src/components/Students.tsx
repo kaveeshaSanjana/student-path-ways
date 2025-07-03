@@ -616,7 +616,7 @@ const Students = () => {
             </CardHeader>
             <CardContent className="text-left">
               <div className="space-y-2 text-sm">
-                <div>User: {user ? `${user.firstName} ${user.lastName} (${user.role})` : 'Not logged in'}</div>
+                <div>User: {user ? `${(user as any).firstName || 'Unknown'} ${(user as any).lastName || 'User'} (${user.role})` : 'Not logged in'}</div>
                 <div>Auth Token: {localStorage.getItem('authToken') ? 'Present' : 'Missing'}</div>
                 <div>API Base URL: {BASE_URL}</div>
                 <div>Loading State: {isLoading ? 'Loading...' : 'Ready'}</div>
