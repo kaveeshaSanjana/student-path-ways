@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import DataTable from '@/components/ui/data-table';
 import { Badge } from '@/components/ui/badge';
@@ -52,27 +53,58 @@ const Students = () => {
     return params.toString();
   };
 
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem('authToken');
+    console.log('Auth token check:', token ? 'Token found' : 'No token found');
+    
+    if (!token) {
+      console.error('No authentication token found in localStorage');
+      toast({
+        title: "Authentication Error",
+        description: "Please log in again to access student data.",
+        variant: "destructive"
+      });
+      return null;
+    }
+
+    return {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      'ngrok-skip-browser-warning': 'true'
+    };
+  };
+
   const fetchStudents = async () => {
     setIsLoading(true);
-    console.log('Loading students data...');
+    console.log('Starting to load students data...');
     
     try {
-      const token = localStorage.getItem('authToken');
+      const headers = getAuthHeaders();
+      if (!headers) {
+        setIsLoading(false);
+        return;
+      }
+
       const queryParams = buildQueryParams();
+      const url = `${BASE_URL}/students?${queryParams}`;
+      console.log('Fetching from URL:', url);
+      console.log('Request headers:', headers);
       
-      const response = await fetch(`${BASE_URL}/students?${queryParams}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-          'ngrok-skip-browser-warning': 'true'
-        }
+      const response = await fetch(url, {
+        headers
       });
 
+      console.log('Response status:', response.status);
+      console.log('Response ok:', response.ok);
+
       if (!response.ok) {
-        throw new Error('Failed to fetch students');
+        const errorText = await response.text();
+        console.error('API Error Response:', errorText);
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
       }
 
       const data = await response.json();
+      console.log('API Response data:', data);
       
       // Transform the data to match the table structure
       const transformedData = data.data.map((item: any) => ({
@@ -96,19 +128,26 @@ const Students = () => {
         guardian: item.guardian
       }));
 
+      console.log('Transformed data:', transformedData);
       setStudentsData(transformedData);
       setTotalCount(data.meta?.total || 0);
       setDataLoaded(true);
       
       toast({
-        title: "Data Loaded",
+        title: "Data Loaded Successfully",
         description: `Successfully loaded ${transformedData.length} students.`
       });
     } catch (error) {
-      console.error('Error fetching students:', error);
+      console.error('Detailed error in fetchStudents:', error);
+      
+      let errorMessage = "Failed to load students data.";
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+
       toast({
         title: "Load Failed",
-        description: "Failed to load students data.",
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {
@@ -117,25 +156,42 @@ const Students = () => {
   };
 
   const fetchStudentById = async (id: string) => {
-    if (!id.trim()) return;
+    if (!id.trim()) {
+      toast({
+        title: "Invalid Input",
+        description: "Please enter a valid student ID.",
+        variant: "destructive"
+      });
+      return;
+    }
     
     setIsLoading(true);
+    console.log('Fetching student by ID:', id);
+    
     try {
-      const token = localStorage.getItem('authToken');
+      const headers = getAuthHeaders();
+      if (!headers) {
+        setIsLoading(false);
+        return;
+      }
+
+      const url = `${BASE_URL}/students/${id}`;
+      console.log('Fetching student from URL:', url);
       
-      const response = await fetch(`${BASE_URL}/students/${id}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-          'ngrok-skip-browser-warning': 'true'
-        }
+      const response = await fetch(url, {
+        headers
       });
 
+      console.log('Student fetch response status:', response.status);
+
       if (!response.ok) {
-        throw new Error('Student not found');
+        const errorText = await response.text();
+        console.error('Student fetch error:', errorText);
+        throw new Error(`Student not found: HTTP ${response.status}`);
       }
 
       const data = await response.json();
+      console.log('Student data received:', data);
       
       // Transform single student data
       const transformedStudent = {
@@ -168,10 +224,16 @@ const Students = () => {
         description: `Found student: ${transformedStudent.name}`
       });
     } catch (error) {
-      console.error('Error fetching student:', error);
+      console.error('Error fetching student by ID:', error);
+      
+      let errorMessage = "Could not find student with the provided ID.";
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+
       toast({
         title: "Student Not Found",
-        description: "Could not find student with the provided ID.",
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {
@@ -180,6 +242,10 @@ const Students = () => {
   };
 
   const handleLoadData = () => {
+    console.log('Load data button clicked');
+    console.log('Student ID filter:', studentIdFilter);
+    console.log('Current auth user:', user);
+    
     if (studentIdFilter.trim()) {
       fetchStudentById(studentIdFilter);
     } else {
@@ -508,6 +574,20 @@ const Students = () => {
           <p className="text-gray-600 dark:text-gray-400 mb-6">
             Click the button below to load students data
           </p>
+          
+          {/* Debug Information */}
+          <Card className="mb-6 mx-auto max-w-2xl">
+            <CardHeader>
+              <CardTitle>Debug Information</CardTitle>
+            </CardHeader>
+            <CardContent className="text-left">
+              <div className="space-y-2 text-sm">
+                <div>User: {user ? `${user.firstName} ${user.lastName} (${user.role})` : 'Not logged in'}</div>
+                <div>Auth Token: {localStorage.getItem('authToken') ? 'Present' : 'Missing'}</div>
+                <div>API Base URL: {BASE_URL}</div>
+              </div>
+            </CardContent>
+          </Card>
           
           {/* Filters Section */}
           <Card className="mb-6 mx-auto max-w-4xl">
