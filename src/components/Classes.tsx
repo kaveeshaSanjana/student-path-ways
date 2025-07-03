@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import DataTable from '@/components/ui/data-table';
 import { useAuth } from '@/contexts/AuthContext';
@@ -83,6 +82,10 @@ const Classes = ({ apiLevel = 'institute' }: ClassesProps) => {
   // Filter states
   const [gradeFilter, setGradeFilter] = useState<string>('');
   const [activeFilter, setActiveFilter] = useState<string>('true');
+  const [specialtyFilter, setSpecialtyFilter] = useState<string>('');
+  const [classTypeFilter, setClassTypeFilter] = useState<string>('');
+  const [academicYearFilter, setAcademicYearFilter] = useState<string>('');
+  const [levelFilter, setLevelFilter] = useState<string>('');
   
   // Enrollment form states
   const [enrollmentCode, setEnrollmentCode] = useState('');
@@ -140,6 +143,22 @@ const Classes = ({ apiLevel = 'institute' }: ClassesProps) => {
         params.append('grade', gradeFilter);
       }
 
+      if (specialtyFilter) {
+        params.append('specialty', specialtyFilter);
+      }
+
+      if (classTypeFilter) {
+        params.append('classType', classTypeFilter);
+      }
+
+      if (academicYearFilter) {
+        params.append('academicYear', academicYearFilter);
+      }
+
+      if (levelFilter) {
+        params.append('level', levelFilter);
+      }
+
       const baseUrl = getBaseUrl();
       const url = `${baseUrl}/institute-classes?${params.toString()}`;
       console.log(`API Request URL: ${url}`);
@@ -182,7 +201,7 @@ const Classes = ({ apiLevel = 'institute' }: ClassesProps) => {
     if (selectedInstitute?.id) {
       handleLoadData();
     }
-  }, [apiLevel, selectedInstitute, gradeFilter, activeFilter]);
+  }, [apiLevel, selectedInstitute, gradeFilter, activeFilter, specialtyFilter, classTypeFilter, academicYearFilter, levelFilter]);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -511,9 +530,9 @@ const Classes = ({ apiLevel = 'institute' }: ClassesProps) => {
         </div>
       ) : (
         <>
-          {/* Filters */}
-          <div className="flex flex-wrap gap-4 items-end">
-            <div className="flex-1 min-w-[200px]">
+          {/* Enhanced Filters */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-end">
+            <div>
               <Label htmlFor="grade-filter">Grade Filter</Label>
               <Select value={gradeFilter} onValueChange={setGradeFilter}>
                 <SelectTrigger>
@@ -530,7 +549,72 @@ const Classes = ({ apiLevel = 'institute' }: ClassesProps) => {
               </Select>
             </div>
 
-            <div className="flex-1 min-w-[200px]">
+            <div>
+              <Label htmlFor="specialty-filter">Specialty Filter</Label>
+              <Select value={specialtyFilter} onValueChange={setSpecialtyFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All Specialties" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All Specialties</SelectItem>
+                  <SelectItem value="science">Science</SelectItem>
+                  <SelectItem value="commerce">Commerce</SelectItem>
+                  <SelectItem value="arts">Arts</SelectItem>
+                  <SelectItem value="mathematics">Mathematics</SelectItem>
+                  <SelectItem value="technology">Technology</SelectItem>
+                  <SelectItem value="general">General</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="class-type-filter">Class Type Filter</Label>
+              <Select value={classTypeFilter} onValueChange={setClassTypeFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All Types" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All Types</SelectItem>
+                  <SelectItem value="regular">Regular</SelectItem>
+                  <SelectItem value="special">Special</SelectItem>
+                  <SelectItem value="advanced">Advanced</SelectItem>
+                  <SelectItem value="remedial">Remedial</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="level-filter">Level Filter</Label>
+              <Select value={levelFilter} onValueChange={setLevelFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All Levels" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All Levels</SelectItem>
+                  <SelectItem value="1">Level 1</SelectItem>
+                  <SelectItem value="2">Level 2</SelectItem>
+                  <SelectItem value="3">Level 3</SelectItem>
+                  <SelectItem value="4">Level 4</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="academic-year-filter">Academic Year</Label>
+              <Select value={academicYearFilter} onValueChange={setAcademicYearFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All Years" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All Years</SelectItem>
+                  <SelectItem value="2024-2025">2024-2025</SelectItem>
+                  <SelectItem value="2025-2026">2025-2026</SelectItem>
+                  <SelectItem value="2026-2027">2026-2027</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
               <Label htmlFor="active-filter">Status Filter</Label>
               <Select value={activeFilter} onValueChange={setActiveFilter}>
                 <SelectTrigger>
@@ -543,24 +627,45 @@ const Classes = ({ apiLevel = 'institute' }: ClassesProps) => {
               </Select>
             </div>
 
-            <Button 
-              onClick={() => handleLoadData(1, itemsPerPage)} 
-              disabled={isLoading}
-              variant="outline"
-              size="sm"
-            >
-              {isLoading ? (
-                <>
-                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                  Refreshing...
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  Refresh Data
-                </>
-              )}
-            </Button>
+            <div className="flex items-end">
+              <Button 
+                onClick={() => handleLoadData(1, itemsPerPage)} 
+                disabled={isLoading}
+                variant="outline"
+                size="sm"
+                className="w-full"
+              >
+                {isLoading ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    Refreshing...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Refresh Data
+                  </>
+                )}
+              </Button>
+            </div>
+
+            <div className="flex items-end">
+              <Button 
+                onClick={() => {
+                  setGradeFilter('');
+                  setSpecialtyFilter('');
+                  setClassTypeFilter('');
+                  setAcademicYearFilter('');
+                  setLevelFilter('');
+                  setActiveFilter('true');
+                }}
+                variant="ghost"
+                size="sm"
+                className="w-full"
+              >
+                Clear Filters
+              </Button>
+            </div>
           </div>
 
           <DataTable
