@@ -5,11 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
-import { Eye, Edit, Users, Search, Filter, UserPlus, Phone, Mail, MapPin, Briefcase } from 'lucide-react';
+import { Eye, Users, Search, Filter, Phone, Mail, MapPin, Briefcase } from 'lucide-react';
 
 interface Parent {
   userId: string;
@@ -32,7 +32,7 @@ interface Parent {
     nic: string;
     birthCertificateNo: string;
     addressLine1: string;
-    addressLine2: string;
+    addressLine2: string | null;
     city: string;
     district: string;
     province: string;
@@ -70,6 +70,8 @@ interface ChildData {
     gender: string;
     nic: string;
     birthCertificateNo: string;
+    addressLine1: string | null;
+    addressLine2: string | null;
     city: string;
     district: string;
     province: string;
@@ -82,7 +84,7 @@ interface ChildData {
   };
 }
 
-interface ChildrenData {
+interface ChildrenResponse {
   parent: Parent;
   children: {
     asFather: ChildData[];
@@ -95,7 +97,7 @@ const Parents = () => {
   const [parents, setParents] = useState<Parent[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedParent, setSelectedParent] = useState<Parent | null>(null);
-  const [childrenData, setChildrenData] = useState<ChildrenData | null>(null);
+  const [childrenData, setChildrenData] = useState<ChildrenResponse | null>(null);
   const [showChildrenDialog, setShowChildrenDialog] = useState(false);
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -241,8 +243,8 @@ const Parents = () => {
                     <div className="space-y-1">
                       <p><strong>Emergency Contact:</strong> {child.emergencyContact}</p>
                       <p><strong>Blood Group:</strong> {child.bloodGroup}</p>
-                      <p><strong>Allergies:</strong> {child.allergies}</p>
-                      <p><strong>Medical Conditions:</strong> {child.medicalConditions}</p>
+                      <p><strong>Allergies:</strong> {child.allergies || 'None'}</p>
+                      <p><strong>Medical Conditions:</strong> {child.medicalConditions || 'None'}</p>
                     </div>
                   </div>
                 </div>
@@ -312,9 +314,9 @@ const Parents = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="">All relationships</SelectItem>
-                  <SelectItem value="father">Father</SelectItem>
-                  <SelectItem value="mother">Mother</SelectItem>
-                  <SelectItem value="guardian">Guardian</SelectItem>
+                  <SelectItem value="Father">Father</SelectItem>
+                  <SelectItem value="Mother">Mother</SelectItem>
+                  <SelectItem value="Guardian">Guardian</SelectItem>
                 </SelectContent>
               </Select>
             </div>

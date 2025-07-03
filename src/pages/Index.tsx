@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import Sidebar from '@/components/layout/Sidebar';
@@ -7,6 +6,7 @@ import Dashboard from '@/components/Dashboard';
 import Users from '@/components/Users';
 import Students from '@/components/Students';
 import Teachers from '@/components/Teachers';
+import Parents from '@/components/Parents';
 import Grades from '@/components/Grades';
 import Classes from '@/components/Classes';
 import Subjects from '@/components/Subjects';
@@ -78,6 +78,8 @@ const AppContent = () => {
           return <Students />;
         case 'teachers':
           return <Teachers />;
+        case 'parents':
+          return <Parents />;
         case 'grades':
           return <Grades />;
         case 'classes':
@@ -178,6 +180,8 @@ const AppContent = () => {
           return <Dashboard />;
         case 'students':
           return <Students />;
+        case 'parents':
+          return <Parents />;
         case 'classes':
           return <Classes apiLevel="institute" />;
         case 'subjects':
@@ -267,6 +271,8 @@ const AppContent = () => {
         return <Students />;
       case 'teachers':
         return <Teachers />;
+      case 'parents':
+        return <Parents />;
       case 'grades':
         return <Grades />;
       case 'classes':
