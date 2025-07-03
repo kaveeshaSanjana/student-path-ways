@@ -9,18 +9,15 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Switch } from '@/components/ui/switch';
 
 const subjectSchema = z.object({
-  code: z.string().min(1, 'Subject code is required'),
   name: z.string().min(2, 'Subject name must be at least 2 characters'),
-  class: z.string().min(1, 'Please select a class'),
-  teacher: z.string().min(1, 'Please select a teacher'),
-  credits: z.string().min(1, 'Credits are required'),
+  code: z.string().min(1, 'Subject code is required'),
   description: z.string().min(5, 'Description is required'),
-  status: z.string().default('Active'),
-  department: z.string().min(1, 'Department is required'),
-  prerequisites: z.string().optional(),
-  gradeWeight: z.string().min(1, 'Grade weight is required')
+  category: z.string().min(1, 'Category is required'),
+  creditHours: z.number().min(1, 'Credit hours must be at least 1'),
+  isActive: z.boolean().default(true)
 });
 
 type SubjectFormData = z.infer<typeof subjectSchema>;
@@ -37,16 +34,12 @@ const CreateSubjectForm = ({ onSubmit, onCancel, initialData }: CreateSubjectFor
   const form = useForm<SubjectFormData>({
     resolver: zodResolver(subjectSchema),
     defaultValues: {
-      code: initialData?.code || '',
       name: initialData?.name || '',
-      class: initialData?.class || '',
-      teacher: initialData?.teacher || '',
-      credits: initialData?.credits?.toString() || '',
+      code: initialData?.code || '',
       description: initialData?.description || '',
-      status: initialData?.status || 'Active',
-      department: initialData?.department || '',
-      prerequisites: initialData?.prerequisites || '',
-      gradeWeight: initialData?.gradeWeight?.toString() || ''
+      category: initialData?.category || '',
+      creditHours: initialData?.creditHours || 1,
+      isActive: initialData?.isActive ?? true
     }
   });
 
@@ -66,20 +59,6 @@ const CreateSubjectForm = ({ onSubmit, onCancel, initialData }: CreateSubjectFor
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="code"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Subject Code</FormLabel>
-                    <FormControl>
-                      <Input placeholder="MATH101" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
                 name="name"
                 render={({ field }) => (
                   <FormItem>
@@ -94,60 +73,12 @@ const CreateSubjectForm = ({ onSubmit, onCancel, initialData }: CreateSubjectFor
               
               <FormField
                 control={form.control}
-                name="class"
+                name="code"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Class</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select class" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="Grade 10-A">Grade 10-A</SelectItem>
-                        <SelectItem value="Grade 10-B">Grade 10-B</SelectItem>
-                        <SelectItem value="Grade 11-S">Grade 11-S</SelectItem>
-                        <SelectItem value="Grade 12-C">Grade 12-C</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="teacher"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Teacher</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select teacher" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="Mr. Smith">Mr. Smith</SelectItem>
-                        <SelectItem value="Mrs. Johnson">Mrs. Johnson</SelectItem>
-                        <SelectItem value="Mr. Williams">Mr. Williams</SelectItem>
-                        <SelectItem value="Ms. Brown">Ms. Brown</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="credits"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Credits</FormLabel>
+                    <FormLabel>Subject Code</FormLabel>
                     <FormControl>
-                      <Input type="number" placeholder="3" {...field} />
+                      <Input placeholder="MATH101" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -156,59 +87,42 @@ const CreateSubjectForm = ({ onSubmit, onCancel, initialData }: CreateSubjectFor
               
               <FormField
                 control={form.control}
-                name="gradeWeight"
+                name="category"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Grade Weight (%)</FormLabel>
+                    <FormLabel>Category</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select category" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="CORES">Core Subject</SelectItem>
+                        <SelectItem value="ELECTIVE">Elective</SelectItem>
+                        <SelectItem value="OPTIONAL">Optional</SelectItem>
+                        <SelectItem value="MANDATORY">Mandatory</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="creditHours"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Credit Hours</FormLabel>
                     <FormControl>
-                      <Input type="number" placeholder="100" {...field} />
+                      <Input 
+                        type="number" 
+                        placeholder="3" 
+                        {...field} 
+                        onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                      />
                     </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="department"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Department</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select department" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="Mathematics">Mathematics</SelectItem>
-                        <SelectItem value="Science">Science</SelectItem>
-                        <SelectItem value="English">English</SelectItem>
-                        <SelectItem value="Social Studies">Social Studies</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="status"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Status</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select status" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="Active">Active</SelectItem>
-                        <SelectItem value="Inactive">Inactive</SelectItem>
-                      </SelectContent>
-                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -231,14 +145,21 @@ const CreateSubjectForm = ({ onSubmit, onCancel, initialData }: CreateSubjectFor
             
             <FormField
               control={form.control}
-              name="prerequisites"
+              name="isActive"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Prerequisites (Optional)</FormLabel>
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base">Active Status</FormLabel>
+                    <div className="text-sm text-muted-foreground">
+                      Enable this subject for students
+                    </div>
+                  </div>
                   <FormControl>
-                    <Input placeholder="Basic Algebra, etc." {...field} />
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
                   </FormControl>
-                  <FormMessage />
                 </FormItem>
               )}
             />

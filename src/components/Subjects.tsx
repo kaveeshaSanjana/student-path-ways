@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import DataTable from '@/components/ui/data-table';
 import { Badge } from '@/components/ui/badge';
@@ -129,13 +130,48 @@ const Subjects = ({ apiLevel = 'institute' }: SubjectsProps) => {
     }
   ];
 
-  const handleCreateSubject = (subjectData: any) => {
+  const handleCreateSubject = async (subjectData: any) => {
     console.log('Creating subject:', subjectData);
-    toast({
-      title: "Subject Created",
-      description: `Subject ${subjectData.name} has been created successfully.`
-    });
-    setIsCreateDialogOpen(false);
+    
+    try {
+      setIsLoading(true);
+      
+      // Call the POST /subjects API
+      const response = await fetch('/api/subjects', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(subjectData)
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create subject');
+      }
+
+      const result = await response.json();
+      console.log('Subject created successfully:', result);
+      
+      toast({
+        title: "Subject Created",
+        description: `Subject ${subjectData.name} has been created successfully.`
+      });
+      
+      setIsCreateDialogOpen(false);
+      
+      // Refresh the data to show the new subject
+      await handleLoadData();
+      
+    } catch (error) {
+      console.error('Error creating subject:', error);
+      toast({
+        title: "Creation Failed",
+        description: "Failed to create subject. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleEditSubject = (subjectData: any) => {
