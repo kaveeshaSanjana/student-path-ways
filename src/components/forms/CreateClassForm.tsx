@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -7,19 +8,22 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Textarea } from '@/components/ui/textarea';
 
 const classSchema = z.object({
   name: z.string().min(2, 'Class name must be at least 2 characters'),
   code: z.string().min(1, 'Class code is required'),
-  capacity: z.string().min(1, 'Capacity is required'),
-  teacher: z.string().min(2, 'Main teacher is required'),
-  room: z.string().min(1, 'Room is required'),
-  grade: z.string().min(1, 'Grade is required'),
-  section: z.string().min(1, 'Section is required'),
   academicYear: z.string().min(1, 'Academic year is required'),
-  status: z.string().default('Active'),
-  subjects: z.string().min(1, 'Number of subjects is required'),
-  schedule: z.string().optional()
+  level: z.string().min(1, 'Level is required'),
+  grade: z.string().min(1, 'Grade is required'),
+  specialty: z.string().min(1, 'Specialty is required'),
+  classType: z.string().min(1, 'Class type is required'),
+  capacity: z.string().min(1, 'Capacity is required'),
+  classTeacherId: z.string().optional(),
+  description: z.string().optional(),
+  startDate: z.string().min(1, 'Start date is required'),
+  endDate: z.string().min(1, 'End date is required'),
+  enrollmentCode: z.string().optional()
 });
 
 type ClassFormData = z.infer<typeof classSchema>;
@@ -38,15 +42,17 @@ const CreateClassForm = ({ onSubmit, onCancel, initialData }: CreateClassFormPro
     defaultValues: {
       name: initialData?.name || '',
       code: initialData?.code || '',
+      academicYear: initialData?.academicYear || '2025-2026',
+      level: initialData?.level?.toString() || '1',
+      grade: initialData?.grade?.toString() || '',
+      specialty: initialData?.specialty || '',
+      classType: initialData?.classType || 'regular',
       capacity: initialData?.capacity?.toString() || '',
-      teacher: initialData?.teacher || '',
-      room: initialData?.room || '',
-      grade: initialData?.grade || '',
-      section: initialData?.section || '',
-      academicYear: initialData?.academicYear || '',
-      status: initialData?.status || 'Active',
-      subjects: initialData?.subjects?.toString() || '',
-      schedule: initialData?.schedule || ''
+      classTeacherId: initialData?.classTeacherId || '',
+      description: initialData?.description || '',
+      startDate: initialData?.startDate ? initialData.startDate.split('T')[0] : '2025-09-01',
+      endDate: initialData?.endDate ? initialData.endDate.split('T')[0] : '2026-06-30',
+      enrollmentCode: initialData?.enrollmentCode || ''
     }
   });
 
@@ -55,23 +61,23 @@ const CreateClassForm = ({ onSubmit, onCancel, initialData }: CreateClassFormPro
   };
 
   return (
-    <Card className="w-full max-w-2xl mx-auto">
+    <Card className="w-full max-w-4xl mx-auto">
       <CardHeader>
         <CardTitle>{isEditing ? 'Edit Class' : 'Add New Class'}</CardTitle>
         <CardDescription>{isEditing ? 'Update class information' : 'Enter class information to create a new record'}</CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Class Name</FormLabel>
+                    <FormLabel>Class Name *</FormLabel>
                     <FormControl>
-                      <Input placeholder="Grade 10 - A" {...field} />
+                      <Input placeholder="Advanced Mathematics Class" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -83,10 +89,48 @@ const CreateClassForm = ({ onSubmit, onCancel, initialData }: CreateClassFormPro
                 name="code"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Class Code</FormLabel>
+                    <FormLabel>Class Code *</FormLabel>
                     <FormControl>
-                      <Input placeholder="G10A" {...field} />
+                      <Input placeholder="MATH-ADV-2025" {...field} />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="academicYear"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Academic Year *</FormLabel>
+                    <FormControl>
+                      <Input placeholder="2025-2026" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="level"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Level *</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select level" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="1">Level 1</SelectItem>
+                        <SelectItem value="2">Level 2</SelectItem>
+                        <SelectItem value="3">Level 3</SelectItem>
+                        <SelectItem value="4">Level 4</SelectItem>
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -97,7 +141,7 @@ const CreateClassForm = ({ onSubmit, onCancel, initialData }: CreateClassFormPro
                 name="grade"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Grade</FormLabel>
+                    <FormLabel>Grade *</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
@@ -105,10 +149,11 @@ const CreateClassForm = ({ onSubmit, onCancel, initialData }: CreateClassFormPro
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="Grade 9">Grade 9</SelectItem>
-                        <SelectItem value="Grade 10">Grade 10</SelectItem>
-                        <SelectItem value="Grade 11">Grade 11</SelectItem>
-                        <SelectItem value="Grade 12">Grade 12</SelectItem>
+                        {Array.from({ length: 12 }, (_, i) => i + 1).map(grade => (
+                          <SelectItem key={grade} value={grade.toString()}>
+                            Grade {grade}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -118,22 +163,47 @@ const CreateClassForm = ({ onSubmit, onCancel, initialData }: CreateClassFormPro
               
               <FormField
                 control={form.control}
-                name="section"
+                name="specialty"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Section</FormLabel>
+                    <FormLabel>Specialty *</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select section" />
+                          <SelectValue placeholder="Select specialty" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="A">A</SelectItem>
-                        <SelectItem value="B">B</SelectItem>
-                        <SelectItem value="C">C</SelectItem>
-                        <SelectItem value="Science">Science</SelectItem>
-                        <SelectItem value="Commerce">Commerce</SelectItem>
+                        <SelectItem value="science">Science</SelectItem>
+                        <SelectItem value="commerce">Commerce</SelectItem>
+                        <SelectItem value="arts">Arts</SelectItem>
+                        <SelectItem value="mathematics">Mathematics</SelectItem>
+                        <SelectItem value="technology">Technology</SelectItem>
+                        <SelectItem value="general">General</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="classType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Class Type *</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select class type" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="regular">Regular</SelectItem>
+                        <SelectItem value="special">Special</SelectItem>
+                        <SelectItem value="advanced">Advanced</SelectItem>
+                        <SelectItem value="remedial">Remedial</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -146,9 +216,9 @@ const CreateClassForm = ({ onSubmit, onCancel, initialData }: CreateClassFormPro
                 name="capacity"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Capacity</FormLabel>
+                    <FormLabel>Capacity *</FormLabel>
                     <FormControl>
-                      <Input type="number" placeholder="30" {...field} />
+                      <Input type="number" min="1" placeholder="35" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -157,36 +227,12 @@ const CreateClassForm = ({ onSubmit, onCancel, initialData }: CreateClassFormPro
               
               <FormField
                 control={form.control}
-                name="teacher"
+                name="classTeacherId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Main Teacher</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select teacher" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="John Smith">John Smith</SelectItem>
-                        <SelectItem value="Sarah Johnson">Sarah Johnson</SelectItem>
-                        <SelectItem value="Michael Brown">Michael Brown</SelectItem>
-                        <SelectItem value="Emily Davis">Emily Davis</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="room"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Room</FormLabel>
+                    <FormLabel>Class Teacher ID</FormLabel>
                     <FormControl>
-                      <Input placeholder="Room 101" {...field} />
+                      <Input placeholder="Teacher ID (optional)" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -195,12 +241,12 @@ const CreateClassForm = ({ onSubmit, onCancel, initialData }: CreateClassFormPro
               
               <FormField
                 control={form.control}
-                name="subjects"
+                name="startDate"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Number of Subjects</FormLabel>
+                    <FormLabel>Start Date *</FormLabel>
                     <FormControl>
-                      <Input type="number" placeholder="8" {...field} />
+                      <Input type="date" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -209,12 +255,12 @@ const CreateClassForm = ({ onSubmit, onCancel, initialData }: CreateClassFormPro
               
               <FormField
                 control={form.control}
-                name="academicYear"
+                name="endDate"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Academic Year</FormLabel>
+                    <FormLabel>End Date *</FormLabel>
                     <FormControl>
-                      <Input placeholder="2024-2025" {...field} />
+                      <Input type="date" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -223,21 +269,13 @@ const CreateClassForm = ({ onSubmit, onCancel, initialData }: CreateClassFormPro
               
               <FormField
                 control={form.control}
-                name="status"
+                name="enrollmentCode"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Status</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select status" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="Active">Active</SelectItem>
-                        <SelectItem value="Inactive">Inactive</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <FormLabel>Enrollment Code</FormLabel>
+                    <FormControl>
+                      <Input placeholder="CTA123 (optional)" {...field} />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -246,12 +284,16 @@ const CreateClassForm = ({ onSubmit, onCancel, initialData }: CreateClassFormPro
             
             <FormField
               control={form.control}
-              name="schedule"
+              name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Schedule (Optional)</FormLabel>
+                  <FormLabel>Description</FormLabel>
                   <FormControl>
-                    <Input placeholder="Morning 8:00 AM - 2:00 PM" {...field} />
+                    <Textarea 
+                      placeholder="Advanced mathematics class for grade 11 students"
+                      className="min-h-[100px]"
+                      {...field} 
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
