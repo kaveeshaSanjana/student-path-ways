@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -53,6 +52,12 @@ const Sidebar = ({ isOpen, onClose, currentPage, onPageChange }: SidebarProps) =
       label: 'Students',
       icon: GraduationCap,
       permission: 'view-students'
+    },
+    {
+      id: 'parents',
+      label: 'Parents',
+      icon: Users,
+      permission: 'view-users'
     },
     // Remove teachers section for SystemAdmin
     ...(user?.role !== 'SystemAdmin' ? [{
