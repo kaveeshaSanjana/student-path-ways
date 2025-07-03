@@ -524,7 +524,7 @@ const Classes = ({ apiLevel = 'institute' }: ClassesProps) => {
             searchPlaceholder="Search classes..."
             customActions={[
               {
-                label: (row: ClassData) => row.enrollmentEnabled ? 'Disable Enrollment' : 'Enable Enrollment',
+                label: 'Toggle Enrollment',
                 action: handleToggleEnrollment,
                 variant: 'outline',
                 condition: () => canEdit
