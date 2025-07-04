@@ -21,7 +21,8 @@ import {
   Video,
   LogOut,
   Menu,
-  FileText
+  FileText,
+  ArrowLeft
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -32,7 +33,7 @@ interface SidebarProps {
 }
 
 const Sidebar = ({ isOpen, onClose, currentPage, onPageChange }: SidebarProps) => {
-  const { user, selectedInstitute, selectedClass, selectedSubject, logout } = useAuth();
+  const { user, selectedInstitute, selectedClass, selectedSubject, logout, setSelectedInstitute, setSelectedClass, setSelectedSubject } = useAuth();
 
   const menuItems = [
     {
@@ -198,6 +199,19 @@ const Sidebar = ({ isOpen, onClose, currentPage, onPageChange }: SidebarProps) =
     onClose();
   };
 
+  const handleBackNavigation = () => {
+    if (selectedSubject) {
+      // Go back from subject level to class level
+      setSelectedSubject(null);
+    } else if (selectedClass) {
+      // Go back from class level to institute level
+      setSelectedClass(null);
+    } else if (selectedInstitute) {
+      // Go back from institute level to institute selection
+      setSelectedInstitute(null);
+    }
+  };
+
   const SidebarSection = ({ title, items }: { title: string; items: any[] }) => {
     const filteredItems = filterItemsByPermission(items);
     
@@ -268,13 +282,25 @@ const Sidebar = ({ isOpen, onClose, currentPage, onPageChange }: SidebarProps) =
         {/* Context Info - Only show for non-SystemAdmin users */}
         {user?.role !== 'SystemAdmin' && (selectedInstitute || selectedClass || selectedSubject) && (
           <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-medium text-blue-600 dark:text-blue-400">Current Selection</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleBackNavigation}
+                className="h-6 w-6 p-0 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-800"
+                title="Go Back"
+              >
+                <ArrowLeft className="h-3 w-3" />
+              </Button>
+            </div>
             {selectedInstitute && (
-              <div className="text-xs text-blue-600 dark:text-blue-400">
+              <div className="text-xs text-blue-600 dark:text-blue-400 mb-1">
                 <span className="font-medium">Institute:</span> {selectedInstitute.name}
               </div>
             )}
             {selectedClass && (
-              <div className="text-xs text-blue-600 dark:text-blue-400">
+              <div className="text-xs text-blue-600 dark:text-blue-400 mb-1">
                 <span className="font-medium">Class:</span> {selectedClass.name}
               </div>
             )}
