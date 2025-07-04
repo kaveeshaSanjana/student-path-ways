@@ -122,7 +122,7 @@ const SubjectSelector = () => {
       } else if (userRole === 'InstituteAdmin' || userRole === 'AttendanceMarker') {
         // For institute admin/attendance marker: get all institute subjects
         if (currentClassId) {
-          url = `${baseUrl}/institute/${currentInstituteId}/class/${currentClassId}`;
+          url = `${baseUrl}/institute-class-subjects/institute/${currentInstituteId}/class/${currentClassId}`;
         } else {
           url = `${baseUrl}/institute-class-subjects/institute/${currentInstituteId}`;
         }
