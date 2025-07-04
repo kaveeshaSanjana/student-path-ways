@@ -59,7 +59,7 @@ const getBaseUrl = () => {
 };
 
 const Classes = ({ apiLevel = 'institute' }: ClassesProps) => {
-  const { user, setSelectedClass, selectedInstitute, selectedClass, selectedSubject, setSelectedInstitute } = useAuth();
+  const { user, setSelectedClass, selectedInstitute, selectedClass, selectedSubject, setSelectedInstitute, setSelectedSubject } = useAuth();
   const { toast } = useToast();
   
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -120,14 +120,17 @@ const Classes = ({ apiLevel = 'institute' }: ClassesProps) => {
       isActive: activeFilter
     });
 
+    // Always add instituteId if available
     if (selectedInstitute?.id) {
       params.append('instituteId', selectedInstitute.id);
     }
 
+    // Add classId for class level APIs
     if (apiLevel === 'class' && selectedClass?.id) {
       params.append('classId', selectedClass.id);
     }
 
+    // Add subjectId for subject level APIs
     if (apiLevel === 'subject' && selectedSubject?.id) {
       params.append('subjectId', selectedSubject.id);
     }
@@ -216,11 +219,16 @@ const Classes = ({ apiLevel = 'institute' }: ClassesProps) => {
 
   const handleBackNavigation = () => {
     if (apiLevel === 'subject' && selectedSubject) {
-      setSelectedClass(null);
+      // Go back from subject level to class level
+      setSelectedSubject(null);
     } else if (apiLevel === 'class' && selectedClass) {
+      // Go back from class level to institute level
       setSelectedClass(null);
     } else if (selectedInstitute) {
+      // Go back from institute level to institute selection
       setSelectedInstitute(null);
+      setSelectedClass(null);
+      setSelectedSubject(null);
     }
   };
 
@@ -234,6 +242,20 @@ const Classes = ({ apiLevel = 'institute' }: ClassesProps) => {
       title += ` (${selectedInstitute.name})`;
     }
     return title;
+  };
+
+  const getBreadcrumbPath = () => {
+    const path = [];
+    if (selectedInstitute) {
+      path.push(`Institute: ${selectedInstitute.name}`);
+    }
+    if (selectedClass) {
+      path.push(`Class: ${selectedClass.name}`);
+    }
+    if (selectedSubject) {
+      path.push(`Subject: ${selectedSubject.name}`);
+    }
+    return path.join(' → ');
   };
 
   const handlePageChange = (page: number) => {
@@ -531,8 +553,9 @@ const Classes = ({ apiLevel = 'institute' }: ClassesProps) => {
 
   return (
     <div className="space-y-6">
+      {/* Back Navigation */}
       {(selectedInstitute || selectedClass || selectedSubject) && (
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-4">
           <Button
             variant="outline"
             size="sm"
@@ -543,15 +566,7 @@ const Classes = ({ apiLevel = 'institute' }: ClassesProps) => {
             <span>Back</span>
           </Button>
           <div className="text-sm text-gray-600 dark:text-gray-400">
-            {selectedInstitute && (
-              <span>Institute: {selectedInstitute.name}</span>
-            )}
-            {selectedClass && (
-              <span> → Class: {selectedClass.name}</span>
-            )}
-            {selectedSubject && (
-              <span> → Subject: {selectedSubject.name}</span>
-            )}
+            {getBreadcrumbPath()}
           </div>
         </div>
       )}
