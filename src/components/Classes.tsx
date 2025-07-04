@@ -263,7 +263,7 @@ const Classes = ({ apiLevel = 'institute' }: ClassesProps) => {
     { 
       key: 'endDate', 
       header: 'End Date',
-      render: (value: string) => new Date(value).toLocalDateString()
+      render: (value: string) => new Date(value).toLocaleDateString()
     },
     { 
       key: 'enrollmentEnabled',
