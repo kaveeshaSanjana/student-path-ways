@@ -1,5 +1,5 @@
 
-export type UserRole = 'SystemAdmin' | 'InstituteAdmin' | 'Teacher' | 'Student' | 'AttendanceMarker';
+import type { UserRole } from '@/contexts/AuthContext';
 
 export const AccessControl = {
   hasPermission: (userRole: UserRole, permission: Permission): boolean => {

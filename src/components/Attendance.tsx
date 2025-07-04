@@ -2,7 +2,7 @@ import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import DataTable from '@/components/ui/data-table';
 import { Badge } from '@/components/ui/badge';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth, type UserRole } from '@/contexts/AuthContext';
 import { AccessControl } from '@/utils/permissions';
 
 const mockOnlineAttendance = [
@@ -85,7 +85,7 @@ const Attendance = () => {
     console.log('Export attendance:', record);
   };
 
-  const canExport = AccessControl.hasPermission(user?.role || 'Student' as const, 'export-attendance');
+  const canExport = AccessControl.hasPermission((user?.role || 'Student') as UserRole, 'export-attendance');
 
   return (
     <div className="space-y-6">

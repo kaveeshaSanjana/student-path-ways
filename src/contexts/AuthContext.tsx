@@ -1,9 +1,10 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 
-interface User {
+export interface User {
   id: string;
   firstName: string;
   lastName: string;
+  name: string; // Computed from firstName + lastName
   email: string;
   phone: string;
   userType: string;
@@ -23,7 +24,11 @@ interface User {
   updatedAt: string;
   imageUrl: string;
   role: string;
+  institutes?: Institute[]; // Optional institutes array
 }
+
+// Export UserRole type for use in other components
+export type UserRole = 'SystemAdmin' | 'InstituteAdmin' | 'Teacher' | 'Student' | 'AttendanceMarker';
 
 interface Institute {
   id: string;
@@ -116,6 +121,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     id: apiUser.id,
     firstName: apiUser.firstName,
     lastName: apiUser.lastName,
+    name: `${apiUser.firstName} ${apiUser.lastName}`, // Compute full name
     email: apiUser.email,
     phone: apiUser.phone,
     userType: apiUser.userType,
@@ -134,7 +140,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     createdAt: apiUser.createdAt,
     updatedAt: apiUser.updatedAt,
     imageUrl: apiUser.imageUrl,
-    role: apiUser.role
+    role: apiUser.role,
+    institutes: apiUser.institutes || [] // Add institutes if available
   });
 
   const login = async (credentials: LoginCredentials) => {

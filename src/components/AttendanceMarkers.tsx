@@ -1,8 +1,7 @@
-
 import React from 'react';
 import DataTable from '@/components/ui/data-table';
 import { Badge } from '@/components/ui/badge';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth, type UserRole } from '@/contexts/AuthContext';
 import { AccessControl } from '@/utils/permissions';
 
 const mockAttendanceMarkers = [
@@ -87,7 +86,7 @@ const AttendanceMarkers = () => {
     console.log('View attendance marker details:', marker);
   };
 
-  const userRole = user?.role || 'Student';
+  const userRole = (user?.role || 'Student') as UserRole;
   const canCreate = AccessControl.hasPermission(userRole, 'create-attendance-marker');
   const canEdit = AccessControl.hasPermission(userRole, 'edit-attendance-marker');
   const canDelete = AccessControl.hasPermission(userRole, 'delete-attendance-marker');
