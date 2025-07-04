@@ -60,7 +60,6 @@ const InstituteSelector = () => {
   const { toast } = useToast();
   const [institutes, setInstitutes] = useState<InstituteData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [dataLoaded, setDataLoaded] = useState(false);
 
   const getBaseUrl = () => {
     return localStorage.getItem('baseUrl') || 'http://localhost:3000';
@@ -86,11 +85,17 @@ const InstituteSelector = () => {
     
     return {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
+      'Authorization': `Bearer ${token}`,
+      'ngrok-skip-browser-warning': 'true'
     };
   };
 
   const handleLoadInstitutes = async () => {
+    if (!user?.id) {
+      console.error('No user ID available');
+      return;
+    }
+
     setIsLoading(true);
     console.log('Loading user institutes...');
     
@@ -102,7 +107,7 @@ const InstituteSelector = () => {
 
     try {
       const baseUrl = getBaseUrl();
-      const url = `${baseUrl}/users/${user?.id}/institutes`;
+      const url = `${baseUrl}/users/${user.id}/institutes`;
       console.log(`API Request URL: ${url}`);
 
       const response = await fetch(url, {
@@ -110,15 +115,25 @@ const InstituteSelector = () => {
         headers
       });
 
+      console.log('Response status:', response.status);
+      console.log('Response headers:', response.headers);
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      // Check if response is actually JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const textResponse = await response.text();
+        console.error('Non-JSON response received:', textResponse);
+        throw new Error('Server returned non-JSON response');
       }
 
       const result: InstituteData[] = await response.json();
       console.log('Institutes API Response:', result);
 
       setInstitutes(result);
-      setDataLoaded(true);
       
       toast({
         title: "Data Loaded",
@@ -128,7 +143,7 @@ const InstituteSelector = () => {
       console.error('Failed to load institutes:', error);
       toast({
         title: "Load Failed",
-        description: "Failed to load institutes data.",
+        description: "Failed to load institutes data. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -136,8 +151,9 @@ const InstituteSelector = () => {
     }
   };
 
+  // Load institutes on component mount if user is available
   useEffect(() => {
-    if (user?.id) {
+    if (user?.id && institutes.length === 0) {
       handleLoadInstitutes();
     }
   }, [user?.id]);
@@ -169,10 +185,10 @@ const InstituteSelector = () => {
         </p>
       </div>
 
-      {!dataLoaded ? (
+      {institutes.length === 0 && !isLoading ? (
         <div className="text-center py-12">
           <p className="text-gray-600 dark:text-gray-400 mb-6">
-            Click the button below to load your institutes
+            No institutes found. Click the button below to refresh.
           </p>
           <Button 
             onClick={handleLoadInstitutes} 
