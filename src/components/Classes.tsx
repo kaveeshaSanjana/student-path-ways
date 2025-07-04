@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import DataTable from '@/components/ui/data-table';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth, type UserRole } from '@/contexts/AuthContext';
 import { AccessControl } from '@/utils/permissions';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -546,7 +546,7 @@ const Classes = ({ apiLevel = 'institute' }: ClassesProps) => {
     }
   };
 
-  const userRole = user?.role || 'Student';
+  const userRole = (user?.role || 'Student') as UserRole;
   const canAdd = AccessControl.hasPermission(userRole, 'create-class');
   const canEdit = AccessControl.hasPermission(userRole, 'edit-class');
   const canDelete = AccessControl.hasPermission(userRole, 'delete-class');

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -6,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth, type UserRole } from '@/contexts/AuthContext';
 import { AccessControl } from '@/utils/permissions';
 import { useToast } from '@/hooks/use-toast';
 import DataTable from '@/components/ui/data-table';
@@ -176,8 +175,8 @@ const Grading = () => {
     });
   };
 
-  const canGrade = AccessControl.hasPermission(user?.role || 'Student', 'grade-assignments');
-  const canManageGrades = AccessControl.hasPermission(user?.role || 'Student', 'manage-grades');
+  const canGrade = AccessControl.hasPermission((user?.role || 'Student') as UserRole, 'grade-assignments');
+  const canManageGrades = AccessControl.hasPermission((user?.role || 'Student') as UserRole, 'manage-grades');
 
   return (
     <div className="space-y-6">
