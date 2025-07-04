@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { AccessControl } from '@/utils/permissions';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, ArrowLeft } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import CreateClassForm from '@/components/forms/CreateClassForm';
@@ -59,35 +59,31 @@ const getBaseUrl = () => {
 };
 
 const Classes = ({ apiLevel = 'institute' }: ClassesProps) => {
-  const { user, setSelectedClass, selectedInstitute } = useAuth();
+  const { user, setSelectedClass, selectedInstitute, selectedClass, selectedSubject, setSelectedInstitute } = useAuth();
   const { toast } = useToast();
   
-  // Dialog states
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isEnrollmentDialogOpen, setIsEnrollmentDialogOpen] = useState(false);
   
-  // Data states
   const [selectedClassData, setSelectedClassData] = useState<ClassData | null>(null);
   const [classesData, setClassesData] = useState<ClassData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [dataLoaded, setDataLoaded] = useState(false);
   
-  // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [totalItems, setTotalItems] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   
-  // Filter states - using "all" instead of empty strings
   const [gradeFilter, setGradeFilter] = useState<string>('all');
   const [activeFilter, setActiveFilter] = useState<string>('true');
   const [specialtyFilter, setSpecialtyFilter] = useState<string>('all');
   const [classTypeFilter, setClassTypeFilter] = useState<string>('all');
   const [academicYearFilter, setAcademicYearFilter] = useState<string>('all');
   const [levelFilter, setLevelFilter] = useState<string>('all');
+  const [searchFilter, setSearchFilter] = useState<string>('');
   
-  // Enrollment form states
   const [enrollmentCode, setEnrollmentCode] = useState('');
   const [requireTeacherVerification, setRequireTeacherVerification] = useState(true);
 
@@ -116,10 +112,57 @@ const Classes = ({ apiLevel = 'institute' }: ClassesProps) => {
     };
   };
 
+  const buildApiUrl = (page = 1, limit = itemsPerPage) => {
+    const baseUrl = getBaseUrl();
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+      isActive: activeFilter
+    });
+
+    if (selectedInstitute?.id) {
+      params.append('instituteId', selectedInstitute.id);
+    }
+
+    if (apiLevel === 'class' && selectedClass?.id) {
+      params.append('classId', selectedClass.id);
+    }
+
+    if (apiLevel === 'subject' && selectedSubject?.id) {
+      params.append('subjectId', selectedSubject.id);
+    }
+
+    if (gradeFilter && gradeFilter !== 'all') {
+      params.append('grade', gradeFilter);
+    }
+
+    if (specialtyFilter && specialtyFilter !== 'all') {
+      params.append('specialty', specialtyFilter);
+    }
+
+    if (classTypeFilter && classTypeFilter !== 'all') {
+      params.append('classType', classTypeFilter);
+    }
+
+    if (academicYearFilter && academicYearFilter !== 'all') {
+      params.append('academicYear', academicYearFilter);
+    }
+
+    if (levelFilter && levelFilter !== 'all') {
+      params.append('level', levelFilter);
+    }
+
+    if (searchFilter && searchFilter.trim()) {
+      params.append('search', searchFilter.trim());
+    }
+
+    return `${baseUrl}/institute-classes?${params.toString()}`;
+  };
+
   const handleLoadData = async (page = 1, limit = itemsPerPage) => {
     setIsLoading(true);
     console.log(`Loading classes data for API level: ${apiLevel}`);
-    console.log(`Current context - Institute: ${selectedInstitute?.name}`);
+    console.log(`Current context - Institute: ${selectedInstitute?.name}, Class: ${selectedClass?.name}, Subject: ${selectedSubject?.name}`);
     
     const headers = getApiHeaders();
     if (!headers) {
@@ -128,42 +171,7 @@ const Classes = ({ apiLevel = 'institute' }: ClassesProps) => {
     }
 
     try {
-      // Build query parameters exactly as specified in the API
-      const params = new URLSearchParams({
-        page: page.toString(),
-        limit: limit.toString(),
-        isActive: activeFilter
-      });
-
-      // Add instituteId parameter as specified
-      if (selectedInstitute?.id) {
-        params.append('instituteId', selectedInstitute.id);
-      }
-
-      // Add grade filter as specified - only if not "all"
-      if (gradeFilter && gradeFilter !== 'all') {
-        params.append('grade', gradeFilter);
-      }
-
-      // Add additional filters based on the response structure - only if not "all"
-      if (specialtyFilter && specialtyFilter !== 'all') {
-        params.append('specialty', specialtyFilter);
-      }
-
-      if (classTypeFilter && classTypeFilter !== 'all') {
-        params.append('classType', classTypeFilter);
-      }
-
-      if (academicYearFilter && academicYearFilter !== 'all') {
-        params.append('academicYear', academicYearFilter);
-      }
-
-      if (levelFilter && levelFilter !== 'all') {
-        params.append('level', levelFilter);
-      }
-
-      const baseUrl = getBaseUrl();
-      const url = `${baseUrl}/institute-classes?${params.toString()}`;
+      const url = buildApiUrl(page, limit);
       console.log(`API Request URL: ${url}`);
 
       const response = await fetch(url, {
@@ -204,7 +212,29 @@ const Classes = ({ apiLevel = 'institute' }: ClassesProps) => {
     if (selectedInstitute?.id) {
       handleLoadData();
     }
-  }, [apiLevel, selectedInstitute, gradeFilter, activeFilter, specialtyFilter, classTypeFilter, academicYearFilter, levelFilter]);
+  }, [apiLevel, selectedInstitute, selectedClass, selectedSubject, gradeFilter, activeFilter, specialtyFilter, classTypeFilter, academicYearFilter, levelFilter]);
+
+  const handleBackNavigation = () => {
+    if (apiLevel === 'subject' && selectedSubject) {
+      setSelectedClass(null);
+    } else if (apiLevel === 'class' && selectedClass) {
+      setSelectedClass(null);
+    } else if (selectedInstitute) {
+      setSelectedInstitute(null);
+    }
+  };
+
+  const getPageTitle = () => {
+    let title = 'All Classes';
+    if (apiLevel === 'subject' && selectedSubject) {
+      title += ` (${selectedSubject.name})`;
+    } else if (apiLevel === 'class' && selectedClass) {
+      title += ` (${selectedClass.name})`;
+    } else if (selectedInstitute) {
+      title += ` (${selectedInstitute.name})`;
+    }
+    return title;
+  };
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -233,7 +263,7 @@ const Classes = ({ apiLevel = 'institute' }: ClassesProps) => {
     { 
       key: 'endDate', 
       header: 'End Date',
-      render: (value: string) => new Date(value).toLocaleDateString()
+      render: (value: string) => new Date(value).toLocalDateString()
     },
     { 
       key: 'enrollmentEnabled',
@@ -262,7 +292,6 @@ const Classes = ({ apiLevel = 'institute' }: ClassesProps) => {
     try {
       console.log('Creating class:', classData);
       
-      // Format the data to match the exact structure from your JSON example
       const formattedData = {
         instituteId: selectedInstitute?.id || "1",
         code: classData.code,
@@ -327,7 +356,6 @@ const Classes = ({ apiLevel = 'institute' }: ClassesProps) => {
     try {
       console.log('Updating class:', classData);
       
-      // Format the data to match API requirements
       const formattedData = {
         code: classData.code,
         name: classData.name,
@@ -420,12 +448,10 @@ const Classes = ({ apiLevel = 'institute' }: ClassesProps) => {
   const handleToggleEnrollment = (classData: ClassData) => {
     setSelectedClassData(classData);
     if (!classData.enrollmentEnabled) {
-      // Show enrollment dialog for enabling
       setEnrollmentCode(classData.enrollmentCode || classData.code || '');
       setRequireTeacherVerification(classData.requireTeacherVerification);
       setIsEnrollmentDialogOpen(true);
     } else {
-      // Directly disable enrollment
       handleDisableEnrollment(classData);
     }
   };
@@ -505,10 +531,35 @@ const Classes = ({ apiLevel = 'institute' }: ClassesProps) => {
 
   return (
     <div className="space-y-6">
+      {(selectedInstitute || selectedClass || selectedSubject) && (
+        <div className="flex items-center space-x-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleBackNavigation}
+            className="flex items-center space-x-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            <span>Back</span>
+          </Button>
+          <div className="text-sm text-gray-600 dark:text-gray-400">
+            {selectedInstitute && (
+              <span>Institute: {selectedInstitute.name}</span>
+            )}
+            {selectedClass && (
+              <span> → Class: {selectedClass.name}</span>
+            )}
+            {selectedSubject && (
+              <span> → Subject: {selectedSubject.name}</span>
+            )}
+          </div>
+        </div>
+      )}
+
       {!dataLoaded ? (
         <div className="text-center py-12">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-            All Classes {apiLevel === 'institute' ? `(${selectedInstitute?.name || 'All Institutes'})` : ''}
+            {getPageTitle()}
           </h2>
           <p className="text-gray-600 dark:text-gray-400 mb-6">
             Click the button below to load classes data
@@ -533,7 +584,6 @@ const Classes = ({ apiLevel = 'institute' }: ClassesProps) => {
         </div>
       ) : (
         <>
-          {/* Enhanced Filters based on API response structure */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-end">
             <div>
               <Label htmlFor="grade-filter">Grade Filter</Label>
@@ -550,6 +600,16 @@ const Classes = ({ apiLevel = 'institute' }: ClassesProps) => {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="search-filter">Search</Label>
+              <Input
+                id="search-filter"
+                placeholder="Search classes..."
+                value={searchFilter}
+                onChange={(e) => setSearchFilter(e.target.value)}
+              />
             </div>
 
             <div>
@@ -661,6 +721,7 @@ const Classes = ({ apiLevel = 'institute' }: ClassesProps) => {
                   setAcademicYearFilter('all');
                   setLevelFilter('all');
                   setActiveFilter('true');
+                  setSearchFilter('');
                 }}
                 variant="ghost"
                 size="sm"
@@ -672,7 +733,7 @@ const Classes = ({ apiLevel = 'institute' }: ClassesProps) => {
           </div>
 
           <DataTable
-            title={`All Classes ${apiLevel === 'institute' ? `(${selectedInstitute?.name || 'All Institutes'})` : ''}`}
+            title={getPageTitle()}
             data={classesData}
             columns={classesColumns}
             onAdd={canAdd ? () => setIsCreateDialogOpen(true) : undefined}
@@ -688,7 +749,6 @@ const Classes = ({ apiLevel = 'institute' }: ClassesProps) => {
                 condition: () => canEdit
               }
             ]}
-            // Server-side pagination props
             currentPage={currentPage}
             totalItems={totalItems}
             totalPages={totalPages}
@@ -699,7 +759,6 @@ const Classes = ({ apiLevel = 'institute' }: ClassesProps) => {
         </>
       )}
 
-      {/* Create Dialog */}
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -712,7 +771,6 @@ const Classes = ({ apiLevel = 'institute' }: ClassesProps) => {
         </DialogContent>
       </Dialog>
 
-      {/* Edit Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -729,7 +787,6 @@ const Classes = ({ apiLevel = 'institute' }: ClassesProps) => {
         </DialogContent>
       </Dialog>
 
-      {/* Enrollment Dialog */}
       <Dialog open={isEnrollmentDialogOpen} onOpenChange={setIsEnrollmentDialogOpen}>
         <DialogContent>
           <DialogHeader>
