@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -68,7 +67,7 @@ interface SubjectCardData {
 }
 
 const SubjectSelector = () => {
-  const { user, selectedInstitute, setSelectedSubject, currentInstituteId } = useAuth();
+  const { user, selectedInstitute, setSelectedSubject, currentInstituteId, currentClassId } = useAuth();
   const { toast } = useToast();
   const [subjectsData, setSubjectsData] = useState<SubjectCardData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -114,12 +113,19 @@ const SubjectSelector = () => {
       if (userRole === 'Student') {
         // For students: get subjects they are enrolled in
         url = `${baseUrl}/institute-class-subject-students/student/${user?.id}/class-details?limit=100&instituteId=${currentInstituteId}&isActive=true`;
+        if (currentClassId) {
+          url += `&classId=${currentClassId}`;
+        }
       } else if (userRole === 'Teacher') {
         // For teachers: get subjects they teach
         url = `${baseUrl}/institute-class-subjects/teacher/${user?.id}`;
       } else if (userRole === 'InstituteAdmin' || userRole === 'AttendanceMarker') {
         // For institute admin/attendance marker: get all institute subjects
-        url = `${baseUrl}/institute-class-subjects/institute/${currentInstituteId}`;
+        if (currentClassId) {
+          url = `${baseUrl}/institute/${currentInstituteId}/class/${currentClassId}`;
+        } else {
+          url = `${baseUrl}/institute-class-subjects/institute/${currentInstituteId}`;
+        }
       } else {
         throw new Error('Unsupported user role for subject selection');
       }
