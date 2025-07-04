@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import DataTable from '@/components/ui/data-table';
 import { GraduationCap, Phone, Mail, MapPin, Heart, RefreshCw } from 'lucide-react';
 import CreateStudentForm from '@/components/forms/CreateStudentForm';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Student {
   userId: string;
@@ -61,6 +62,7 @@ interface StudentsResponse {
 }
 
 const Students = () => {
+  const { selectedInstitute, selectedClass, selectedSubject, currentInstituteId, currentClassId, currentSubjectId } = useAuth();
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(false);
   const [dataLoaded, setDataLoaded] = useState(false);
@@ -103,28 +105,65 @@ const Students = () => {
     return headers;
   };
 
+  const buildQueryParams = () => {
+    const params = new URLSearchParams({
+      page: currentPage.toString(),
+      limit: itemsPerPage.toString()
+    });
+
+    if (currentInstituteId) {
+      params.append('instituteId', currentInstituteId);
+    }
+
+    if (currentClassId) {
+      params.append('classId', currentClassId);
+    }
+
+    if (currentSubjectId) {
+      params.append('subjectId', currentSubjectId);
+    }
+
+    if (statusFilter !== 'all') {
+      params.append('isActive', statusFilter);
+    }
+
+    if (searchTerm.trim()) {
+      params.append('search', searchTerm.trim());
+    }
+
+    if (gradeFilter !== 'all') {
+      params.append('grade', gradeFilter);
+    }
+
+    return params;
+  };
+
+  const buildRequestBody = (additionalData: any = {}) => {
+    const body: any = { ...additionalData };
+
+    if (currentInstituteId) {
+      body.instituteId = currentInstituteId;
+    }
+
+    if (currentClassId) {
+      body.classId = currentClassId;
+    }
+
+    if (currentSubjectId) {
+      body.subjectId = currentSubjectId;
+    }
+
+    return body;
+  };
+
   const fetchStudents = async () => {
     try {
       setLoading(true);
 
-      const params = new URLSearchParams({
-        page: currentPage.toString(),
-        limit: itemsPerPage.toString()
-      });
-
-      if (statusFilter !== 'all') {
-        params.append('isActive', statusFilter);
-      }
-
-      if (searchTerm.trim()) {
-        params.append('search', searchTerm.trim());
-      }
-
-      if (gradeFilter !== 'all') {
-        params.append('grade', gradeFilter);
-      }
+      const params = buildQueryParams();
 
       console.log('Fetching students with params:', params.toString());
+      console.log('Current context - Institute:', selectedInstitute?.name, 'Class:', selectedClass?.name, 'Subject:', selectedSubject?.name);
 
       const baseUrl = getBaseUrl();
       const response = await fetch(`${baseUrl}/students?${params}`, {
@@ -209,12 +248,14 @@ const Students = () => {
     try {
       setLoading(true);
       
+      const requestBody = buildRequestBody(studentData);
+      
       const headers = getApiHeaders();
       const baseUrl = getBaseUrl();
       const response = await fetch(`${baseUrl}/students`, {
         method: 'POST',
         headers,
-        body: JSON.stringify(studentData)
+        body: JSON.stringify(requestBody)
       });
 
       if (!response.ok) {
@@ -246,11 +287,13 @@ const Students = () => {
     try {
       setLoading(true);
       
+      const requestBody = buildRequestBody(studentData);
+      
       const baseUrl = getBaseUrl();
       const response = await fetch(`${baseUrl}/students/${selectedStudent.userId}`, {
         method: 'PATCH',
         headers: getApiHeaders(),
-        body: JSON.stringify(studentData)
+        body: JSON.stringify(requestBody)
       });
 
       if (!response.ok) {
@@ -328,11 +371,34 @@ const Students = () => {
     }
   ];
 
+  const getContextTitle = () => {
+    let title = 'Students Management';
+    const contexts = [];
+    
+    if (selectedInstitute) {
+      contexts.push(selectedInstitute.name);
+    }
+    
+    if (selectedClass) {
+      contexts.push(selectedClass.name);
+    }
+    
+    if (selectedSubject) {
+      contexts.push(selectedSubject.name);
+    }
+    
+    if (contexts.length > 0) {
+      title += ` (${contexts.join(' → ')})`;
+    }
+    
+    return title;
+  };
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Students Management</h1>
+          <h1 className="text-3xl font-bold text-gray-900">{getContextTitle()}</h1>
           <p className="text-gray-600 mt-1">Manage student accounts and information</p>
         </div>
         <div className="flex items-center space-x-2">

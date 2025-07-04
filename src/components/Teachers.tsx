@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import DataTable from '@/components/ui/data-table';
 import { Badge } from '@/components/ui/badge';
@@ -52,7 +53,7 @@ const mockTeachers = [
 ];
 
 const Teachers = () => {
-  const { user } = useAuth();
+  const { user, selectedInstitute, selectedClass, selectedSubject, currentInstituteId, currentClassId, currentSubjectId } = useAuth();
   const { toast } = useToast();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -61,11 +62,83 @@ const Teachers = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [dataLoaded, setDataLoaded] = useState(false);
 
+  const getBaseUrl = () => {
+    return localStorage.getItem('baseUrl') || 'http://localhost:3000';
+  };
+
+  const getAuthToken = () => {
+    const token = localStorage.getItem('access_token') || 
+                  localStorage.getItem('token') || 
+                  localStorage.getItem('authToken');
+    return token;
+  };
+
+  const getApiHeaders = () => {
+    const token = getAuthToken();
+    
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'ngrok-skip-browser-warning': 'true'
+    };
+
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    return headers;
+  };
+
+  const buildQueryParams = () => {
+    const params = new URLSearchParams();
+
+    // Add context-aware filtering
+    if (currentInstituteId) {
+      params.append('instituteId', currentInstituteId);
+    }
+
+    if (currentClassId) {
+      params.append('classId', currentClassId);
+    }
+
+    if (currentSubjectId) {
+      params.append('subjectId', currentSubjectId);
+    }
+
+    return params;
+  };
+
+  const buildRequestBody = (additionalData: any = {}) => {
+    const body: any = { ...additionalData };
+
+    if (currentInstituteId) {
+      body.instituteId = currentInstituteId;
+    }
+
+    if (currentClassId) {
+      body.classId = currentClassId;
+    }
+
+    if (currentSubjectId) {
+      body.subjectId = currentSubjectId;
+    }
+
+    return body;
+  };
+
   const handleLoadData = async () => {
     setIsLoading(true);
     console.log('Loading teachers data...');
+    console.log(`Current context - Institute: ${selectedInstitute?.name}, Class: ${selectedClass?.name}, Subject: ${selectedSubject?.name}`);
     
     try {
+      const baseUrl = getBaseUrl();
+      const headers = getApiHeaders();
+      const params = buildQueryParams();
+      
+      // For now, simulate API call with mock data but in real scenario would be:
+      // const url = params.toString() ? `${baseUrl}/teachers?${params}` : `${baseUrl}/teachers`;
+      // const response = await fetch(url, { method: 'GET', headers });
+      
       // Simulate API call delay
       await new Promise(resolve => setTimeout(resolve, 1000));
       
@@ -123,6 +196,10 @@ const Teachers = () => {
 
   const handleUpdateTeacher = (teacherData: any) => {
     console.log('Updating teacher:', teacherData);
+    
+    // In real scenario, would include context in request body:
+    // const requestBody = buildRequestBody(teacherData);
+    
     toast({
       title: "Teacher Updated",
       description: `Teacher ${teacherData.name} has been updated successfully.`
@@ -150,6 +227,10 @@ const Teachers = () => {
 
   const handleCreateTeacher = (teacherData: any) => {
     console.log('Creating teacher:', teacherData);
+    
+    // In real scenario, would include context in request body:
+    // const requestBody = buildRequestBody(teacherData);
+    
     toast({
       title: "Teacher Created",
       description: `Teacher ${teacherData.name} has been created successfully.`
@@ -162,12 +243,35 @@ const Teachers = () => {
   const canEdit = AccessControl.hasPermission(userRole, 'edit-teacher');
   const canDelete = AccessControl.hasPermission(userRole, 'delete-teacher');
 
+  const getContextTitle = () => {
+    const contexts = [];
+    
+    if (selectedInstitute) {
+      contexts.push(selectedInstitute.name);
+    }
+    
+    if (selectedClass) {
+      contexts.push(selectedClass.name);
+    }
+    
+    if (selectedSubject) {
+      contexts.push(selectedSubject.name);
+    }
+    
+    let title = 'Teachers Management';
+    if (contexts.length > 0) {
+      title += ` (${contexts.join(' → ')})`;
+    }
+    
+    return title;
+  };
+
   return (
     <div className="space-y-6">
       {!dataLoaded ? (
         <div className="text-center py-12">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            Teachers Management
+            {getContextTitle()}
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mb-6">
             Click the button below to load teachers data
@@ -194,7 +298,7 @@ const Teachers = () => {
         <>
           <div className="text-center mb-6">
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-              Teachers Management
+              {getContextTitle()}
             </h1>
             <p className="text-gray-600 dark:text-gray-400">
               Manage teaching staff, assignments, and professional information

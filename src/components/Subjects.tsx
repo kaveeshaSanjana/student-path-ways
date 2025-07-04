@@ -14,11 +14,11 @@ interface SubjectsProps {
 }
 
 const Subjects = ({ apiLevel = 'institute' }: SubjectsProps) => {
-  const { user, selectedInstitute, selectedClass } = useAuth();
+  const { user, selectedInstitute, selectedClass, selectedSubject, currentInstituteId, currentClassId, currentSubjectId } = useAuth();
   const { toast } = useToast();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [selectedSubject, setSelectedSubject] = useState<any>(null);
+  const [selectedSubjectData, setSelectedSubjectData] = useState<any>(null);
   const [subjectsData, setSubjectsData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [dataLoaded, setDataLoaded] = useState(false);
@@ -49,16 +49,55 @@ const Subjects = ({ apiLevel = 'institute' }: SubjectsProps) => {
     return headers;
   };
 
+  const buildQueryParams = () => {
+    const params = new URLSearchParams();
+
+    // Add context-aware filtering
+    if (currentInstituteId) {
+      params.append('instituteId', currentInstituteId);
+    }
+
+    if (currentClassId) {
+      params.append('classId', currentClassId);
+    }
+
+    if (currentSubjectId) {
+      params.append('subjectId', currentSubjectId);
+    }
+
+    return params;
+  };
+
+  const buildRequestBody = (additionalData: any = {}) => {
+    const body: any = { ...additionalData };
+
+    if (currentInstituteId) {
+      body.instituteId = currentInstituteId;
+    }
+
+    if (currentClassId) {
+      body.classId = currentClassId;
+    }
+
+    if (currentSubjectId) {
+      body.subjectId = currentSubjectId;
+    }
+
+    return body;
+  };
+
   const handleLoadData = async () => {
     setIsLoading(true);
     console.log(`Loading subjects data for API level: ${apiLevel}`);
-    console.log(`Current context - Institute: ${selectedInstitute?.name}, Class: ${selectedClass?.name}`);
+    console.log(`Current context - Institute: ${selectedInstitute?.name}, Class: ${selectedClass?.name}, Subject: ${selectedSubject?.name}`);
     
     try {
       const baseUrl = getBaseUrl();
       const headers = getApiHeaders();
+      const params = buildQueryParams();
       
-      const response = await fetch(`${baseUrl}/subjects`, {
+      const url = params.toString() ? `${baseUrl}/subjects?${params}` : `${baseUrl}/subjects`;
+      const response = await fetch(url, {
         method: 'GET',
         headers
       });
@@ -93,7 +132,7 @@ const Subjects = ({ apiLevel = 'institute' }: SubjectsProps) => {
 
   useEffect(() => {
     handleLoadData();
-  }, [apiLevel, selectedInstitute, selectedClass]);
+  }, [apiLevel, selectedInstitute, selectedClass, selectedSubject]);
 
   const subjectsColumns = [
     { key: 'code', header: 'Subject Code' },
@@ -120,17 +159,19 @@ const Subjects = ({ apiLevel = 'institute' }: SubjectsProps) => {
       const baseUrl = getBaseUrl();
       const headers = getApiHeaders();
       
+      const requestBody = buildRequestBody({
+        name: subjectData.name,
+        code: subjectData.code,
+        category: subjectData.category,
+        creditHours: subjectData.creditHours,
+        description: subjectData.description,
+        isActive: subjectData.isActive
+      });
+      
       const response = await fetch(`${baseUrl}/subjects`, {
         method: 'POST',
         headers,
-        body: JSON.stringify({
-          name: subjectData.name,
-          code: subjectData.code,
-          category: subjectData.category,
-          creditHours: subjectData.creditHours,
-          description: subjectData.description,
-          isActive: subjectData.isActive
-        })
+        body: JSON.stringify(requestBody)
       });
 
       if (!response.ok) {
@@ -167,8 +208,10 @@ const Subjects = ({ apiLevel = 'institute' }: SubjectsProps) => {
       setIsLoading(true);
       const baseUrl = getBaseUrl();
       const headers = getApiHeaders();
+      const params = buildQueryParams();
       
-      const response = await fetch(`${baseUrl}/subjects/${subjectData.id}`, {
+      const url = params.toString() ? `${baseUrl}/subjects/${subjectData.id}?${params}` : `${baseUrl}/subjects/${subjectData.id}`;
+      const response = await fetch(url, {
         method: 'GET',
         headers
       });
@@ -180,7 +223,7 @@ const Subjects = ({ apiLevel = 'institute' }: SubjectsProps) => {
       const result = await response.json();
       console.log('Subject details loaded:', result);
       
-      setSelectedSubject(result);
+      setSelectedSubjectData(result);
       setIsEditDialogOpen(true);
       
     } catch (error) {
@@ -203,15 +246,17 @@ const Subjects = ({ apiLevel = 'institute' }: SubjectsProps) => {
       const baseUrl = getBaseUrl();
       const headers = getApiHeaders();
       
-      const response = await fetch(`${baseUrl}/subjects/${selectedSubject.id}`, {
+      const requestBody = buildRequestBody({
+        name: subjectData.name,
+        description: subjectData.description,
+        creditHours: subjectData.creditHours,
+        category: subjectData.category
+      });
+      
+      const response = await fetch(`${baseUrl}/subjects/${selectedSubjectData.id}`, {
         method: 'PATCH',
         headers,
-        body: JSON.stringify({
-          name: subjectData.name,
-          description: subjectData.description,
-          creditHours: subjectData.creditHours,
-          category: subjectData.category
-        })
+        body: JSON.stringify(requestBody)
       });
 
       if (!response.ok) {
@@ -227,7 +272,7 @@ const Subjects = ({ apiLevel = 'institute' }: SubjectsProps) => {
       });
       
       setIsEditDialogOpen(false);
-      setSelectedSubject(null);
+      setSelectedSubjectData(null);
       await handleLoadData();
       
     } catch (error) {
@@ -295,12 +340,25 @@ const Subjects = ({ apiLevel = 'institute' }: SubjectsProps) => {
   const canDelete = AccessControl.hasPermission(userRole, 'delete-subject');
 
   const getTitle = () => {
-    let title = 'All Subjects';
-    if (apiLevel === 'class' && selectedClass) {
-      title += ` (${selectedClass.name})`;
-    } else if (apiLevel === 'institute' && selectedInstitute) {
-      title += ` (${selectedInstitute.name})`;
+    const contexts = [];
+    
+    if (selectedInstitute) {
+      contexts.push(selectedInstitute.name);
     }
+    
+    if (selectedClass) {
+      contexts.push(selectedClass.name);
+    }
+    
+    if (selectedSubject) {
+      contexts.push(selectedSubject.name);
+    }
+    
+    let title = 'All Subjects';
+    if (contexts.length > 0) {
+      title += ` (${contexts.join(' → ')})`;
+    }
+    
     return title;
   };
 
@@ -391,11 +449,11 @@ const Subjects = ({ apiLevel = 'institute' }: SubjectsProps) => {
             <DialogTitle>Edit Subject</DialogTitle>
           </DialogHeader>
           <CreateSubjectForm
-            initialData={selectedSubject}
+            initialData={selectedSubjectData}
             onSubmit={handleUpdateSubject}
             onCancel={() => {
               setIsEditDialogOpen(false);
-              setSelectedSubject(null);
+              setSelectedSubjectData(null);
             }}
           />
         </DialogContent>
