@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import DataTable from '@/components/ui/data-table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth, type UserRole } from '@/contexts/AuthContext';
 import { AccessControl } from '@/utils/permissions';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
@@ -290,7 +289,7 @@ const Subjects = ({ apiLevel = 'institute' }: SubjectsProps) => {
     });
   };
 
-  const userRole = user?.role || 'Student';
+  const userRole = (user?.role || 'Student') as UserRole;
   const canAdd = AccessControl.hasPermission(userRole, 'create-subject');
   const canEdit = AccessControl.hasPermission(userRole, 'edit-subject');
   const canDelete = AccessControl.hasPermission(userRole, 'delete-subject');

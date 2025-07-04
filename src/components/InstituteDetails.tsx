@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth, type UserRole } from '@/contexts/AuthContext';
 import { AccessControl } from '@/utils/permissions';
 import { 
   Building, 
@@ -27,7 +27,7 @@ const InstituteDetails = () => {
     );
   }
 
-  const userRole = user?.role || 'Student';
+  const userRole = (user?.role || 'Student') as UserRole;
   const canEdit = AccessControl.hasPermission(userRole, 'edit-institute');
 
   const handleEdit = () => {

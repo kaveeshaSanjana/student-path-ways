@@ -1,10 +1,9 @@
-
 import React, { useState } from 'react';
 import DataTable from '@/components/ui/data-table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, ExternalLink, Play } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth, type UserRole } from '@/contexts/AuthContext';
 import { AccessControl } from '@/utils/permissions';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
@@ -138,7 +137,7 @@ const Exams = () => {
     }
   ];
 
-  const userRole = user?.role || 'Student';
+  const userRole = (user?.role || 'Student') as UserRole;
   const canAdd = AccessControl.hasPermission(userRole, 'create-exam');
   const canEdit = AccessControl.hasPermission(userRole, 'edit-exam');
   const canDelete = AccessControl.hasPermission(userRole, 'delete-exam');

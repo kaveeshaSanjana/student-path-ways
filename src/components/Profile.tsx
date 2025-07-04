@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth, type UserRole } from '@/contexts/AuthContext';
 import { AccessControl } from '@/utils/permissions';
 import { 
   User, 
@@ -31,7 +31,7 @@ const Profile = () => {
     joinDate: '2023-01-15'
   });
 
-  const userPermissions = AccessControl.getUserPermissions(user?.role || 'Student');
+  const userPermissions = AccessControl.getUserPermissions((user?.role || 'Student') as UserRole);
 
   const handleSave = () => {
     // Save logic would go here

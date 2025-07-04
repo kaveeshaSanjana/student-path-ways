@@ -3,7 +3,7 @@ import DataTable from '@/components/ui/data-table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth, type UserRole } from '@/contexts/AuthContext';
 import { AccessControl } from '@/utils/permissions';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
@@ -157,9 +157,10 @@ const Teachers = () => {
     setIsCreateDialogOpen(false);
   };
 
-  const canAdd = AccessControl.hasPermission(user?.role || 'Student' as const, 'create-teacher');
-  const canEdit = AccessControl.hasPermission(user?.role || 'Student' as const, 'edit-teacher');
-  const canDelete = AccessControl.hasPermission(user?.role || 'Student' as const, 'delete-teacher');
+  const userRole = (user?.role || 'Student') as UserRole;
+  const canAdd = AccessControl.hasPermission(userRole, 'create-teacher');
+  const canEdit = AccessControl.hasPermission(userRole, 'edit-teacher');
+  const canDelete = AccessControl.hasPermission(userRole, 'delete-teacher');
 
   return (
     <div className="space-y-6">
