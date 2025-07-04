@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useContext, useEffect } from 'react';
 
 export interface User {
@@ -117,31 +118,76 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     };
   };
 
-  const mapUserData = (apiUser: any): User => ({
+  // Updated user type mapping to handle backend enum
+  const mapUserTypeToRole = (userType: string): UserRole => {
+    const typeMapping: Record<string, UserRole> = {
+      'STUDENT': 'Student',
+      'TEACHER': 'Teacher',
+      'SUPER_ADMIN': 'SystemAdmin',
+      'SUPERADMIN': 'SystemAdmin',
+      'INSTITUTE_ADMIN': 'InstituteAdmin',
+      'ATTEDANCE_MARKER': 'AttendanceMarker',
+      'ATTENDANCE_MARKER': 'AttendanceMarker',
+      'PARENT': 'Student' // Map parent to student for now
+    };
+    return typeMapping[userType.toUpperCase()] || 'Student';
+  };
+
+  const fetchUserInstitutes = async (userId: string, accessToken: string) => {
+    try {
+      console.log(`Fetching institutes for user ${userId}...`);
+      const baseUrl = getBaseUrl();
+      const response = await fetch(`${baseUrl}/users/${userId}/institutes`, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true'
+        },
+      });
+
+      if (response.ok) {
+        const contentType = response.headers.get('Content-Type');
+        if (contentType && contentType.includes('application/json')) {
+          const institutes = await response.json();
+          console.log('Fetched institutes:', institutes);
+          return Array.isArray(institutes) ? institutes : [];
+        } else {
+          console.error('Non-JSON response for institutes:', await response.text());
+        }
+      } else {
+        console.error('Failed to fetch institutes:', response.status, response.statusText);
+      }
+    } catch (error) {
+      console.error('Error fetching user institutes:', error);
+    }
+    return [];
+  };
+
+  const mapUserData = (apiUser: any, institutes: any[] = []): User => ({
     id: apiUser.id,
     firstName: apiUser.firstName,
     lastName: apiUser.lastName,
     name: `${apiUser.firstName} ${apiUser.lastName}`, // Compute full name
     email: apiUser.email,
-    phone: apiUser.phone,
+    phone: apiUser.phone || '',
     userType: apiUser.userType,
-    dateOfBirth: apiUser.dateOfBirth,
-    gender: apiUser.gender,
-    nic: apiUser.nic,
-    birthCertificateNo: apiUser.birthCertificateNo,
-    addressLine1: apiUser.addressLine1,
-    addressLine2: apiUser.addressLine2,
-    city: apiUser.city,
-    district: apiUser.district,
-    province: apiUser.province,
-    postalCode: apiUser.postalCode,
-    country: apiUser.country,
-    isActive: apiUser.isActive,
-    createdAt: apiUser.createdAt,
-    updatedAt: apiUser.updatedAt,
-    imageUrl: apiUser.imageUrl,
-    role: apiUser.role,
-    institutes: apiUser.institutes || [] // Add institutes if available
+    dateOfBirth: apiUser.dateOfBirth || '',
+    gender: apiUser.gender || '',
+    nic: apiUser.nic || '',
+    birthCertificateNo: apiUser.birthCertificateNo || '',
+    addressLine1: apiUser.addressLine1 || '',
+    addressLine2: apiUser.addressLine2 || '',
+    city: apiUser.city || '',
+    district: apiUser.district || '',
+    province: apiUser.province || '',
+    postalCode: apiUser.postalCode || '',
+    country: apiUser.country || '',
+    isActive: apiUser.isActive || true,
+    createdAt: apiUser.createdAt || '',
+    updatedAt: apiUser.updatedAt || '',
+    imageUrl: apiUser.imageUrl || '',
+    role: mapUserTypeToRole(apiUser.userType),
+    institutes: institutes
   });
 
   const login = async (credentials: LoginCredentials) => {
@@ -168,7 +214,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       localStorage.setItem('access_token', data.access_token);
       localStorage.setItem('refresh_token', data.refresh_token);
 
-      const mappedUser = mapUserData(data.user);
+      // Fetch user institutes
+      const institutes = await fetchUserInstitutes(data.user.id, data.access_token);
+      
+      const mappedUser = mapUserData(data.user, institutes);
+      console.log('Mapped user:', mappedUser);
       setUser(mappedUser);
     } catch (error) {
       console.error('Login error:', error);
@@ -228,7 +278,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
           if (response.ok) {
             const data = await response.json();
-            const mappedUser = mapUserData(data);
+            const institutes = await fetchUserInstitutes(data.id, token);
+            const mappedUser = mapUserData(data, institutes);
             setUser(mappedUser);
           } else {
             console.error('Failed to validate token:', response.status);

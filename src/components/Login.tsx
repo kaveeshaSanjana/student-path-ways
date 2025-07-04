@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useAuth, UserRole } from '@/contexts/AuthContext';
+import { useAuth, type UserRole } from '@/contexts/AuthContext';
 import { Eye, EyeOff, GraduationCap, Wifi, WifiOff, Settings } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -77,6 +77,7 @@ const Login = ({ onLogin }: LoginProps) => {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [useApiLogin, setUseApiLogin] = useState(true);
+  const { login } = useAuth();
   const { toast } = useToast();
 
   const handleQuickLogin = (role: UserRole) => {
@@ -130,48 +131,6 @@ const Login = ({ onLogin }: LoginProps) => {
       console.error('Error fetching user institutes:', error);
     }
     return [];
-  };
-
-  const handleApiLogin = async (email: string, password: string) => {
-    try {
-      console.log(`Attempting API login to ${baseUrl}/auth/login`);
-      const response = await fetch(`${baseUrl}/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'ngrok-skip-browser-warning': 'true'
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('API login failed:', response.status, response.statusText, errorText);
-        throw new Error(`Login failed: ${response.status} ${response.statusText}`);
-      }
-
-      const data = await response.json();
-      console.log('API login response:', data);
-      
-      // Fetch user institutes if available
-      const institutes = await fetchUserInstitutes(data.user.id, data.access_token);
-      
-      // Map API response to our user format with proper role mapping
-      const user = {
-        id: data.user.id,
-        name: `${data.user.firstName} ${data.user.lastName}`,
-        email: data.user.email,
-        role: mapUserTypeToRole(data.user.userType),
-        institutes: institutes,
-        accessToken: data.access_token
-      };
-
-      console.log('Mapped user:', user);
-      return user;
-    } catch (error) {
-      console.error('API login error:', error);
-      throw error;
-    }
   };
 
   const handleMockLogin = async (email: string, password: string, role: UserRole) => {
@@ -231,25 +190,25 @@ const Login = ({ onLogin }: LoginProps) => {
     localStorage.setItem('baseUrl', baseUrl);
 
     try {
-      let user;
-
       if (useApiLogin) {
-        user = await handleApiLogin(email, password);
+        // Use AuthContext login for API login
+        await login({ email, password });
         toast({
           title: "Success",
-          description: `Logged in successfully as ${user.role}`,
+          description: "Logged in successfully",
         });
       } else {
-        user = await handleMockLogin(email, password, selectedRole);
+        // Handle mock login
+        const user = await handleMockLogin(email, password, selectedRole);
         toast({
           title: "Success",
           description: `Logged in successfully as ${user.role}`,
         });
+        
+        console.log('User logged in:', user);
+        console.log('User role:', user.role);
+        onLogin(user);
       }
-
-      console.log('User logged in:', user);
-      console.log('User role:', user.role);
-      onLogin(user);
     } catch (error) {
       console.error('Login failed:', error);
       setError(error instanceof Error ? error.message : 'Login failed');
@@ -495,7 +454,7 @@ const Login = ({ onLogin }: LoginProps) => {
               <CardTitle className="text-sm">API Demo Credentials</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2 text-gray-600 dark:text-gray-400">
-              <div><strong>Example:</strong> admin@example.com / password123</div>
+              <div><strong>Example:</strong> 123@gmail.com / password123</div>
             </CardContent>
           </Card>
         )}
