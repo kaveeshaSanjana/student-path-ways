@@ -17,14 +17,31 @@ All colors MUST be HSL.
     --popover: 0 0% 100%;
     --popover-foreground: 220 26% 14%;
 
+    /* Enhanced LMS Color Palette */
     --primary: 217 91% 60%;
     --primary-foreground: 0 0% 100%;
+    --primary-light: 217 91% 75%;
+    --primary-dark: 217 91% 45%;
 
-    --primary-light: 217 91% 85%;
-    --primary-dark: 217 91% 35%;
-
-    --secondary: 217 32% 17%;
+    --secondary: 220 26% 14%;
     --secondary-foreground: 0 0% 100%;
+
+    /* Enhanced Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-dark)));
+    --gradient-secondary: linear-gradient(135deg, hsl(var(--secondary)), hsl(var(--primary-dark)));
+    --gradient-hero: linear-gradient(135deg, hsl(var(--primary) / 0.9), hsl(var(--secondary) / 0.8));
+    --gradient-card: linear-gradient(145deg, hsl(var(--card)), hsl(var(--primary) / 0.05));
+    
+    /* Enhanced Background */
+    --background: 210 40% 98%;
+    --background-secondary: 217 32% 96%;
+    
+    /* Enhanced Accent Colors */
+    --accent: 283 89% 74%;
+    --accent-secondary: 142 76% 36%;
+    --success: 142 76% 36%;
+    --warning: 38 92% 50%;
+    --info: 199 89% 48%;
 
     --muted: 217 32% 96%;
     --muted-foreground: 217 10% 40%;
@@ -318,16 +335,41 @@ All colors MUST be HSL.
     transform-style: preserve-3d;
   }
 
-  /* Parallax layers */
-  .parallax-slow {
-    transform: translate3d(0, 0, 0);
+  /* Enhanced Glass Effect Utilities */
+  .glass {
+    @apply bg-white/10 backdrop-blur-md border border-white/20;
+  }
+  
+  .glass-card {
+    @apply bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl;
   }
 
-  .parallax-medium {
-    transform: translate3d(0, 0, 0);
+  /* Enhanced Gradient Backgrounds */
+  .bg-gradient-hero {
+    background: var(--gradient-hero);
+  }
+  
+  .bg-gradient-primary {
+    background: var(--gradient-primary);
+  }
+  
+  .bg-gradient-secondary {
+    background: var(--gradient-secondary);
+  }
+  
+  .bg-gradient-card {
+    background: var(--gradient-card);
   }
 
-  .parallax-fast {
-    transform: translate3d(0, 0, 0);
+  /* Enhanced Button Styles */
+  .btn-gradient {
+    @apply bg-gradient-to-r from-primary to-primary-dark text-primary-foreground;
+    @apply hover:from-primary-dark hover:to-primary transition-all duration-300;
+    @apply shadow-lg hover:shadow-xl transform hover:scale-105;
+  }
+  
+  .btn-glass {
+    @apply glass hover:bg-white/20 text-primary border-primary/30;
+    @apply transition-all duration-300 transform hover:scale-105;
   }
 }

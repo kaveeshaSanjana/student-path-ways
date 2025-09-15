@@ -162,6 +162,60 @@ const ServicesSection = () => {
   // Determine visible services count per category
   const items = servicesByCategory[selectedCategory] ?? [];
   const visibleServices = selectedCategory === "Crypto" ? items.slice(0, 3) : items;
-  return;
+  
+  return (
+    <section className="py-16 bg-gradient-to-br from-background via-primary-light/10 to-secondary/5">
+      <div className="container mx-auto px-4">
+        <div className="text-center mb-12">
+          <h2 className="text-4xl font-bold mb-4 bg-gradient-to-r from-primary to-primary-dark bg-clip-text text-transparent">
+            Our Services
+          </h2>
+          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+            Discover our comprehensive range of services designed to meet your needs
+          </p>
+        </div>
+        
+        {/* Category Navigation */}
+        <div className="flex flex-wrap justify-center gap-2 mb-12">
+          {categories.map((category) => (
+            <button
+              key={category}
+              onClick={() => setSelectedCategory(category)}
+              className={`px-6 py-3 rounded-full transition-all duration-300 font-medium ${
+                selectedCategory === category
+                  ? 'bg-primary text-primary-foreground shadow-lg'
+                  : 'bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {category}
+            </button>
+          ))}
+        </div>
+        
+        {/* Services Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {visibleServices.map((service, index) => (
+            <div
+              key={index}
+              className="bg-card border border-border rounded-xl p-6 hover:shadow-lg transition-all duration-300 hover:border-primary/50"
+            >
+              <h3 className="text-xl font-bold mb-3 text-primary">{service.title}</h3>
+              <p className="text-muted-foreground mb-4">{service.description}</p>
+              {service.videoUrl && (
+                <div className="aspect-video bg-muted rounded-lg mb-4">
+                  <iframe
+                    src={service.videoUrl}
+                    className="w-full h-full rounded-lg"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
 };
 export default ServicesSection;

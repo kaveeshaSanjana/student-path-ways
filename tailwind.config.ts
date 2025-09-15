@@ -54,6 +54,13 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
+				success: 'hsl(var(--success))',
+				warning: 'hsl(var(--warning))',
+				info: 'hsl(var(--info))',
+				glass: {
+					DEFAULT: 'rgba(255, 255, 255, 0.1)',
+					card: 'rgba(255, 255, 255, 0.05)'
+				},
 				lms: {
 					blue: 'hsl(var(--lms-blue))',
 					'blue-light': 'hsl(var(--lms-blue-light))',
