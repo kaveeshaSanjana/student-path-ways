@@ -14,6 +14,7 @@ import AwardsSection from "./AwardsSection";
 import ServicesSection from "./ServicesSection";
 import Footer from "./Footer";
 import SmartNFCSection from "./SmartNFCSection";
+import PartnersSection from "./PartnersSection";
 const LMSHomepage = () => {
   const [isTransformed, setIsTransformed] = useState(false);
   const handleLMSClick = () => {
@@ -174,6 +175,8 @@ const LMSHomepage = () => {
         </div>
       </div>
 
+      {/* Partners Section */}
+      <PartnersSection />
 
       {/* Whiteboard Animation Section */}
       <WhiteboardSection />
