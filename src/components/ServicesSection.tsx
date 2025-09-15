@@ -162,6 +162,6 @@ const ServicesSection = () => {
   // Determine visible services count per category
   const items = servicesByCategory[selectedCategory] ?? [];
   const visibleServices = selectedCategory === "Crypto" ? items.slice(0, 3) : items;
-  return null;
+  return;
 };
 export default ServicesSection;

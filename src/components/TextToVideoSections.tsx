@@ -262,7 +262,7 @@ const AnimatedSection = ({
 };
 const TextToVideoSections = () => {
   const sections = [{
-    title: "#1 International Education System",
+    title: "AI-Powered LMS in Messaging Apps",
     description: "For the first time in Sri Lanka, empower students, parents, and educational teams with instant LMS access via WhatsApp and Telegram bots. Receive real-time notifications, updates on causes, and AI-powered assistance directly on your favorite messaging platform. Perfect for academic communities looking to stay connected and engaged without needing to access a separate portal.",
     isReversed: false,
     delay: 0,
