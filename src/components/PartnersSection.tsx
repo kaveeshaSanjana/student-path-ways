@@ -4,26 +4,25 @@ import sinhalaLogo from "@/assets/partners/sinhala-logo.png";
 import googleLogo from "@/assets/partners/google-logo.png";
 
 const PartnersSection = () => {
-  // Easily extendable partner array
-  const partners = [
+  // Base partner logos
+  const basePartners = [
     { name: "Partner 1", logo: partner1 },
-    { name: "AWS", logo: awsLogo },
-    { name: "Sinhala Partner", logo: sinhalaLogo },
-    { name: "Google", logo: googleLogo },
-    { name: "Partner 1", logo: partner1 }, // Duplicate for continuous scroll
     { name: "AWS", logo: awsLogo },
     { name: "Sinhala Partner", logo: sinhalaLogo },
     { name: "Google", logo: googleLogo },
   ];
 
+  // Create multiple copies for seamless loop
+  const partners = [...basePartners, ...basePartners, ...basePartners];
+
   return (
-    <section className="py-16 bg-gradient-to-r from-background via-muted/20 to-background border-y border-border/20">
+    <section className="py-8 bg-gradient-to-r from-background via-muted/20 to-background border-y border-border/20">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary to-primary-dark bg-clip-text text-transparent mb-4">
+        <div className="text-center mb-6">
+          <h2 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-primary to-primary-dark bg-clip-text text-transparent mb-2">
             Our Trusted Partners
           </h2>
-          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+          <p className="text-muted-foreground text-sm max-w-xl mx-auto">
             Working together with leading organizations to transform education
           </p>
         </div>
@@ -31,11 +30,11 @@ const PartnersSection = () => {
         {/* Partners Marquee */}
         <div className="relative overflow-hidden">
           <div className="flex items-center justify-center">
-            <div className="flex animate-scroll-right space-x-12 md:space-x-16">
+            <div className="flex animate-scroll-right space-x-6 md:space-x-8">
               {partners.map((partner, index) => (
                 <div
                   key={index}
-                  className="flex-shrink-0 w-24 h-24 md:w-32 md:h-32 flex items-center justify-center bg-card/50 backdrop-blur-sm rounded-xl border border-border/10 hover:border-primary/20 transition-all duration-300 hover:scale-105 hover:shadow-lg group"
+                  className="flex-shrink-0 w-16 h-16 md:w-20 md:h-20 flex items-center justify-center bg-card/50 backdrop-blur-sm rounded-lg border border-border/10 hover:border-primary/20 transition-all duration-300 hover:scale-105 hover:shadow-md group"
                 >
                   <img
                     src={partner.logo}
