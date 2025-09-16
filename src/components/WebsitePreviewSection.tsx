@@ -34,15 +34,23 @@ const WebsitePreviewSection = () => {
 
         <Tabs defaultValue="student" onValueChange={setActiveTab} className="w-full max-w-5xl md:max-w-7xl mx-auto">
           <div className="overflow-x-auto mb-4 md:mb-8">
-            <TabsList className="flex w-max min-w-full bg-muted/50 p-1 rounded-lg h-auto">
+            <TabsList className="flex w-full bg-muted/50 p-2 rounded-lg h-auto">
               {categories.map((category) => (
                 <TabsTrigger 
                   key={category.id} 
                   value={category.id} 
-                  className="flex items-center gap-2 py-3 px-3 md:px-4 text-xs md:text-sm h-auto whitespace-nowrap flex-shrink-0"
+                  className={`flex items-center justify-center gap-2 py-4 px-2 text-xs md:text-sm h-auto transition-all duration-300 ${
+                    activeTab === category.id 
+                      ? 'flex-grow bg-primary text-primary-foreground' 
+                      : 'flex-shrink-0 w-12 md:w-16'
+                  }`}
                 >
                   <category.icon className="w-4 h-4 md:w-5 md:h-5 flex-shrink-0" />
-                  <span className="hidden sm:inline leading-tight">{category.label}</span>
+                  <span className={`leading-tight transition-all duration-300 ${
+                    activeTab === category.id ? 'opacity-100' : 'opacity-0 w-0 overflow-hidden'
+                  }`}>
+                    {category.label}
+                  </span>
                 </TabsTrigger>
               ))}
             </TabsList>
