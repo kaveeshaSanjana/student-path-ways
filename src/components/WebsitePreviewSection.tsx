@@ -1,8 +1,10 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Users, GraduationCap, User, UserCheck, Clock } from "lucide-react";
 import { useState } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
 const WebsitePreviewSection = () => {
   const [activeTab, setActiveTab] = useState("student");
+  const isMobile = useIsMobile();
   const categories = [{
     id: "student",
     label: "Student",
@@ -45,9 +47,17 @@ const WebsitePreviewSection = () => {
         <Tabs defaultValue="student" onValueChange={setActiveTab} className="w-full max-w-5xl md:max-w-7xl mx-auto">
           <div className="overflow-x-auto mb-4 md:mb-8">
             <TabsList className="flex w-full bg-muted/50 p-2 rounded-lg h-auto">
-              {categories.map(category => <TabsTrigger key={category.id} value={category.id} className={`flex items-center justify-center gap-2 py-4 px-2 text-xs md:text-sm h-auto transition-all duration-300 ${activeTab === category.id ? 'flex-grow bg-primary text-primary-foreground' : 'flex-shrink-0 w-12 md:w-16'}`}>
+              {categories.map(category => <TabsTrigger key={category.id} value={category.id} className={`flex items-center justify-center gap-2 py-4 px-2 text-xs md:text-sm h-auto transition-all duration-300 ${
+                  isMobile 
+                    ? (activeTab === category.id ? 'flex-grow bg-primary text-primary-foreground' : 'flex-shrink-0 w-12') 
+                    : 'flex-1 bg-transparent data-[state=active]:bg-primary data-[state=active]:text-primary-foreground'
+                }`}>
                   <category.icon className="w-4 h-4 md:w-5 md:h-5 flex-shrink-0" />
-                  <span className={`leading-tight transition-all duration-300 ${activeTab === category.id ? 'opacity-100' : 'opacity-0 w-0 overflow-hidden'}`}>
+                  <span className={`leading-tight transition-all duration-300 ${
+                    isMobile 
+                      ? (activeTab === category.id ? 'opacity-100' : 'opacity-0 w-0 overflow-hidden')
+                      : 'opacity-100'
+                  }`}>
                     {category.label}
                   </span>
                 </TabsTrigger>)}
