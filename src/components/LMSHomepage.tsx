@@ -15,7 +15,6 @@ import ServicesSection from "./ServicesSection";
 import Footer from "./Footer";
 import SmartNFCSection from "./SmartNFCSection";
 import PartnersSection from "./PartnersSection";
-import { SurakshaAISection } from "./SurakshaAISection";
 const LMSHomepage = () => {
   const [isTransformed, setIsTransformed] = useState(false);
   const handleLMSClick = () => {
@@ -190,9 +189,6 @@ const LMSHomepage = () => {
 
       {/* Smart NFC ID Section */}
       <SmartNFCSection />
-
-      {/* Suraksha AI Section */}
-      <SurakshaAISection />
 
       {/* Messaging Apps Section */}
       <MessagingAppsSection />
