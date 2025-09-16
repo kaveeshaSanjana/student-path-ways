@@ -50,13 +50,13 @@ const WebsitePreviewSection = () => {
               {categories.map(category => <TabsTrigger key={category.id} value={category.id} className={`flex items-center justify-center gap-2 py-4 px-2 text-xs md:text-sm h-auto transition-all duration-300 ${
                   isMobile 
                     ? (activeTab === category.id ? 'flex-grow bg-primary text-primary-foreground' : 'flex-shrink-0 w-12') 
-                    : 'flex-1 bg-transparent data-[state=active]:bg-primary data-[state=active]:text-primary-foreground'
+                    : 'flex-1'
                 }`}>
                   <category.icon className="w-4 h-4 md:w-5 md:h-5 flex-shrink-0" />
                   <span className={`leading-tight transition-all duration-300 ${
                     isMobile 
                       ? (activeTab === category.id ? 'opacity-100' : 'opacity-0 w-0 overflow-hidden')
-                      : 'opacity-100'
+                      : 'opacity-100 block'
                   }`}>
                     {category.label}
                   </span>
