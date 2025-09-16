@@ -31,18 +31,20 @@ const WebsitePreviewSection = () => {
         </div>
 
         <Tabs defaultValue="student" className="w-full max-w-5xl md:max-w-7xl mx-auto">
-          <TabsList className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 mb-8 md:mb-12 bg-muted/50 p-1 rounded-lg h-auto w-full">
-            {categories.map((category) => (
-              <TabsTrigger 
-                key={category.id} 
-                value={category.id} 
-                className="flex flex-col sm:flex-row md:flex-col items-center gap-2 py-3 md:py-4 px-2 md:px-3 text-xs md:text-sm h-auto w-full"
-              >
-                <category.icon className="w-4 h-4 md:w-6 md:h-6 flex-shrink-0" />
-                <span className="text-center leading-tight">{category.label}</span>
-              </TabsTrigger>
-            ))}
-          </TabsList>
+          <div className="overflow-x-auto mb-8 md:mb-12">
+            <TabsList className="flex w-max min-w-full bg-muted/50 p-1 rounded-lg h-auto">
+              {categories.map((category) => (
+                <TabsTrigger 
+                  key={category.id} 
+                  value={category.id} 
+                  className="flex items-center gap-2 py-3 px-4 text-xs md:text-sm h-auto whitespace-nowrap flex-shrink-0"
+                >
+                  <category.icon className="w-4 h-4 md:w-5 md:h-5 flex-shrink-0" />
+                  <span className="leading-tight">{category.label}</span>
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </div>
 
           {Object.entries(roleDescriptions).map(([key, description]) => (
             <TabsContent key={key} value={key} className="space-y-6 md:space-y-8">
